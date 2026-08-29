@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+.DS_Store
+*.log
+
+# Never commit real secrets. The example file is the documentation of which
+# variables exist; the real values live in the Cloudflare Pages dashboard.
+.env
+.env.*
+!.env.example
