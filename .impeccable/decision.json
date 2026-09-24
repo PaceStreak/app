@@ -1,0 +1,64 @@
+{
+  "title": "PaceStreak app — home screen structure",
+  "question": "The brand world is settled (near-black, lime, flame, the five-level grid). This picks how the home screen and log flow are composed. Lock one, steer, or re-roll.",
+  "options": [
+    {
+      "id": "ledger",
+      "label": "The Ledger",
+      "kicker": "THE ROLL",
+      "thesis": "Home is your training log itself: a running ledger of days, with the streak as its masthead.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#f4f4f5"],
+      "materials": ["ruled day rows", "tabular numerals", "rest days printed as kept"],
+      "viewport": "Masthead: streak weeks huge, this week's 7 day-ticks under it. Below, today's row open for a one-tap log; past days scroll as dated ledger lines, rest days quietly marked 'rest · kept'.",
+      "risk": "The year grid moves off home; the 'watch it fill' moment lives one tap away on Progress.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "streak masthead", "x": 0, "y": 0, "w": 6, "h": 2, "accent": true},
+        {"label": "week ticks", "x": 0, "y": 2, "w": 6, "h": 1},
+        {"label": "today · tap to log", "x": 0, "y": 3, "w": 6, "h": 2, "accent": true},
+        {"label": "ledger rows", "x": 0, "y": 5, "w": 6, "h": 6},
+        {"label": "tab bar", "x": 0, "y": 11, "w": 6, "h": 1}
+      ]}
+    },
+    {
+      "id": "grid",
+      "label": "The Grid",
+      "thesis": "Home is the year: the activity grid fills the first screen and the streak lives inside it.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#f4f4f5"],
+      "materials": ["53-week grid", "kept-week column bands", "thumb-reach log button"],
+      "viewport": "A full-width 26-week grid with kept weeks banded in lime; streak count overlaid top-left; a large Log button docked at thumb height opens a bottom sheet.",
+      "risk": "Beautiful at month six, empty and discouraging on day one — needs a strong first-run state.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "streak + level", "x": 0, "y": 0, "w": 6, "h": 1},
+        {"label": "activity grid", "x": 0, "y": 1, "w": 6, "h": 5, "accent": true},
+        {"label": "this week vs target", "x": 0, "y": 6, "w": 6, "h": 2},
+        {"label": "recent", "x": 0, "y": 8, "w": 6, "h": 2},
+        {"label": "LOG", "x": 1, "y": 10, "w": 4, "h": 1, "accent": true},
+        {"label": "tab bar", "x": 0, "y": 11, "w": 6, "h": 1}
+      ]}
+    },
+    {
+      "id": "week",
+      "label": "The Week",
+      "thesis": "Home is this week, because the week is the unit: seven day slots against your target, filled by tapping.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#f4f4f5"],
+      "materials": ["seven tall day slots", "target line", "discipline glyphs"],
+      "viewport": "Seven vertical day slots fill the screen; tapping today's slot logs; the target is a line across the slots you fill toward. Streak and freezes sit above, chains swipe sideways.",
+      "risk": "Long-term progress (grid, records) is secondary; strong for habit, weaker for 'watch it compound'.",
+      "wireframe": {"cols": 7, "rows": 12, "regions": [
+        {"label": "streak · freezes", "x": 0, "y": 0, "w": 7, "h": 2},
+        {"label": "M", "x": 0, "y": 2, "w": 1, "h": 6, "accent": true},
+        {"label": "T", "x": 1, "y": 2, "w": 1, "h": 6},
+        {"label": "W", "x": 2, "y": 2, "w": 1, "h": 6, "accent": true},
+        {"label": "T", "x": 3, "y": 2, "w": 1, "h": 6},
+        {"label": "F", "x": 4, "y": 2, "w": 1, "h": 6},
+        {"label": "S", "x": 5, "y": 2, "w": 1, "h": 6},
+        {"label": "S", "x": 6, "y": 2, "w": 1, "h": 6},
+        {"label": "recent + challenges", "x": 0, "y": 8, "w": 7, "h": 3},
+        {"label": "tab bar", "x": 0, "y": 11, "w": 7, "h": 1}
+      ]}
+    }
+  ],
+  "reroll": true,
+  "buildPath": {"value": "code", "toggle": false},
+  "steer": true
+}

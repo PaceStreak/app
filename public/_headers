@@ -1,0 +1,17 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Robots-Tag: noindex, nofollow
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pacestreak.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Cache-Control: no-cache
+
+# Content-hashed by Vite: a changed file gets a new URL, so these can never
+# serve stale bytes.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Must revalidate every time or an old worker keeps serving an old shell.
+/sw.js
+  Cache-Control: no-cache

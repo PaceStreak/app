@@ -1,0 +1,4 @@
+# The app is behind a login and must never be indexed. This is NOT the
+# marketing site's robots.txt - the two are not interchangeable.
+User-agent: *
+Disallow: /

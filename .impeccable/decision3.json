@@ -1,0 +1,61 @@
+{
+  "title": "PaceStreak app — premium fitness + game layer (re-roll 2)",
+  "question": "Steered: a paid-app-grade home with the gamification up front. Lock one, steer, or re-roll.",
+  "options": [
+    {
+      "id": "rings",
+      "label": "Flame & Rings",
+      "kicker": "THE ROLL",
+      "thesis": "A hero instrument you read in one glance: the streak flame with three rings around it — this week vs target, XP to next level, active challenge.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#7cc7ff"],
+      "materials": ["concentric progress rings", "animated flame count", "glass-free matte cards", "centre Log button in the tab bar"],
+      "viewport": "Top: streak weeks as a big flame numeral inside three rings (lime = week, flame = level XP, blue = challenge). Under it: this week's day chips, then 'Quests this week', recent sessions with PR/XP chips. Tab bar with a raised centre + to log.",
+      "risk": "Rings are the category's signature (Apple Fitness); ours earns it by meaning 'week vs your own target', not calories.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "flame + 3 rings", "x": 1, "y": 0, "w": 4, "h": 4, "accent": true},
+        {"label": "week day chips", "x": 0, "y": 4, "w": 6, "h": 1},
+        {"label": "level · XP bar", "x": 0, "y": 5, "w": 6, "h": 1},
+        {"label": "quests", "x": 0, "y": 6, "w": 6, "h": 2},
+        {"label": "recent sessions", "x": 0, "y": 8, "w": 6, "h": 3},
+        {"label": "tabs  ( + )  tabs", "x": 0, "y": 11, "w": 6, "h": 1, "accent": true}
+      ]}
+    },
+    {
+      "id": "coach",
+      "label": "Coach Cards",
+      "thesis": "Home is a short stack of smart cards that each say one true thing right now: 'You're 1 session from keeping week 7', 'New PR on bench', 'Crew challenge ends Sunday'.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#f4f4f5"],
+      "materials": ["prioritised card stack", "swipe to dismiss", "inline one-tap actions"],
+      "viewport": "A compact status bar (streak · level · week 2/4), then the top card large with its action (Log / Repair / Join), smaller cards under it, a persistent Log button.",
+      "risk": "Relies on good ranking logic; a quiet week produces a thin screen.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "streak · level · week", "x": 0, "y": 0, "w": 6, "h": 1},
+        {"label": "top card + action", "x": 0, "y": 1, "w": 6, "h": 4, "accent": true},
+        {"label": "card", "x": 0, "y": 5, "w": 6, "h": 2},
+        {"label": "card", "x": 0, "y": 7, "w": 6, "h": 2},
+        {"label": "LOG", "x": 4, "y": 9, "w": 2, "h": 2, "accent": true},
+        {"label": "tab bar", "x": 0, "y": 11, "w": 6, "h": 1}
+      ]}
+    },
+    {
+      "id": "character",
+      "label": "Character Sheet",
+      "thesis": "You are the character: home is your sheet — level, title, streak, badges and stats — and logging is how you earn the next line of it.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#c8a2ff"],
+      "materials": ["level crest", "stat rows with tabular numerals", "badge shelf", "XP ledger"],
+      "viewport": "Level crest with title (Novice → Veteran) and XP bar at the top, streak and week progress as the two primary stats, a badge shelf, then 'Recent XP' lines that explain where points came from.",
+      "risk": "Gamification leads; people who switch it off need a plain variant of home.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "level crest + XP", "x": 0, "y": 0, "w": 6, "h": 3, "accent": true},
+        {"label": "streak", "x": 0, "y": 3, "w": 3, "h": 2},
+        {"label": "this week", "x": 3, "y": 3, "w": 3, "h": 2},
+        {"label": "badge shelf", "x": 0, "y": 5, "w": 6, "h": 2},
+        {"label": "XP ledger", "x": 0, "y": 7, "w": 6, "h": 3},
+        {"label": "tabs  ( + )  tabs", "x": 0, "y": 11, "w": 6, "h": 1, "accent": true}
+      ]}
+    }
+  ],
+  "reroll": true,
+  "buildPath": {"value": "code", "toggle": false},
+  "steer": true
+}

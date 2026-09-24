@@ -1,0 +1,60 @@
+{
+  "title": "PaceStreak app — home screen structure (re-roll 1)",
+  "question": "Fresh hand; the earlier three are retired. Lock one, steer, or re-roll.",
+  "options": [
+    {
+      "id": "pages",
+      "label": "The Pages",
+      "kicker": "THE ROLL",
+      "thesis": "Home is four full-screen pages you swipe between: Today, This week, The year, Your crew — each one answers one question.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#f4f4f5"],
+      "materials": ["snap-scrolling pages", "page dots", "persistent log button"],
+      "viewport": "Today page: giant 'Log' target in the middle of the screen with discipline chips around it, the streak number above. Swipe right for the week slots, again for the year grid, again for the crew feed.",
+      "risk": "Swiping hides three of four answers; people who never swipe never see the grid.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "streak", "x": 0, "y": 0, "w": 6, "h": 2},
+        {"label": "LOG target", "x": 1, "y": 3, "w": 4, "h": 4, "accent": true},
+        {"label": "discipline chips", "x": 0, "y": 7, "w": 6, "h": 2},
+        {"label": "• ○ ○ ○", "x": 2, "y": 10, "w": 2, "h": 1},
+        {"label": "tab bar", "x": 0, "y": 11, "w": 6, "h": 1}
+      ]}
+    },
+    {
+      "id": "rails",
+      "label": "The Rails",
+      "thesis": "Each streak is a line: weeks are stations along a rail, kept ones lit, and you are at the end of it.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#f4f4f5"],
+      "materials": ["horizontal rail per chain", "lit week stations", "current-week platform"],
+      "viewport": "Every chain (Everything, Lifting, Running…) is a horizontal rail of week stations running off the left edge; the current week is a wide 'platform' showing day-ticks against target with a log button on it.",
+      "risk": "A metaphor to learn; one-chain users get one lonely rail.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "header", "x": 0, "y": 0, "w": 6, "h": 1},
+        {"label": "rail · Everything", "x": 0, "y": 1, "w": 4, "h": 2},
+        {"label": "platform", "x": 4, "y": 1, "w": 2, "h": 2, "accent": true},
+        {"label": "rail · Lifting", "x": 0, "y": 3, "w": 4, "h": 2},
+        {"label": "platform", "x": 4, "y": 3, "w": 2, "h": 2, "accent": true},
+        {"label": "recent sessions", "x": 0, "y": 5, "w": 6, "h": 5},
+        {"label": "tab bar", "x": 0, "y": 11, "w": 6, "h": 1}
+      ]}
+    },
+    {
+      "id": "scoreboard",
+      "label": "The Scoreboard",
+      "thesis": "Home reads like a stadium board: this week versus your target in huge numerals, everything else in small print below.",
+      "palette": ["#0a0a0b", "#141417", "#d3ff3e", "#ff6b35", "#f4f4f5"],
+      "materials": ["oversized tabular numerals", "target / done split", "ticker of recent sessions"],
+      "viewport": "Top half: '2 / 4' this week, set enormous, with days left and streak weeks as smaller scores beside it. A full-width log bar under it; a ticker of sessions and crew kudos below.",
+      "risk": "Numbers-first can read as pressure; the tone of the copy has to carry 'rest is fine'.",
+      "wireframe": {"cols": 6, "rows": 12, "regions": [
+        {"label": "2 / 4", "x": 0, "y": 0, "w": 4, "h": 4, "accent": true},
+        {"label": "streak · days left", "x": 4, "y": 0, "w": 2, "h": 4},
+        {"label": "LOG bar", "x": 0, "y": 4, "w": 6, "h": 1, "accent": true},
+        {"label": "ticker", "x": 0, "y": 5, "w": 6, "h": 5},
+        {"label": "tab bar", "x": 0, "y": 11, "w": 6, "h": 1}
+      ]}
+    }
+  ],
+  "reroll": true,
+  "buildPath": {"value": "code", "toggle": false},
+  "steer": true
+}
