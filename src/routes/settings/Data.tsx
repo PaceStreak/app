@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { DownloadSimple, UploadSimple, Warning } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Field, Section } from "../../components/ui";
+import { Banner, Field, Section } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { syncNow } from "../../lib/sync";
 import { queryClient } from "../../lib/queries";
@@ -17,6 +18,10 @@ export function Data() {
   const [deleting, setDeleting] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmSheet, ask] = useConfirm();
+  // Arriving from the monthly backup reminder. A banner with a button rather
+  // than an automatic download: browsers block downloads nobody tapped for.
+  const [params, setParams] = useSearchParams();
+  const fromReminder = params.get("backup") === "1";
 
   const download = async (format: "json" | "csv" | "ics") => {
     setBusy(format);
@@ -30,6 +35,7 @@ export function Data() {
       a.download = name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (fromReminder) setParams({}, { replace: true });
     } catch (err) {
       toast.error(errorText(err));
     } finally {
@@ -67,6 +73,19 @@ export function Data() {
   return (
     <div>
       <p className="text-muted">It's your training history. Take all of it, whenever you like.</p>
+      {fromReminder && (
+        <Banner
+          tone="accent"
+          icon={<DownloadSimple size={18} />}
+          action={
+            <button type="button" className="btn btn-sm btn-primary" disabled={busy !== null} onClick={() => void download("json")}>
+              {busy === "json" ? "Preparing…" : "Download"}
+            </button>
+          }
+        >
+          Your monthly backup: everything, in one file you can import again later.
+        </Banner>
+      )}
       <Section title="Export">
         <div className="card divide-y divide-line">
           {(

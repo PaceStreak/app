@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Navigate } from "react-router";
-import { MagnifyingGlass } from "../components/phosphor";
+import { CheckCircle, MagnifyingGlass, WarningCircle } from "../components/phosphor";
 import { Sheet } from "../components/Sheet";
 import { toast } from "../components/toast";
 import { Empty, ErrorState, Loading, PageHeader, Segmented } from "../components/ui";
@@ -182,22 +182,87 @@ function Audit() {
   );
 }
 
+interface WorkerState {
+  status: "ok" | "stale" | "never_ran";
+  last_tick_at: string | null;
+  age_seconds?: number;
+  duration_ms?: number;
+  failing_ticks?: number;
+  jobs?: Record<string, { result?: number; error?: string }>;
+}
+
 function Metrics() {
-  const q = useQuery({ queryKey: ["admin-metrics"], queryFn: () => api<Record<string, number | { week: string; count: number }[]>>("/admin/metrics") });
+  const q = useQuery({
+    queryKey: ["admin-metrics"],
+    queryFn: () => api<Record<string, number> & { worker: WorkerState }>("/admin/metrics"),
+    refetchInterval: 60_000,
+  });
   if (!q.data) return <Loading />;
   const tiles = ["users", "onboarded", "active_1d", "active_7d", "active_30d", "sessions_7d", "open_reports", "suspended"];
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {tiles.map((k) => (
-        <div key={k} className="card p-4">
-          <p className="text-sm text-dim">{k.replace(/_/g, " ")}</p>
-          <p className="num mt-1 text-2xl font-semibold">{q.data[k] as number}</p>
-        </div>
-      ))}
+    <div className="space-y-4">
+      <WorkerPanel worker={q.data.worker} />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {tiles.map((k) => (
+          <div key={k} className="card p-4">
+            <p className="text-sm text-dim">{k.replace(/_/g, " ")}</p>
+            <p className="num mt-1 text-2xl font-semibold">{q.data[k]}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
+/** Whether reminders, digests, challenge results and account purges are
+    actually running. Status is always a word plus an icon, never colour alone. */
+function WorkerPanel({ worker }: { worker: WorkerState }) {
+  const healthy = worker.status === "ok" && !worker.failing_ticks;
+  const headline =
+    worker.status === "never_ran"
+      ? "The worker has never run"
+      : worker.status === "stale"
+        ? `No tick for ${Math.round((worker.age_seconds ?? 0) / 60)} minutes`
+        : worker.failing_ticks
+          ? `${worker.failing_ticks} tick${worker.failing_ticks === 1 ? "" : "s"} in a row with a failing job`
+          : "Running normally";
+  return (
+    <section className="card p-4" aria-labelledby="worker-heading">
+      <div className="flex items-center gap-3">
+        {healthy ? <CheckCircle size={22} weight="fill" className="text-accent-text" aria-hidden /> : <WarningCircle size={22} weight="fill" className="text-danger" aria-hidden />}
+        <div className="min-w-0 flex-1">
+          <h2 id="worker-heading" className="font-semibold">
+            Scheduler: {headline}
+          </h2>
+          {worker.last_tick_at && (
+            <p className="text-sm text-dim">
+              Last tick {timeAgo(worker.last_tick_at)} ago{worker.duration_ms != null ? `, took ${worker.duration_ms} ms` : ""}
+            </p>
+          )}
+        </div>
+      </div>
+      {worker.jobs && (
+        <table className="mt-3 w-full text-sm">
+          <caption className="sr-only">Last tick, per job</caption>
+          <thead>
+            <tr className="text-left text-dim">
+              <th scope="col" className="py-1 font-medium">Job</th>
+              <th scope="col" className="py-1 text-right font-medium">Last result</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {Object.entries(worker.jobs).map(([name, r]) => (
+              <tr key={name}>
+                <th scope="row" className="py-1.5 text-left font-normal">{name}</th>
+                <td className={`num py-1.5 text-right ${r.error ? "font-semibold text-danger" : ""}`}>{r.error ? `Failed: ${r.error}` : r.result}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+  );
+}
 
 /** Grant or revoke official status. Granting may take a reserved handle such
     as "pacestreak" - the only place that is allowed. Revoking from a reserved
