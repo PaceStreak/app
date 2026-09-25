@@ -38,6 +38,7 @@ import { localWeek } from "../lib/training";
 import type { Challenge, Plan } from "../lib/types";
 import { useProfilePatch } from "./settings/useProfilePatch";
 import { useLog } from "../shell/LogContext";
+import { plural } from "../lib/units";
 
 const ICONS: Record<CoachCard["icon"], ReactNode> = {
   flame: <Fire weight="fill" />,
@@ -239,7 +240,7 @@ export default function Today() {
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="font-semibold tracking-tight">The grid</h2>
             <span className="num text-sm text-dim">
-              {stats.data.totals.active_days} days · longest {main?.longest ?? 0} wk
+              {plural(stats.data.totals.active_days, "day")} · longest {main?.longest ?? 0} wk
             </span>
           </div>
           <Heatmap

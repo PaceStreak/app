@@ -2,6 +2,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
+import { WeekStrip } from "../../components/WeekStrip";
 import { DisciplineIcon } from "../../components/icons";
 import { ArrowsClockwise, Copy, DotsThreeVertical, Fire, Megaphone, PushPin, ShareNetwork, Trash, Trophy, WarningCircle } from "../../components/phosphor";
 import { FeedCard, PersonRow, ReportSheet } from "../../components/social";
@@ -99,7 +100,7 @@ export default function GroupDetail() {
       <PageHeader
         title={group?.name ?? ""}
         back="/groups"
-        subtitle={group ? `${group.member_count} members · ${group.kind === "coaching" ? "Coaching" : "Crew"}` : undefined}
+        subtitle={group ? `${group.member_count} ${group.member_count === 1 ? "member" : "members"} · ${group.kind === "coaching" ? "Coaching" : "Crew"}` : undefined}
         action={
           group && (
             <button type="button" className="btn btn-ghost btn-icon" aria-label="Group options" onClick={() => setMenu(true)}>
@@ -388,13 +389,9 @@ function GroupStreak({ group, onThreshold }: { group: Group; onThreshold: (v: nu
           {st.current}
         </p>
       </div>
-      <ol className="mt-3 grid grid-cols-12 gap-[3px]" aria-label="The group's last 12 weeks">
-        {st.weeks.map((w, i) => (
-          <li key={i} className={`week-mark is-${w}`}>
-            <span className="sr-only">{w === "kept" ? "kept" : w === "open" ? "in progress" : w}</span>
-          </li>
-        ))}
-      </ol>
+      <div className="mt-3">
+        <WeekStrip weeks={st.weeks} label="The group's last 12 weeks" />
+      </div>
       {st.this_week && st.this_week.counted > 0 && (
         <p className="mt-3 text-sm text-muted">
           This week: {st.this_week.kept} of {st.this_week.counted} kept so far
@@ -556,7 +553,7 @@ function Announcements({ groupId, manager }: { groupId: string; manager: boolean
             <p className="mt-1 flex items-center gap-1.5 text-xs text-dim">
               {a.pinned && (
                 <>
-                  <PushPin size={12} weight="fill" aria-hidden /> Pinned ·
+                  <PushPin size={12} weight="fill" aria-hidden /> Pinned ·{" "}
                 </>
               )}
               {a.author ? `@${a.author.handle}` : "Former admin"} · {fmtMonthDay(a.created_at.slice(0, 10))}

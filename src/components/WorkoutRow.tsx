@@ -3,7 +3,7 @@ import { relativeDay, timeOfDay } from "../lib/dates";
 import type { LibraryIndex } from "../lib/queries";
 import { exerciseOrder, workedSets } from "../lib/training";
 import type { Profile, Workout } from "../lib/types";
-import { distance, duration, pace } from "../lib/units";
+import { distance, duration, pace, plural } from "../lib/units";
 import { DisciplineIcon } from "./icons";
 import { CloudArrowUp, WarningCircle } from "./phosphor";
 
@@ -19,7 +19,7 @@ export function workoutSummary(w: Workout, lib: LibraryIndex | null, profile: Pi
     const names = exerciseOrder(w)
       .slice(0, 3)
       .map((id) => lib?.byId.get(id)?.name ?? "Exercise");
-    bits.push(`${sets.length} sets`, names.join(", "));
+    bits.push(plural(sets.length, "set"), names.join(", "));
   }
   if (w.distance_m) bits.push(distance(w.distance_m, profile.distance_unit));
   if (w.duration_sec) bits.push(duration(w.duration_sec));

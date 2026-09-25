@@ -12,7 +12,7 @@ import { fmtMonthDay } from "../../lib/dates";
 import { queryClient, useLibrary, useRestDays, useStats } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import type { Chain } from "../../lib/types";
-import { compact, fromKg, fromMetres } from "../../lib/units";
+import { compact, fromKg, fromMetres, plural } from "../../lib/units";
 
 interface ProgressData {
   weeks: {
@@ -147,7 +147,7 @@ export default function Progress() {
                     title={`Weekly ${metric}`}
                     bars={bars}
                     target={metric === "days" ? targetNow : null}
-                    targetLabel={metric === "days" ? `Your target: ${targetNow} days` : undefined}
+                    targetLabel={metric === "days" ? targetNow != null ? `Your target: ${plural(targetNow, "day")}` : undefined : undefined}
                   />
                 )}
               </div>
@@ -215,7 +215,7 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold">{chain.name}</p>
-          <p className="text-sm text-dim">{chain.target} days a week</p>
+          <p className="text-sm text-dim">{plural(chain.target, "day")} a week</p>
         </div>
         <div className="text-right">
           <p className="num flex items-center justify-end gap-1 text-2xl font-semibold tracking-tight">
@@ -226,6 +226,11 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
         </div>
       </div>
       <ol className="mt-4 grid grid-cols-[repeat(26,minmax(0,1fr))] gap-[3px]" aria-label="The last 26 weeks">
+        {/* Always 26 wide: weeks before the history starts are faint
+            placeholders, so a new streak isn't one stretched box. */}
+        {Array.from({ length: Math.max(0, 26 - chain.weeks.length) }, (_, i) => (
+          <li key={`pad${i}`} className="week-mark is-none" aria-hidden />
+        ))}
         {chain.weeks.map((w) => (
           <li key={w.week_start} className={`week-mark is-${w.status}`} title={`Week of ${fmtMonthDay(w.week_start)}: ${STATUS_LABEL[w.status]} (${w.days}/${w.target})`}>
             <span className="sr-only">

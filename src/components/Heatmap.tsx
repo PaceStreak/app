@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { addDays, fmtMonthDay, parseDay, weekStart } from "../lib/dates";
 import type { HeatDay, WeekCell } from "../lib/types";
+import { plural } from "../lib/units";
 
 /**
  * The grid. One column per week, one square per day, brightness by how
@@ -91,7 +92,7 @@ export function Heatmap({
   const [asTable, setAsTable] = useState(false);
   const statusOf = new Map(weekCells.map((w) => [w.week_start, w.status]));
   return (
-    <figure className="m-0" aria-label={label ?? `Activity over the last ${span} weeks: ${active} days trained`}>
+    <figure className="m-0" aria-label={label ?? `Activity over the last ${span} weeks: ${plural(active, "day")} trained`}>
       {/* Left and sticky: the grid often sits in a horizontal scroller wider
           than a phone, where a right-aligned control is off-screen. */}
       <div className="sticky left-0 mb-1 flex w-fit">
@@ -146,7 +147,7 @@ export function Heatmap({
           </span>
         ))}
       </div>
-      <div className="heat" role="img" aria-label={`${active} training days in ${span} weeks`}>
+      <div className="heat" role="img" aria-label={`${plural(active, "training day")} in ${span} weeks`}>
         {columns.map((col) => (
           <div key={col.start} className="heat-col">
             {col.cells.map((cell) => (

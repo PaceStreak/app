@@ -10,6 +10,7 @@ import { syncNow } from "../../lib/sync";
 import { queryClient } from "../../lib/queries";
 import { useSession } from "../../lib/session";
 import { ActivityImport, CalendarFeed } from "./ActivityImport";
+import { plural } from "../../lib/units";
 
 export function Data() {
   const { signOut } = useSession();
@@ -51,7 +52,7 @@ export function Data() {
       const res = await api<{ imported: number; skipped: number }>("/me/import", { method: "POST", form });
       await syncNow();
       void queryClient.invalidateQueries();
-      toast.success(`Imported ${res.imported} sessions`, { body: res.skipped ? `${res.skipped} were already here or unreadable.` : undefined });
+      toast.success(`Imported ${plural(res.imported, "session")}`, { body: res.skipped ? `${res.skipped} were already here or unreadable.` : undefined });
     } catch (err) {
       toast.error(errorText(err));
     } finally {

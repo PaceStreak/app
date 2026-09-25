@@ -41,6 +41,24 @@ export interface CoachContext {
   deviceTimezone?: string | null;
 }
 
+/**
+ * Whether two IANA zones keep the same clock. Browsers report legacy
+ * aliases ("Asia/Calcutta" for "Asia/Kolkata", "Europe/Kiev" for
+ * "Europe/Kyiv"), so comparing names would call a person who never moved a
+ * traveller. Same wall-clock time now and in six months (either side of
+ * any daylight-saving change) means same zone, for everything the app does.
+ */
+export function sameClock(a: string, b: string, now = new Date()): boolean {
+  if (a === b) return true;
+  try {
+    const at = (tz: string, d: Date) => new Intl.DateTimeFormat("en-GB", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(d);
+    const later = new Date(now.getTime() + 182 * 86_400_000);
+    return at(a, now) === at(b, now) && at(a, later) === at(b, later);
+  } catch {
+    return false; // an unknown zone name: not provably the same
+  }
+}
+
 /** "America/New_York" -> "New York". Good enough to recognise a place. */
 export function placeName(tz: string): string {
   return (tz.split("/").pop() ?? tz).replace(/_/g, " ");
@@ -101,7 +119,7 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
   // days already logged keep the date they were logged on. Offered once per
   // destination, and never nagged.
   const tz = ctx.deviceTimezone;
-  if (tz && tz !== me.profile.timezone && !ctx.dismissed(`tz:${tz}`)) {
+  if (tz && !sameClock(tz, me.profile.timezone) && !ctx.dismissed(`tz:${tz}`)) {
     cards.push({
       id: `tz:${tz}`,
       tone: "neutral",

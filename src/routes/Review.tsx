@@ -6,6 +6,7 @@ import { Empty, ErrorState, Loading, PageHeader, Section, Stat } from "../compon
 import { ApiError, api } from "../lib/api";
 import { fmtMonthDay } from "../lib/dates";
 import { useMe } from "../lib/session";
+import { plural } from "../lib/units";
 
 interface YearReview {
   year: number;
@@ -107,7 +108,7 @@ function ReviewBody({ r }: { r: YearReview }) {
             bars={r.months.map((m) => ({ key: m.month, label: m.month, value: m.days, display: `${m.days} day${m.days === 1 ? "" : "s"}` }))}
           />
           <p className="mt-2 text-sm text-dim">
-            Best month: {r.best_month.month}, {r.best_month.days} days. Your most common training day was {r.favourite_weekday}.
+            Best month: {r.best_month.month}, {plural(r.best_month.days, "day")}. Your most common training day was {r.favourite_weekday}.
           </p>
         </div>
       </Section>

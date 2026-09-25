@@ -67,3 +67,24 @@ describe("deload signal", () => {
     expect(deloadSignal(rated(12, 6, 4), "2026-09-23")).toBeNull();
   });
 });
+
+import { sameClock } from "./coach";
+
+describe("sameClock", () => {
+  it("treats legacy aliases as the same place", () => {
+    expect(sameClock("Asia/Calcutta", "Asia/Kolkata")).toBe(true);
+    expect(sameClock("Europe/Kiev", "Europe/Kyiv")).toBe(true);
+  });
+  it("tells real moves apart, including daylight saving", () => {
+    expect(sameClock("Asia/Kolkata", "Europe/London")).toBe(false);
+    // Same offset in winter, different in summer: not the same clock.
+    expect(sameClock("Europe/London", "Africa/Abidjan", new Date("2026-01-15T12:00:00Z"))).toBe(false);
+  });
+  it("never throws on a bad name", () => {
+    expect(sameClock("Not/AZone", "Europe/London")).toBe(false);
+  });
+  it("keeps the travel card quiet for an alias", () => {
+    const cards = buildCards(ctx({}, { deviceTimezone: "Asia/Calcutta", me: { ...ctx({}).me, profile: { ...ctx({}).me.profile, timezone: "Asia/Kolkata" } } as Me }));
+    expect(cards.some((c) => c.id.startsWith("tz:"))).toBe(false);
+  });
+});

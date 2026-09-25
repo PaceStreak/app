@@ -992,6 +992,8 @@
   .week-mark.is-frozen { background: var(--info); opacity: 0.8; }
   .week-mark.is-repaired { background: transparent; box-shadow: inset 0 0 0 1.5px var(--chart); }
   .week-mark.is-open { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line-lit); }
+  /* Before the history starts: present for alignment, barely visible. */
+  .week-mark.is-none { background: transparent; box-shadow: inset 0 0 0 1px var(--line); opacity: 0.5; }
   /* Exercises in a superset share an accent edge, so the group reads as one
      unit; the "Superset A" label says it in words too. */
   .superset-block {

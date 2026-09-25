@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";
 import { useConfirm } from "../../components/Confirm";
+import { WeekStrip } from "../../components/WeekStrip";
 import { EncourageButton } from "../../components/Encourage";
 import { Fire, Handshake, Pause } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
@@ -26,7 +27,6 @@ export interface BuddyView {
   them?: { days: number; target: number; paused: boolean };
 }
 
-const WEEK_LABEL = { kept: "kept together", missed: "missed", paused: "paused", open: "in progress" } as const;
 
 export default function Buddies() {
   const q = useQuery({ queryKey: ["buddies"], queryFn: () => api<BuddyView[]>("/buddies") });
@@ -140,13 +140,9 @@ function BuddyCard({ b, onEnd }: { b: BuddyView; onEnd: () => void }) {
           {b.current}
         </p>
       </div>
-      <ol className="mt-3 grid grid-cols-12 gap-[3px]" aria-label="The last 12 weeks together">
-        {(b.weeks ?? []).map((w, i) => (
-          <li key={i} className={`week-mark is-${w === "kept" ? "kept" : w}`}>
-            <span className="sr-only">{WEEK_LABEL[w]}</span>
-          </li>
-        ))}
-      </ol>
+      <div className="mt-3">
+        <WeekStrip weeks={b.weeks ?? []} label="The last 12 weeks together" />
+      </div>
       <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
         <Progress label="You" days={me.days} target={me.target} />
         {them.paused ? (

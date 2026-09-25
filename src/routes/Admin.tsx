@@ -6,7 +6,7 @@ import { Sheet } from "../components/Sheet";
 import { toast } from "../components/toast";
 import { Empty, ErrorState, Loading, PageHeader, Segmented } from "../components/ui";
 import { api, errorText } from "../lib/api";
-import { timeAgo } from "../lib/dates";
+import { ago } from "../lib/dates";
 import { useMe } from "../lib/session";
 
 type Tab = "reports" | "users" | "audit" | "metrics" | "ops";
@@ -83,7 +83,7 @@ function Reports() {
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="chip chip-flame">{r.reason.replace("_", " ")}</span>
                 <span className="chip">{r.target_type}</span>
-                <span className="text-dim">{timeAgo(r.created_at)} ago · by @{r.reporter?.handle ?? "?"}</span>
+                <span className="text-dim">{ago(r.created_at)} · by @{r.reporter?.handle ?? "?"}</span>
               </div>
               <p className="mt-2 text-sm">
                 About <b>@{r.reported?.handle ?? "deleted"}</b>
@@ -186,7 +186,7 @@ function Audit() {
       {(q.data ?? []).map((a) => (
         <li key={a.id} className="px-4 py-3 text-sm">
           <span className="font-medium">{a.action}</span> <span className="text-dim">on {a.target_type} {a.target_id?.slice(0, 8)}</span>
-          <span className="block text-dim">by @{a.actor ?? "?"} · {timeAgo(a.created_at)} ago</span>
+          <span className="block text-dim">by @{a.actor ?? "?"} · {ago(a.created_at)}</span>
         </li>
       ))}
       {q.data?.length === 0 && <li className="px-4 py-6 text-center text-muted">Nothing yet.</li>}
@@ -248,7 +248,7 @@ function WorkerPanel({ worker }: { worker: WorkerState }) {
           </h2>
           {worker.last_tick_at && (
             <p className="text-sm text-dim">
-              Last tick {timeAgo(worker.last_tick_at)} ago{worker.duration_ms != null ? `, took ${worker.duration_ms} ms` : ""}
+              Last tick {ago(worker.last_tick_at)}{worker.duration_ms != null ? `, took ${worker.duration_ms} ms` : ""}
             </p>
           )}
         </div>
@@ -379,7 +379,7 @@ function Ops() {
                 <button type="button" className="w-full text-left" aria-expanded={open === e.id} onClick={() => setOpen(open === e.id ? null : e.id)}>
                   <span className="block font-mono text-sm break-words">{e.message}</span>
                   <span className="mt-0.5 block text-sm text-dim">
-                    {e.count}× · last {timeAgo(e.last_seen)} ago{e.path ? ` · ${e.path}` : ""}{e.release ? ` · ${e.release}` : ""}
+                    {e.count}× · last {ago(e.last_seen)}{e.path ? ` · ${e.path}` : ""}{e.release ? ` · ${e.release}` : ""}
                   </span>
                 </button>
                 {open === e.id && (

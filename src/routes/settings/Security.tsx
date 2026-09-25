@@ -7,7 +7,7 @@ import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Banner, Field, Section } from "../../components/ui";
 import { api, errorText, setTokens } from "../../lib/api";
-import { timeAgo } from "../../lib/dates";
+import { ago, timeAgo } from "../../lib/dates";
 import { useMe, useSession } from "../../lib/session";
 import { PasskeySection } from "./PasskeySection";
 
@@ -222,7 +222,7 @@ export function Security() {
                   {device(s.user_agent)} {s.current && <span className="chip chip-accent ml-1 h-5 px-1.5 text-[0.7rem]">This device</span>}
                 </span>
                 <span className="block text-sm text-dim">
-                  {s.last_used_at ? `Active ${timeAgo(s.last_used_at)} ago` : `Signed in ${timeAgo(s.created_at)} ago`}
+                  {s.last_used_at ? `Active ${ago(s.last_used_at)}` : `Signed in ${ago(s.created_at)}`}
                   {s.ip_address ? ` · ${s.ip_address}` : ""}
                 </span>
               </span>

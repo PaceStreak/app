@@ -6,7 +6,7 @@ import { haptic } from "../lib/prefs";
 import { queryClient } from "../lib/queries";
 import { useMe } from "../lib/session";
 import type { FeedEvent, Person } from "../lib/types";
-import { compact, distance, duration, weight } from "../lib/units";
+import { compact, distance, duration, weight, plural } from "../lib/units";
 import { DisciplineIcon } from "./icons";
 import { ChatCircle, Fire, HandsClapping, Medal, SealCheck, Sparkle, Trophy } from "./phosphor";
 import { Sheet } from "./Sheet";
@@ -96,7 +96,7 @@ export function eventHeadline(e: FeedEvent, units: { weight: "kg" | "lb"; distan
       const bits: string[] = [];
       if (d.distance_m) bits.push(distance(d.distance_m as number, units.distance));
       if (d.duration_sec) bits.push(duration(d.duration_sec as number));
-      if (d.set_count) bits.push(`${d.set_count} sets`);
+      if (d.set_count) bits.push(plural(Number(d.set_count), "set"));
       const ex = (d.exercises as string[] | undefined) ?? [];
       return {
         title: (d.title as string) || `${d.verb as string}`,

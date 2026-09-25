@@ -86,6 +86,17 @@ export function timeAgo(isoInstant: string): string {
   return fmtMonthDay(isoInstant.slice(0, 10));
 }
 
+/**
+ * For sentences: "just now", "5m ago", "3d ago", or "on 12 Sept" once it's
+ * over a week. timeAgo() alone is for compact labels; appending "ago" to it
+ * produced "just now ago" and "12 Sept ago".
+ */
+export function ago(isoInstant: string): string {
+  const short = timeAgo(isoInstant);
+  if (short === "just now") return short;
+  return /^\d+[mhd]$/.test(short) ? `${short} ago` : `on ${short}`;
+}
+
 export function timeOfDay(isoInstant: string): string {
   return new Date(isoInstant).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }

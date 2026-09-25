@@ -7,6 +7,7 @@ import { ApiError, api } from "../lib/api";
 import { addDays, fmtMonthDay, localToday, weekStart } from "../lib/dates";
 import { useMe } from "../lib/session";
 import type { Recap as RecapData } from "../lib/types";
+import { plural } from "../lib/units";
 
 /**
  * One week, summed up - the screen the Monday digest opens. Attendance only:
@@ -76,7 +77,7 @@ function RecapBody({ recap, today }: { recap: RecapData; today: string }) {
         <p className={`text-sm font-semibold ${recap.status === "kept" ? "text-accent" : "text-muted"}`}>{recap.verdict}</p>
         <p className="num mt-2 text-4xl font-semibold tracking-tight">
           {recap.days}
-          <span className="text-lg font-normal text-dim"> of {recap.target} days</span>
+          <span className="text-lg font-normal text-dim"> of {plural(recap.target, "day")}</span>
         </p>
         <div className="mt-4">
           <WeekDots

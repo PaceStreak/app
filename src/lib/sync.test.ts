@@ -175,14 +175,22 @@ describe("rejections", () => {
 });
 
 describe("deleting", () => {
-  it("queues a delete and removes the row once confirmed", async () => {
+  it("queues a delete made offline and removes the row once confirmed", async () => {
     acceptAll();
     await saveWorkout(workout("a"));
     await push();
-    await deleteWorkout("a");
-    expect((await outbox())[0].op).toBe("delete");
+    // Offline, so the push that deleteWorkout schedules can't race the
+    // assertion: the delete has to wait in the outbox.
+    (navigator as { onLine: boolean }).onLine = false;
+    try {
+      await deleteWorkout("a");
+      expect((await outbox())[0].op).toBe("delete");
+    } finally {
+      (navigator as { onLine: boolean }).onLine = true;
+    }
     await push();
     expect(await (await db()).get("workouts", "a")).toBeUndefined();
+    expect(await outbox()).toHaveLength(0);
   });
 });
 

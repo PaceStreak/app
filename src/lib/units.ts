@@ -94,3 +94,9 @@ export function compact(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(Math.round(n));
 }
+
+/** "1 day", "3 days". English-only by design until the rest of the UI moves
+ * to the i18n catalog, which has proper plural rules. */
+export function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
+}

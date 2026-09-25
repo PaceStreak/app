@@ -32,7 +32,7 @@ import { useMe } from "../../lib/session";
 import { saveWorkout } from "../../lib/sync";
 import { EFFORT, FEEL, blankWorkout, suggestNext, warmupSets } from "../../lib/training";
 import type { Exercise, SetKind, Workout, WorkoutSet } from "../../lib/types";
-import { clock, e1rm, parseDuration, parseNumber, toKg, weight as fmtWeight, type WeightUnit } from "../../lib/units";
+import { clock, e1rm, parseDuration, parseNumber, toKg, weight as fmtWeight, plural, type WeightUnit } from "../../lib/units";
 import { FeelIcon } from "./FeelIcon";
 
 const DRAFT_KEY = "active-workout";
@@ -575,7 +575,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
       >
         {!draft.editing && (
           <p className="num -mt-1 mb-5 text-muted">
-            {clock(elapsed)} · {completedSets} sets · {draft.exercises.length} exercises
+            {clock(elapsed)} · {plural(completedSets, "set")} · {plural(draft.exercises.length, "exercise")}
           </p>
         )}
         <fieldset>

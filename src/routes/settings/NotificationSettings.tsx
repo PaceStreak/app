@@ -108,7 +108,7 @@ export function NotificationSettings() {
 
       <Section title="Timing">
         <div className="card space-y-4 p-4">
-          <div>
+          <div className="-mx-4 -mt-4 border-b border-line">
             <Switch
               checked={me.profile.reminder_mode === "smart"}
               onChange={(v) => void save({ reminder_mode: v ? "smart" : "fixed" })}

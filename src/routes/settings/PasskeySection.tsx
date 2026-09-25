@@ -5,7 +5,7 @@ import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Field, Section } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
-import { timeAgo } from "../../lib/dates";
+import { ago } from "../../lib/dates";
 import { addPasskey, passkeysSupported, wasCancelled, type Passkey } from "../../lib/passkeys";
 
 type Dialog = { kind: "add"; password: string; name: string } | { kind: "rename"; key: Passkey; name: string } | { kind: "remove"; key: Passkey; password: string };
@@ -48,7 +48,7 @@ export function PasskeySection() {
                         <CloudCheck size={14} aria-hidden /> Synced ·{" "}
                       </>
                     )}
-                    {k.last_used_at ? `Used ${timeAgo(k.last_used_at)} ago` : `Added ${timeAgo(k.created_at)} ago`}
+                    {k.last_used_at ? `Used ${ago(k.last_used_at)}` : `Added ${ago(k.created_at)}`}
                   </span>
                 </span>
                 <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={`Rename ${k.name}`} onClick={() => setDialog({ kind: "rename", key: k, name: k.name })}>
