@@ -3,16 +3,16 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { DisciplineIcon } from "../../components/icons";
-import { ArrowsClockwise, Copy, DotsThreeVertical, Fire, ShareNetwork, Trophy, WarningCircle } from "../../components/phosphor";
+import { ArrowsClockwise, Copy, DotsThreeVertical, Fire, Megaphone, PushPin, ShareNetwork, Trash, Trophy, WarningCircle } from "../../components/phosphor";
 import { FeedCard, PersonRow, ReportSheet } from "../../components/social";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Avatar, ErrorState, Loading, PageHeader, Segmented, Switch } from "../../components/ui";
+import { Avatar, ErrorState, Field, Loading, PageHeader, Segmented, Switch } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
 import { queryClient } from "../../lib/queries";
 import { useMe } from "../../lib/session";
-import type { Challenge, FeedEvent, Group, Person } from "../../lib/types";
+import type { Challenge, FeedEvent, Group, Person, PlanSummary, PlanTemplate } from "../../lib/types";
 import { distance, duration } from "../../lib/units";
 import { ChallengeCard, NewChallengeSheet } from "./Challenges";
 
@@ -24,6 +24,7 @@ interface CoachMember extends Person {
   at_risk: boolean;
   consistency: number;
   weeks: { week_start: string; days: number; target: number; status: string }[];
+  plan: { name: string; week: number; weeks: number; done: number; due: number; from_this_coach: boolean } | null;
   recent: { id: string; date: string; discipline: string; title: string | null; duration_sec: number | null; distance_m: number | null; effort: number | null; feel: number | null; sets: number }[];
 }
 
@@ -35,6 +36,7 @@ export default function GroupDetail() {
   const [menu, setMenu] = useState(false);
   const [report, setReport] = useState(false);
   const [newChallenge, setNewChallenge] = useState(false);
+  const [suggestFor, setSuggestFor] = useState<CoachMember | null>(null);
   const [editing, setEditing] = useState(false);
   const [confirmSheet, ask] = useConfirm();
   const g = useQuery({ queryKey: ["group", id], queryFn: () => api<Group>(`/groups/${id}`) });
@@ -147,6 +149,8 @@ export default function GroupDetail() {
             </div>
           )}
 
+          <Announcements groupId={id} manager={group.my_role === "owner" || group.my_role === "admin"} />
+
           {group.streak && <GroupStreak group={group} onThreshold={(v) => void action(() => api(`/groups/${id}`, { method: "PATCH", body: { streak_threshold: v } }), "Updated")} />}
 
           <Segmented
@@ -236,6 +240,21 @@ export default function GroupDetail() {
                           <span key={w.week_start} className={`week-mark is-${w.status} h-5 flex-1`} title={`${fmtMonthDay(w.week_start)}: ${w.days}/${w.target}`} />
                         ))}
                       </div>
+                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-3 py-2 text-sm">
+                        <span className="min-w-0 truncate">
+                          {m.plan ? (
+                            <>
+                              <strong>{m.plan.name}</strong>: week {m.plan.week} of {m.plan.weeks}, {m.plan.done} of {m.plan.due} done
+                              {m.plan.from_this_coach ? " · your suggestion" : ""}
+                            </>
+                          ) : (
+                            <span className="text-dim">No plan running</span>
+                          )}
+                        </span>
+                        <button type="button" className="btn btn-secondary btn-sm shrink-0" onClick={() => setSuggestFor(m)}>
+                          Suggest a plan
+                        </button>
+                      </div>
                       <ul className="mt-3 space-y-1.5 text-sm">
                         {m.recent.slice(0, 5).map((r) => (
                           <li key={r.id} className="flex items-center gap-2 text-muted">
@@ -250,6 +269,8 @@ export default function GroupDetail() {
                 </div>
               ))}
           </div>
+
+          <SuggestPlanSheet groupId={id} member={suggestFor} onClose={() => setSuggestFor(null)} />
 
           <Sheet open={menu} onClose={() => setMenu(false)} title={group.name}>
             <div className="-mx-2 flex flex-col">
@@ -394,6 +415,166 @@ function GroupStreak({ group, onThreshold }: { group: Group; onThreshold: (v: nu
           </select>
         </div>
       )}
+    </section>
+  );
+}
+
+/** A coach suggests a plan; it lands in the member's plans, unstarted. */
+function SuggestPlanSheet({ groupId, member, onClose }: { groupId: string; member: CoachMember | null; onClose: () => void }) {
+  const templates = useQuery({ queryKey: ["plan-templates"], queryFn: () => api<PlanTemplate[]>("/plans/templates"), enabled: member !== null, staleTime: Infinity });
+  const mine = useQuery({ queryKey: ["plans"], queryFn: () => api<PlanSummary[]>("/plans"), enabled: member !== null });
+  const [choice, setChoice] = useState("tpl:plan-two-a-week");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    if (!member) return;
+    setBusy(true);
+    try {
+      const plan = choice.startsWith("tpl:") ? { plan_template_id: choice.slice(4) } : { plan_id: choice.slice(5) };
+      await api(`/groups/${groupId}/members/${member.id}/plan`, { body: { ...plan, note: note.trim() || null } });
+      toast.success(`Suggested to ${member.display_name ?? `@${member.handle}`}`, { body: "It's in their plans. Starting it is their call." });
+      setNote("");
+      onClose();
+    } catch (err) {
+      toast.error(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet open={member !== null} onClose={onClose} title={member ? `A plan for ${member.display_name ?? `@${member.handle}`}` : ""}>
+      {member && (
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+        >
+          <div>
+            <label className="field-label" htmlFor="sp-plan">Plan</label>
+            <select id="sp-plan" className="input" value={choice} onChange={(e) => setChoice(e.target.value)}>
+              <optgroup label="Templates">
+                {(templates.data ?? []).map((t) => (
+                  <option key={t.id} value={`tpl:${t.id}`}>{t.name} ({t.weeks_count} weeks)</option>
+                ))}
+              </optgroup>
+              {(mine.data ?? []).length > 0 && (
+                <optgroup label="Your plans">
+                  {(mine.data ?? []).map((p) => (
+                    <option key={p.id} value={`mine:${p.id}`}>{p.name} ({p.weeks_count} weeks)</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
+          <Field label="Note (optional)" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why this one, and when to start" />
+          <p className="text-sm text-dim">They get a copy with any routines it uses. They decide whether and when to start it, and can change or delete it.</p>
+          <button className="btn btn-primary w-full" disabled={busy}>
+            Send suggestion
+          </button>
+        </form>
+      )}
+    </Sheet>
+  );
+}
+
+interface Announcement {
+  id: string;
+  body: string;
+  pinned: boolean;
+  created_at: string;
+  author: Person | null;
+}
+
+/** Notes from the group's owner and admins. Members read; nobody replies,
+ * so there is nothing between members to moderate. */
+function Announcements({ groupId, manager }: { groupId: string; manager: boolean }) {
+  const q = useQuery({ queryKey: ["announcements", groupId], queryFn: () => api<Announcement[]>(`/groups/${groupId}/announcements`) });
+  const [draft, setDraft] = useState<{ body: string; pinned: boolean } | null>(null);
+  const [all, setAll] = useState(false);
+  const [confirmSheet, ask] = useConfirm();
+  const items = q.data ?? [];
+  if (!manager && items.length === 0) return null;
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["announcements", groupId] });
+  const post = async () => {
+    if (!draft) return;
+    try {
+      await api(`/groups/${groupId}/announcements`, { body: { body: draft.body.trim(), pinned: draft.pinned } });
+      setDraft(null);
+      toast.success("Posted", { body: "Members were notified." });
+      await refresh();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const remove = async (a: Announcement) => {
+    if (!(await ask({ title: "Remove this announcement?", confirm: "Remove", danger: true }))) return;
+    try {
+      await api(`/groups/${groupId}/announcements/${a.id}`, { method: "DELETE" });
+      await refresh();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const shown = all ? items : items.slice(0, 2);
+  return (
+    <section className="card mb-5 p-4" aria-labelledby="announcements">
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="announcements" className="flex items-center gap-2 font-semibold">
+          <Megaphone size={18} aria-hidden /> Announcements
+        </h2>
+        {manager && !draft && (
+          <button type="button" className="text-sm font-semibold text-accent-text" onClick={() => setDraft({ body: "", pinned: false })}>
+            Post
+          </button>
+        )}
+      </div>
+      {draft && (
+        <form
+          className="mt-3 space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void post();
+          }}
+        >
+          <textarea className="input" rows={3} maxLength={500} required value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} aria-label="Announcement" placeholder="Long run Sunday, 8am from the park gate." />
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={draft.pinned} onChange={(e) => setDraft({ ...draft, pinned: e.target.checked })} /> Pin to the top
+          </label>
+          <div className="flex gap-2">
+            <button type="button" className="btn btn-secondary flex-1" onClick={() => setDraft(null)}>Cancel</button>
+            <button className="btn btn-primary flex-1" disabled={!draft.body.trim()}>Post to everyone</button>
+          </div>
+        </form>
+      )}
+      {items.length === 0 && !draft && <p className="mt-2 text-sm text-dim">Only owners and admins can post. Members get a notification.</p>}
+      <ul className="mt-2 divide-y divide-line">
+        {shown.map((a) => (
+          <li key={a.id} className="py-2.5">
+            <p className="whitespace-pre-wrap">{a.body}</p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-dim">
+              {a.pinned && (
+                <>
+                  <PushPin size={12} weight="fill" aria-hidden /> Pinned ·
+                </>
+              )}
+              {a.author ? `@${a.author.handle}` : "Former admin"} · {fmtMonthDay(a.created_at.slice(0, 10))}
+              {manager && (
+                <button type="button" className="ml-auto rounded p-1 hover:bg-surface-2" aria-label="Remove announcement" onClick={() => void remove(a)}>
+                  <Trash size={14} />
+                </button>
+              )}
+            </p>
+          </li>
+        ))}
+      </ul>
+      {items.length > 2 && (
+        <button type="button" className="mt-1 text-sm font-semibold text-accent-text" onClick={() => setAll(!all)}>
+          {all ? "Show fewer" : `Show all ${items.length}`}
+        </button>
+      )}
+      {confirmSheet}
     </section>
   );
 }

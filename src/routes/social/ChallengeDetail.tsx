@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { CheckCircle, Copy, DotsThreeVertical } from "../../components/phosphor";
 import { PersonRow, ReportSheet } from "../../components/social";
@@ -37,7 +37,7 @@ export default function ChallengeDetail() {
   if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   const c = q.data;
   const mine = c?.leaderboard?.find((r) => r.id === me.user.id);
-  const unit = c?.kind === "weekly_target" ? "weeks" : "days";
+  const unit = c?.kind === "weekly_target" ? "weeks" : c?.kind === "plan_sessions" ? "plan sessions" : "days";
 
   return (
     <div>
@@ -83,6 +83,16 @@ export default function ChallengeDetail() {
                   Day {c.days_elapsed} of {c.days_total}
                   {c.disciplines.length ? ` · ${c.disciplines.map((d) => lib?.discipline(d)?.name ?? d).join(", ")} only` : ""}
                 </p>
+                {c.kind === "plan_sessions" && c.plan_name && (
+                  <p className="mt-2 text-sm text-muted">
+                    Everyone follows <strong className="text-ink">{c.plan_name}</strong>.{" "}
+                    {c.joined && (
+                      <Link to="/plans" className="font-semibold text-accent-text">
+                        Your copy
+                      </Link>
+                    )}
+                  </p>
+                )}
               </div>
             )}
             {!c.joined && c.status !== "finished" && (

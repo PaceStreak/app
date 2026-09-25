@@ -9,7 +9,7 @@ import { api, errorText } from "../../lib/api";
 import { addDays, daysBetween, fmtMonthDay, localToday } from "../../lib/dates";
 import { queryClient, useLibrary } from "../../lib/queries";
 import { useMe } from "../../lib/session";
-import type { Challenge } from "../../lib/types";
+import type { Challenge, PlanSummary, PlanTemplate } from "../../lib/types";
 import { SocialGate, SocialHeader } from "./SocialNav";
 
 export function ChallengeCard({ c }: { c: Challenge }) {
@@ -130,7 +130,10 @@ export function NewChallengeSheet({ open, onClose, groupId }: { open: boolean; o
   const navigate = useNavigate();
   const today = localToday(me.profile.timezone);
   const [title, setTitle] = useState("");
-  const [kind, setKind] = useState<"active_days" | "weekly_target">("active_days");
+  const [kind, setKind] = useState<"active_days" | "weekly_target" | "plan_sessions">("active_days");
+  const [planChoice, setPlanChoice] = useState("tpl:plan-two-a-week");
+  const templates = useQuery({ queryKey: ["plan-templates"], queryFn: () => api<PlanTemplate[]>("/plans/templates"), enabled: open && kind === "plan_sessions", staleTime: Infinity });
+  const myPlans = useQuery({ queryKey: ["plans"], queryFn: () => api<PlanSummary[]>("/plans"), enabled: open && kind === "plan_sessions" });
   const [length, setLength] = useState(14);
   const [target, setTarget] = useState("10");
   const [disciplines, setDisciplines] = useState<string[]>([]);
@@ -138,15 +141,23 @@ export function NewChallengeSheet({ open, onClose, groupId }: { open: boolean; o
   const create = async () => {
     setBusy(true);
     try {
+      const plan = kind === "plan_sessions" ? (planChoice.startsWith("tpl:") ? { plan_template_id: planChoice.slice(4) } : { plan_id: planChoice.slice(5) }) : {};
+      const planName =
+        kind === "plan_sessions"
+          ? planChoice.startsWith("tpl:")
+            ? templates.data?.find((t) => `tpl:${t.id}` === planChoice)?.name
+            : myPlans.data?.find((p) => `mine:${p.id}` === planChoice)?.name
+          : null;
       const c = await api<Challenge>("/challenges", {
         body: {
-          title: title || (kind === "active_days" ? `${target || length} days in ${length}` : `Keep every week`),
+          title: title || (kind === "active_days" ? `${target || length} days in ${length}` : kind === "plan_sessions" ? `${planName ?? "One plan"}, together` : `Keep every week`),
           kind,
-          target: target ? Number(target) : null,
-          disciplines,
+          target: kind === "plan_sessions" ? null : target ? Number(target) : null,
+          disciplines: kind === "plan_sessions" ? [] : disciplines,
           starts_on: today,
           ends_on: addDays(today, length - 1),
           group_id: groupId ?? null,
+          ...plan,
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["challenges"] });
@@ -164,9 +175,36 @@ export function NewChallengeSheet({ open, onClose, groupId }: { open: boolean; o
         <input className="input" placeholder="Name (optional)" maxLength={60} value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Challenge name" />
         <div>
           <p className="field-label">What counts</p>
-          <Segmented label="Scoring" value={kind} onChange={setKind} options={[{ value: "active_days", label: "Active days" }, { value: "weekly_target", label: "Kept weeks" }]} />
-          <p className="field-hint">{kind === "active_days" ? "Most distinct training days wins. One per day, however many sessions." : "Weeks where each person hits their own target. Fair between a 3-day and a 6-day plan."}</p>
+          <Segmented label="Scoring" value={kind} onChange={setKind} options={[{ value: "active_days", label: "Active days" }, { value: "weekly_target", label: "Kept weeks" }, { value: "plan_sessions", label: "One plan" }]} />
+          <p className="field-hint">
+            {kind === "active_days"
+              ? "Most distinct training days wins. One per day, however many sessions."
+              : kind === "weekly_target"
+                ? "Weeks where each person hits their own target. Fair between a 3-day and a 6-day plan."
+                : "Everyone follows the same plan; each person gets their own copy, and every planned session done counts. It runs as long as the plan."}
+          </p>
         </div>
+        {kind === "plan_sessions" && (
+          <div>
+            <label className="field-label" htmlFor="c-plan">The plan</label>
+            <select id="c-plan" className="input" value={planChoice} onChange={(e) => setPlanChoice(e.target.value)}>
+              <optgroup label="Templates">
+                {(templates.data ?? []).map((t) => (
+                  <option key={t.id} value={`tpl:${t.id}`}>{t.name} ({t.weeks_count} weeks)</option>
+                ))}
+              </optgroup>
+              {(myPlans.data ?? []).length > 0 && (
+                <optgroup label="Your plans">
+                  {(myPlans.data ?? []).map((p) => (
+                    <option key={p.id} value={`mine:${p.id}`}>{p.name} ({p.weeks_count} weeks)</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <p className="field-hint">Joining switches each person's running plan to their copy of this one. Up to 13 weeks.</p>
+          </div>
+        )}
+        {kind !== "plan_sessions" && (
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="field-label" htmlFor="c-len">Length</label>
@@ -181,6 +219,8 @@ export function NewChallengeSheet({ open, onClose, groupId }: { open: boolean; o
             <input id="c-target" className="input num" inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value.replace(/\D/g, ""))} />
           </div>
         </div>
+        )}
+        {kind !== "plan_sessions" && (
         <div>
           <p className="field-label">Only these activities (optional)</p>
           <div className="flex flex-wrap gap-2">
@@ -194,6 +234,7 @@ export function NewChallengeSheet({ open, onClose, groupId }: { open: boolean; o
             })}
           </div>
         </div>
+        )}
         <p className="text-sm text-dim">Starts today. Sessions only count if they're logged within three days of happening, so nobody can backfill their way to the top.</p>
       </div>
     </Sheet>

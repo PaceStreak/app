@@ -367,7 +367,9 @@ export interface Challenge {
   id: string;
   title: string;
   description: string | null;
-  kind: "active_days" | "weekly_target";
+  kind: "active_days" | "weekly_target" | "plan_sessions";
+  /** For plan challenges: the plan everyone follows. */
+  plan_name?: string | null;
   target: number | null;
   disciplines: string[];
   starts_on: string;
