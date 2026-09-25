@@ -4,8 +4,11 @@ The product itself — the signed-in frontend of
 [PaceStreak](https://www.pacestreak.com), a workout streak tracker. Will be
 served from **`app.pacestreak.com`**.
 
-**Nothing is built here yet.** This repository exists so the decisions below are
-recorded before code is written, rather than rediscovered afterwards.
+**Built, not deployed.** A React 19 + Vite + TypeScript PWA covering the whole
+product: logging (quick, set-level and live), week-based streaks with pauses,
+progress and records, XP and badges, social, groups, challenges,
+notifications, weekly recap, file import, calendar subscription, export and
+admin. It works offline through an IndexedDB outbox.
 
 Copyright (c) 2026 PaceStreak. Licensed under [AGPL-3.0](./LICENSE) — anyone
 running a modified version of this over a network must offer its source to
@@ -29,9 +32,10 @@ the extra hostname.
 
 | | |
 | --- | --- |
-| Stack | Undecided — see [ARCHITECTURE.md](./ARCHITECTURE.md#the-open-decision) |
-| Hostname | `app.pacestreak.com` — **no DNS record yet, deliberately** |
-| Depends on | `PaceStreak/api`, which is also unbuilt |
+| Stack | React 19, React Router, TanStack Query, Tailwind v4, Vite, `idb`, Phosphor icons |
+| Rendering | Static SPA shell (decided; see [ARCHITECTURE.md](./ARCHITECTURE.md)) |
+| Hostname | `app.pacestreak.com`, **no DNS record yet, deliberately** |
+| Depends on | `PaceStreak/api`, built, not deployed |
 | Hosting | Cloudflare Pages, Git-connected, like every other site here |
 
 ## Constraints already settled
@@ -69,15 +73,17 @@ Every site in this organization ships `default-src 'self'`. The first `fetch()`
 to `api.pacestreak.com` will be blocked by the browser, and the page sees only
 a failed request — no visible error, no console entry a user would report.
 
-Whoever writes that call adds `connect-src 'self' https://api.pacestreak.com`
-to `public/_headers` **in the same commit**.
+**Done:** `public/_headers` already allows `connect-src 'self'
+https://api.pacestreak.com`. If the API ever moves, change that line in the
+same commit as `PUBLIC_API_BASE_URL`, or every request fails silently.
 
 ### This app must not be indexed
 
 It is behind a login; indexing it produces search results that lead to a login
 wall. Ship `robots.txt` with `Disallow: /` *and* a `noindex` header — the
 `robots.txt` prevents crawling, the header prevents indexing of URLs discovered
-by other means.
+by other means. **Both are in place** (`public/robots.txt`, `X-Robots-Tag` in
+`public/_headers`).
 
 The marketing site is the opposite: it must be indexed, and its
 `robots.txt` allows everything. Do not copy one repository's file into the
@@ -90,18 +96,27 @@ the build emits `404.html`. On the blog, before that page existed,
 `/robots.txt` returned the site's HTML and Cloudflare appended it to its own
 content-signals policy — crawlers were handed a robots.txt with a full HTML
 document inside it. A single-page app makes this worse, not better, because
-every path legitimately renders the shell.
+every path legitimately renders the shell. **Handled in `vite.config.ts`:**
+`_redirects` falls back to the shell only for the prefixes in
+`src/routes.json`, and `404.html` is emitted for everything else. A new
+top-level route must be added to `routes.json`.
 
 ### Export is a launch requirement
 
-The marketing site promises *"full JSON and CSV export from day one."* That is a
-product commitment, and it needs UI here, not just an endpoint in the API.
+The marketing site promises full export. It has UI in Settings → Data: JSON,
+CSV and ICS export, JSON import, GPX/FIT/CSV import, and the calendar feed.
 
 ## Local development
 
-Nothing to run yet. When there is, this section documents the one command that
-starts it and the one that runs the tests. Anything longer than that is a bug in
-the setup.
+```bash
+npm ci
+npm run dev      # http://localhost:5173, talks to the API on http://localhost:8000
+npm test         # vitest
+npm run build    # typecheck + production build into dist/
+```
+
+Start the API first (`make dev` in `PaceStreak/api`). "You're offline, or the
+server can't be reached" almost always means the API isn't on :8000.
 
 ## Deploying
 

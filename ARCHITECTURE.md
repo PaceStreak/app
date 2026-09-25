@@ -1,7 +1,7 @@
 # Architecture
 
-Nothing is implemented. This records the shape the code has to fit into and the
-one decision that is still genuinely open.
+How the app is put together and why. The rendering decision below is made; the
+table is kept because it records what was traded away.
 
 ## Why `app` is a separate host from `www`
 
@@ -27,16 +27,18 @@ trade, and it is accepted.
 ```text
 browser
   ├── app.pacestreak.com   Cloudflare Pages  →  static build of this repo
-  └── api.pacestreak.com   (unbuilt)         →  data, sessions
+  └── api.pacestreak.com   (built, not deployed) →  data, sessions
 ```
 
 The app talks only to the API. It has no server of its own; anything that needs
 a secret belongs in the API, not in a Pages Function here. If that stops being
 true, that is an architecture change and belongs in a pull request that says so.
 
-## The open decision
+## The rendering decision: a static SPA shell
 
-**Rendering strategy is not decided.** The rest of the organization is static
+**Decided: static SPA shell** (React + Vite), for the reasons in the last two
+rows below: no runtime to operate, and a shell that holds no user data can be
+cached anywhere without leaking anyone's training history. The rest of the organization is static
 Astro, which suits a marketing site and a blog. This is an application, and the
 trade is real:
 
@@ -48,13 +50,30 @@ trade is real:
 | Cache safety | Trivial — the shell holds no user data | Must set `Cache-Control: private` correctly, every route |
 | Fits existing tooling | Yes | Adds a runtime to operate |
 
-The default, absent a reason, is **the static shell**: it keeps this repository
+The static shell was the default absent a reason, and was chosen: it keeps this repository
 in the same operational shape as the others, and the cache-safety row is not a
 small consideration when the payload is personal health data.
 
 Whichever is chosen, record it in [CHANGELOG.md](./CHANGELOG.md) and in
 [`PaceStreak/infra`](https://github.com/PaceStreak/infra)'s `DECISIONS.md`,
 because it determines what the Pages project is allowed to run.
+
+## Inside the app
+
+- **Offline-first.** Every save goes to IndexedDB (`src/lib/db.ts`) and an
+  outbox keyed by workout id (`src/lib/sync.ts`); the UI reads from IndexedDB.
+  Sync pushes to `/workouts/batch` (idempotent, last-write-wins) and pulls
+  `/workouts/changes?since=N`, deletions included.
+- **Auth.** The access token lives in memory only; the refresh token is an
+  HttpOnly cookie; the CSRF token is kept in localStorage (useless without the
+  cookie). See `src/lib/api.ts`.
+- **Service worker** (`sw/sw.js`): precaches the shell, network-first
+  navigations, cache-first hashed assets, and never intercepts the API.
+- **Routes** are listed once in `src/routes.json`, which drives both the router
+  and the generated `_redirects`.
+- **Stats from an older build may be cached on the device.** Any field added to
+  `/me/stats` must be read with a fallback (`s.pauses ?? []`), or an offline
+  user with an old cache crashes.
 
 ## Things that are decided
 
