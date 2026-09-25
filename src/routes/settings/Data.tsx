@@ -8,6 +8,7 @@ import { api, errorText } from "../../lib/api";
 import { syncNow } from "../../lib/sync";
 import { queryClient } from "../../lib/queries";
 import { useSession } from "../../lib/session";
+import { ActivityImport, CalendarFeed } from "./ActivityImport";
 
 export function Data() {
   const { signOut } = useSession();
@@ -93,6 +94,8 @@ export function Data() {
         <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => e.target.files?.[0] && void importFile(e.target.files[0])} />
         <p className="field-hint">Safe to run twice: sessions already here are skipped. Imported history counts for your streak but not for challenges.</p>
       </Section>
+      <ActivityImport />
+      <CalendarFeed />
       <Section title="Delete account">
         <button type="button" className="btn btn-danger w-full" onClick={() => setDeleting(true)}>
           <Warning size={18} /> Delete my account

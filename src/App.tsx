@@ -84,6 +84,7 @@ const router = createBrowserRouter([
       { path: "/history", element: page(() => import("./routes/History")) },
       { path: "/progress", element: page(() => import("./routes/progress/Progress")) },
       { path: "/progress/xp", element: page(() => import("./routes/progress/Xp")) },
+      { path: "/recap", element: page(() => import("./routes/Recap")) },
       { path: "/records", element: page(() => import("./routes/progress/Records")) },
       { path: "/achievements", element: page(() => import("./routes/progress/Achievements")) },
       { path: "/body", element: page(() => import("./routes/progress/Body")) },

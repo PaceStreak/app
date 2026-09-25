@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { BarChart } from "../../components/BarChart";
 import { Heatmap, HeatLegend } from "../../components/Heatmap";
-import { ArrowCounterClockwise, Barbell, CaretDown, Fire, Medal, Scales, Snowflake, Sparkle, Trophy } from "../../components/phosphor";
+import { ArrowCounterClockwise, Barbell, CaretDown, Fire, Medal, Scales, Snowflake, Sparkle, Trophy, CalendarCheck } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { ErrorState, List, Loading, PageHeader, RowLink, Section, Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
@@ -100,11 +100,11 @@ export default function Progress() {
             <div className="card p-4">
               <div className="-mx-4 overflow-x-auto px-4">
                 <div className="min-w-[640px]">
-                  <Heatmap days={s.heatmap} weeks={s.chains[0]?.weeks} today={s.today} weekStartsOn={s.week_starts_on} span={53} />
+                  <Heatmap days={s.heatmap} weeks={s.chains[0]?.weeks} today={s.today} weekStartsOn={s.week_starts_on} span={53} plannedDays={s.training_days} pauses={s.pauses ?? []} />
                 </div>
               </div>
               <div className="mt-3">
-                <HeatLegend />
+                <HeatLegend planned={Boolean(s.training_days)} paused={(s.pauses ?? []).length > 0} />
               </div>
             </div>
           </Section>
@@ -165,6 +165,7 @@ export default function Progress() {
 
           <Section title="More">
             <List>
+              <RowLink to="/recap" icon={<CalendarCheck size={20} />} title="Weekly recap" detail="Last week, summed up" />
               <RowLink to="/records" icon={<Trophy size={20} />} title="Personal records" detail={`${s.totals.records} so far`} />
               <RowLink to="/achievements" icon={<Medal size={20} />} title="Achievements" />
               {s.gamification_enabled && <RowLink to="/progress/xp" icon={<Sparkle size={20} />} title="Level and XP" detail={`Level ${s.level.level} · ${s.level.title}`} />}

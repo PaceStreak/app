@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { Heatmap } from "../../components/Heatmap";
 import { DotsThreeVertical, Fire, Lock, Medal } from "../../components/phosphor";
-import { FeedCard, FollowButton, ReportSheet, personName } from "../../components/social";
+import { FeedCard, FollowButton, OfficialMark, ReportSheet, personName } from "../../components/social";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Avatar, ErrorState, Loading, PageHeader, Section } from "../../components/ui";
@@ -17,6 +17,7 @@ interface ProfileData {
   id: string;
   handle: string;
   display_name: string | null;
+  official?: boolean;
   avatar_hue: number;
   current_streak?: number;
   bio: string | null;
@@ -97,7 +98,10 @@ export default function Profile() {
           <div className="flex items-center gap-4">
             <Avatar name={personName(p)} hue={p.avatar_hue} size={76} />
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-2xl font-semibold tracking-tight">{personName(p)}</h1>
+              <h1 className="truncate text-2xl font-semibold tracking-tight">
+                {personName(p)}
+                <OfficialMark official={Boolean(p.official)} />
+              </h1>
               <p className="text-muted">@{p.handle}</p>
               {p.level && <p className="mt-1 text-sm text-dim">Level {p.level.level} · {p.level.title}</p>}
             </div>

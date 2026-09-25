@@ -105,6 +105,7 @@ interface UserRow {
   is_verified: boolean;
   created_at: string;
   social_suspended: boolean;
+  official: boolean;
   reports: number;
 }
 
@@ -114,6 +115,22 @@ function Users({ admin }: { admin: boolean }) {
   const patch = async (id: string, body: Record<string, unknown>) => {
     try {
       await api(`/admin/users/${id}`, { method: "PATCH", body });
+      void users.refetch();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const setOfficial = async (u: UserRow) => {
+    // Granting may take a reserved handle (e.g. "pacestreak"); revoking from
+    // one needs an ordinary handle to move to. The API enforces both.
+    const handle = window.prompt(
+      u.official ? "Ordinary handle to move this account to (leave blank to keep the current one)" : "Handle for the official account (reserved handles allowed)",
+      u.official ? "" : (u.handle ?? ""),
+    );
+    if (handle === null) return;
+    try {
+      await api(`/admin/users/${u.id}/official`, { body: { official: !u.official, handle: handle.trim() || null } });
+      toast.success(u.official ? "Official status removed" : "Marked official");
       void users.refetch();
     } catch (err) {
       toast.error(errorText(err));
@@ -132,7 +149,7 @@ function Users({ admin }: { admin: boolean }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">@{u.handle ?? "(no handle)"} <span className="text-sm text-dim">{u.email}</span></span>
                 <span className="block text-sm text-dim">
-                  {u.role} · {u.is_verified ? "verified" : "unverified"} · {u.reports} reports{u.social_suspended ? " · suspended" : ""}{!u.is_active ? " · deactivated" : ""}
+                  {u.role} · {u.is_verified ? "verified" : "unverified"} · {u.reports} reports{u.official ? " · official" : ""}{u.social_suspended ? " · suspended" : ""}{!u.is_active ? " · deactivated" : ""}
                 </span>
               </span>
             </div>
@@ -147,6 +164,9 @@ function Users({ admin }: { admin: boolean }) {
                     <option value="moderator">moderator</option>
                     <option value="admin">admin</option>
                   </select>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => void setOfficial(u)}>
+                    {u.official ? "Remove official" : "Make official"}
+                  </button>
                   <button type="button" className="btn btn-danger btn-sm" onClick={() => void patch(u.id, { is_active: !u.is_active })}>
                     {u.is_active ? "Deactivate" : "Reactivate"}
                   </button>

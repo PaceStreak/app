@@ -18,6 +18,8 @@
   ],
   "shortcuts": [
     { "name": "Log a session", "short_name": "Log", "url": "/log?source=shortcut", "icons": [{ "src": "/icons/shortcut-log.png", "sizes": "96x96" }] },
+    { "name": "Start a live workout", "short_name": "Live", "url": "/workouts/live?source=shortcut", "icons": [{ "src": "/icons/shortcut-log.png", "sizes": "96x96" }] },
+    { "name": "Last week's recap", "short_name": "Recap", "url": "/recap?source=shortcut", "icons": [{ "src": "/icons/shortcut-log.png", "sizes": "96x96" }] },
     { "name": "Progress", "url": "/progress?source=shortcut", "icons": [{ "src": "/icons/shortcut-log.png", "sizes": "96x96" }] },
     { "name": "Rest timer", "url": "/tools?source=shortcut", "icons": [{ "src": "/icons/shortcut-log.png", "sizes": "96x96" }] }
   ]

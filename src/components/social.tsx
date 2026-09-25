@@ -8,7 +8,7 @@ import { useMe } from "../lib/session";
 import type { FeedEvent, Person } from "../lib/types";
 import { compact, distance, duration, weight } from "../lib/units";
 import { DisciplineIcon } from "./icons";
-import { ChatCircle, Fire, HandsClapping, Medal, Sparkle, Trophy } from "./phosphor";
+import { ChatCircle, Fire, HandsClapping, Medal, SealCheck, Sparkle, Trophy } from "./phosphor";
 import { Sheet } from "./Sheet";
 import { toast } from "./toast";
 import { Avatar } from "./ui";
@@ -17,13 +17,25 @@ export function personName(p: Pick<Person, "display_name" | "handle">) {
   return p.display_name || `@${p.handle}`;
 }
 
+/** The brand's own account. An icon with a text label, never colour alone,
+    and granted only by an admin - so it can't be imitated with a name. */
+export function OfficialMark({ official }: { official?: boolean }) {
+  if (!official) return null;
+  return (
+    <SealCheck size={16} weight="fill" className="ml-1 inline-block shrink-0 align-[-2px] text-accent" aria-label="Official PaceStreak account" role="img" />
+  );
+}
+
 export function PersonRow({ p, right, sub }: { p: Person; right?: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <Link to={`/u/${p.handle}`} className="flex min-w-0 flex-1 items-center gap-3">
         <Avatar name={personName(p)} hue={p.avatar_hue} />
         <span className="min-w-0">
-          <span className="block truncate font-semibold">{personName(p)}</span>
+          <span className="block truncate font-semibold">
+            {personName(p)}
+            <OfficialMark official={p.official} />
+          </span>
           <span className="block truncate text-sm text-dim">
             {sub ?? (
               <>
@@ -138,7 +150,10 @@ export function FeedCard({ e, link = true }: { e: FeedEvent; link?: boolean }) {
         <Avatar name={personName(e.author)} hue={e.author.avatar_hue} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[0.95rem]">
-            <span className="font-semibold">{personName(e.author)}</span>
+            <span className="font-semibold">
+              {personName(e.author)}
+              <OfficialMark official={e.author.official} />
+            </span>
           </p>
           <p className="text-sm text-dim">{timeAgo(e.created_at)}</p>
         </div>

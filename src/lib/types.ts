@@ -6,6 +6,8 @@ export type Visibility = "private" | "followers" | "public";
 export interface Profile {
   handle: string | null;
   display_name: string | null;
+  /** Set only by an admin; the brand's own account. */
+  official: boolean;
   bio: string | null;
   avatar_hue: number;
   timezone: string;
@@ -132,7 +134,7 @@ export interface WeekCell {
   week_start: string;
   days: number;
   target: number;
-  status: "kept" | "frozen" | "repaired" | "missed" | "open";
+  status: "kept" | "frozen" | "repaired" | "paused" | "missed" | "open";
   score: number;
 }
 
@@ -153,7 +155,57 @@ export interface Chain {
   repairable_week: string | null;
   run_started: string | null;
   consistency: number;
+  /** The current week is sheltered by a pause. */
+  paused_now: boolean;
   weeks: WeekCell[];
+}
+
+export type PauseReason = "injury" | "illness" | "life" | "other";
+
+export interface Pause {
+  id: string;
+  starts_on: string;
+  /** Inclusive; null while open-ended. */
+  ends_on: string | null;
+  /** When it actually stops sheltering weeks (open pauses are capped). */
+  effective_end: string;
+  reason: PauseReason;
+  note: string | null;
+  active: boolean;
+  upcoming: boolean;
+}
+
+export interface PauseState {
+  pauses: Pause[];
+  budget: { days_used: number; days_allowed: number };
+}
+
+export interface Recap {
+  week_start: string;
+  week_end: string;
+  status: WeekCell["status"];
+  verdict: string;
+  days: number;
+  target: number;
+  sessions: number;
+  trained_on: string[];
+  disciplines: { id: string; name: string; sessions: number }[];
+  previous_days: number | null;
+  streak: number;
+  longest: number;
+  freezes_available: number;
+  records: { label: string; day: string }[];
+  badges: { id: string; title: string; tier: string | null }[];
+  this_week_target: number;
+}
+
+export interface FileImportResult {
+  format: "gpx" | "fit" | "csv";
+  found: number;
+  imported: number;
+  duplicates: number;
+  problems: string[];
+  more_problems: number;
 }
 
 export interface LevelInfo {
@@ -181,6 +233,9 @@ export interface Stats {
   season: { id: string; starts_on: string; ends_on: string };
   chains: Chain[];
   repair_available: boolean;
+  paused_today: boolean;
+  pauses: Pause[];
+  training_days: number | null;
   heatmap: HeatDay[];
   totals: {
     sessions: number;
@@ -229,6 +284,7 @@ export interface Person {
   display_name: string | null;
   avatar_hue: number;
   visibility: Visibility;
+  official?: boolean;
   level?: number;
   current_streak?: number;
   [extra: string]: unknown;

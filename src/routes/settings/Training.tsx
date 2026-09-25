@@ -10,6 +10,7 @@ import { WEEKDAYS } from "../../lib/dates";
 import { queryClient, useLibrary } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import type { Chain } from "../../lib/types";
+import { PauseSection } from "./PauseSection";
 import { useProfilePatch } from "./useProfilePatch";
 
 export function Training() {
@@ -45,6 +46,8 @@ export function Training() {
         </button>
       </Section>
 
+      <PauseSection />
+
       <Section title="Week">
         <p className="field-label">Weeks start on</p>
         <Segmented label="Week starts on" value={me.profile.week_starts_on} onChange={(v) => void save({ week_starts_on: v }, "Saved")} options={[{ value: 0, label: "Monday" }, { value: 6, label: "Sunday" }, { value: 5, label: "Saturday" }]} />
@@ -59,7 +62,7 @@ export function Training() {
             );
           })}
         </div>
-        <p className="field-hint">Only used to time reminders. The streak always counts against your weekly target, whichever days you train.</p>
+        <p className="field-hint">Used to time reminders and to mark the other days as planned rest on your grid. The streak always counts against your weekly target, whichever days you train.</p>
       </Section>
 
       <Section title="Units">

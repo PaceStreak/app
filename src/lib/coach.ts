@@ -100,6 +100,17 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
       primary: { kind: "log", label: "Log a session" },
     });
   } else {
+    const pause = stats?.paused_today ? (stats.pauses ?? []).find((p) => p.active) : undefined;
+    if (pause) {
+      cards.push({
+        id: `paused:${pause.id}`,
+        tone: "neutral",
+        icon: "sun",
+        title: "Streak paused",
+        body: `${pause.ends_on ? `Until ${fmtMonthDay(pause.ends_on)}. ` : ""}Nothing breaks while you recover, and there are no reminders. Log anything you do; it still counts.`,
+        primary: { kind: "link", label: "I'm back", to: "/settings/training#pause" },
+      });
+    }
     for (const chain of stats?.chains ?? []) {
       if (!chain.at_risk || (chain.current === 0 && chain.this_week_days === 0)) continue;
       const needed = Math.max(0, chain.this_week_target - (chain === main ? weekDays : chain.this_week_days));

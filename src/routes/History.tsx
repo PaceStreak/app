@@ -81,8 +81,8 @@ export default function History() {
                 <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
                   <h2 className="font-semibold">{label(g.week)}</h2>
                   {cell && (
-                    <span className={`chip h-6 ${cell.status === "kept" ? "chip-accent" : cell.status === "missed" ? "" : cell.status === "open" ? "" : "chip-flame"}`}>
-                      {cell.status === "open" ? `${Math.max(days, cell.days)} of ${cell.target}` : cell.status === "kept" ? "Kept" : cell.status === "frozen" ? "Frozen" : cell.status === "repaired" ? "Repaired" : `${cell.days} of ${cell.target}`}
+                    <span className={`chip h-6 ${cell.status === "kept" ? "chip-accent" : cell.status === "missed" || cell.status === "open" || cell.status === "paused" ? "" : "chip-flame"}`}>
+                      {cell.status === "open" ? `${Math.max(days, cell.days)} of ${cell.target}` : cell.status === "kept" ? "Kept" : cell.status === "frozen" ? "Frozen" : cell.status === "repaired" ? "Repaired" : cell.status === "paused" ? "Paused" : `${cell.days} of ${cell.target}`}
                     </span>
                   )}
                 </div>

@@ -222,6 +222,8 @@ export default function Today() {
             today={today}
             weekStartsOn={me.profile.week_starts_on}
             span={26}
+            plannedDays={stats.data.training_days ?? me.profile.training_days}
+            pauses={stats.data.pauses ?? []}
           />
         </Link>
       )}
