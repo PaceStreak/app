@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import { Fingerprint } from "../../components/phosphor";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
+import { conditionalSupported, passkeysSupported, signInWithPasskey, wasCancelled } from "../../lib/passkeys";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
 
@@ -23,6 +25,39 @@ export default function Login() {
     const me = await signIn(tokens);
     const next = params.get("next");
     navigate(me?.needs_onboarding ? "/welcome" : next && next.startsWith("/") ? next : "/", { replace: true });
+  };
+
+  // Offer saved passkeys in the email field's autofill list. The request waits
+  // silently until one is picked, and is aborted when the page goes away or
+  // an explicit sign-in starts (a browser allows only one at a time).
+  const [conditional, setConditional] = useState<AbortController | null>(null);
+  useEffect(() => {
+    let ctrl: AbortController | null = null;
+    void conditionalSupported().then((ok) => {
+      if (!ok) return;
+      ctrl = new AbortController();
+      setConditional(ctrl);
+      signInWithPasskey({ conditional: true, signal: ctrl.signal })
+        .then(done)
+        .catch((err) => {
+          if (!wasCancelled(err)) setError(errorText(err));
+        });
+    });
+    return () => ctrl?.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const passkey = async () => {
+    conditional?.abort();
+    setBusy(true);
+    setError(null);
+    try {
+      await done(await signInWithPasskey());
+    } catch (err) {
+      if (!wasCancelled(err)) setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submit = async (e: FormEvent) => {
@@ -84,7 +119,7 @@ export default function Login() {
       }
     >
       <form onSubmit={submit} className="space-y-5">
-        <Field label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+        <Field label="Email" type="email" autoComplete="username webauthn" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
         {error && (
           <p className="field-error" role="alert">
@@ -94,6 +129,11 @@ export default function Login() {
         <button className="btn btn-primary w-full" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
+        {passkeysSupported() && (
+          <button type="button" className="btn btn-secondary w-full" onClick={passkey} disabled={busy}>
+            <Fingerprint size={18} aria-hidden /> Sign in with a passkey
+          </button>
+        )}
         <p className="text-center text-sm">
           <Link to="/forgot-password" className="text-muted underline">
             Forgot your password?

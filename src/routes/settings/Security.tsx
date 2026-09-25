@@ -9,6 +9,7 @@ import { Banner, Field, Section } from "../../components/ui";
 import { api, errorText, setTokens } from "../../lib/api";
 import { timeAgo } from "../../lib/dates";
 import { useMe, useSession } from "../../lib/session";
+import { PasskeySection } from "./PasskeySection";
 
 interface SessionRow {
   id: string;
@@ -52,6 +53,7 @@ export function Security() {
   const [pw, setPw] = useState<{ current: string; next: string } | null>(null);
   const [setup, setSetup] = useState<{ secret: string; uri: string; password: string; code: string; codes?: string[] } | null>(null);
   const [disable, setDisable] = useState<{ password: string; code: string } | null>(null);
+  const [regen, setRegen] = useState<{ code: string; codes?: string[] } | null>(null);
 
   const changePassword = async () => {
     if (!pw) return;
@@ -91,6 +93,17 @@ export function Security() {
       await api("/auth/2fa/disable", { body: disable });
       setDisable(null);
       toast("Two-factor is off");
+      void twofa.refetch();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
+  const regenerate = async () => {
+    if (!regen) return;
+    try {
+      const res = await api<{ recovery_codes: string[] }>("/auth/2fa/recovery-codes", { body: { code: regen.code } });
+      setRegen({ ...regen, codes: res.recovery_codes });
       void twofa.refetch();
     } catch (err) {
       toast.error(errorText(err));
@@ -151,7 +164,17 @@ export function Security() {
             <button type="button" className="btn btn-primary btn-sm" onClick={startSetup}>Set up</button>
           )}
         </div>
+        {twofa.data?.enabled && (
+          <>
+            {twofa.data.recovery_codes_remaining <= 3 && (
+              <p className="field-hint text-flame-text" role="status">Running low on recovery codes. Make a new set before you need one.</p>
+            )}
+            <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={() => setRegen({ code: "" })}>New recovery codes</button>
+          </>
+        )}
       </Section>
+
+      <PasskeySection />
 
       <Section title="Where you're signed in" action={<button type="button" className="text-sm font-semibold text-danger" onClick={everywhere}>Sign out everywhere</button>}>
         <ul className="card divide-y divide-line">
@@ -223,6 +246,29 @@ export function Security() {
             <button type="button" className="btn btn-danger w-full" onClick={turnOff}>Turn off</button>
           </div>
         )}
+      </Sheet>
+      <Sheet open={regen !== null} onClose={() => setRegen(null)} title={regen?.codes ? "Your new recovery codes" : "New recovery codes"}>
+        {regen &&
+          (regen.codes ? (
+            <div>
+              <p className="text-muted">Your old codes no longer work. Each of these works once; this is the only time they're shown.</p>
+              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-surface-2 p-4 font-mono text-sm">
+                {regen.codes.map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
+              <div className="mt-4 flex gap-2">
+                <button type="button" className="btn btn-secondary flex-1" onClick={() => void navigator.clipboard?.writeText(regen.codes!.join("\n")).then(() => toast.success("Copied"))}>Copy</button>
+                <button type="button" className="btn btn-primary flex-1" onClick={() => setRegen(null)}>I've saved them</button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-muted">Every current recovery code stops working and ten new ones replace them.</p>
+              <Field label="Code from your authenticator app" inputMode="numeric" autoComplete="one-time-code" value={regen.code} onChange={(e) => setRegen({ ...regen, code: e.target.value.replace(/\D/g, "") })} />
+              <button type="button" className="btn btn-primary w-full" disabled={regen.code.length < 6} onClick={regenerate}>Make new codes</button>
+            </div>
+          ))}
       </Sheet>
       {confirmSheet}
     </div>
