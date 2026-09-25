@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
@@ -25,10 +26,10 @@ import { weight as fmtWeight } from "../lib/units";
 import { LogProvider, useLog } from "./LogContext";
 
 const TABS = [
-  { to: "/", label: "Today", icon: House, end: true },
-  { to: "/progress", label: "Progress", icon: ChartLineUp },
-  { to: "/feed", label: "Social", icon: UsersThree },
-  { to: "/you", label: "You", icon: UserCircle },
+  { to: "/", label: t("nav.today"), icon: House, end: true },
+  { to: "/progress", label: t("nav.progress"), icon: ChartLineUp },
+  { to: "/feed", label: t("nav.social"), icon: UsersThree },
+  { to: "/you", label: t("nav.you"), icon: UserCircle },
 ];
 
 export function Shell() {
@@ -133,11 +134,11 @@ function ShellInner() {
         <nav className="flex flex-col gap-1" aria-label="Main">
           {[
             ...TABS,
-            { to: "/notifications", label: "Notifications", icon: Bell, badge: unread },
-            { to: "/leaderboards", label: "Leaderboards", icon: Trophy },
-            { to: "/tools", label: "Tools", icon: Wrench },
-            { to: "/settings", label: "Settings", icon: Gear },
-            ...(staff ? [{ to: "/admin", label: "Moderation", icon: ShieldCheck }] : []),
+            { to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: unread },
+            { to: "/leaderboards", label: t("nav.leaderboards"), icon: Trophy },
+            { to: "/tools", label: t("nav.tools"), icon: Wrench },
+            { to: "/settings", label: t("nav.settings"), icon: Gear },
+            ...(staff ? [{ to: "/admin", label: t("nav.moderation"), icon: ShieldCheck }] : []),
           ].map((t) => (
             <NavLink
               key={t.to}
@@ -160,14 +161,14 @@ function ShellInner() {
         {/* Phone top bar: just the bell. The page owns its own title. */}
         <div className="safe-top sticky top-0 z-30 lg:hidden">
           <div className="flex h-12 items-center justify-between bg-bg/85 px-4 backdrop-blur-md">
-            <NavLink to="/" aria-label="PaceStreak home" className="flex items-center gap-2 font-semibold tracking-tight">
+            <NavLink to="/" aria-label={t("nav.home")} className="flex items-center gap-2 font-semibold tracking-tight">
               <svg viewBox="0 0 64 64" className="size-6" aria-hidden>
                 <path d="M37 10 14 36h14l-2 18 24-26H36l1-18Z" fill="var(--accent)" />
               </svg>
             </NavLink>
             <div className="flex items-center gap-1">
               {(!online || offline || sync.pending > 0) && <OfflinePill online={online && !offline} pending={sync.pending} />}
-              <NavLink to="/notifications" className="btn btn-ghost btn-icon relative" aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}>
+              <NavLink to="/notifications" className="btn btn-ghost btn-icon relative" aria-label={`${t("nav.notifications")}${unread ? `, ${t("nav.unread", { count: unread })}` : ""}`}>
                 <Bell size={22} />
                 {unread > 0 && <span className="absolute top-2 right-2 size-2.5 rounded-full bg-flame ring-2 ring-bg" />}
               </NavLink>
@@ -196,7 +197,7 @@ function ShellInner() {
                   haptic(8);
                   openLog();
                 }}
-                aria-label="Log a session"
+                aria-label={t("nav.log")}
                 className="log-fab press grid size-14 -translate-y-3 place-items-center rounded-full bg-accent text-accent-ink"
               >
                 <Plus size={26} weight="bold" />

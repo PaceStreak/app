@@ -111,6 +111,26 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
         primary: { kind: "link", label: "I'm back", to: "/settings/training#pause" },
       });
     }
+    // Back from a long pause: suggest an easier first fortnight. Offered, never
+    // applied - lowering the target is the person's call, and it only takes
+    // effect from this week, so nothing in the past changes.
+    if (!pause && main) {
+      const back = (stats?.pauses ?? []).find(
+        (p) => !p.active && !p.upcoming && daysBetween(p.starts_on, p.effective_end) >= 13 && daysBetween(p.effective_end, today) <= 14,
+      );
+      if (back && main.target > 1) {
+        const easier = Math.max(1, main.target - 1);
+        cards.push({
+          id: `eased:${back.id}`,
+          tone: "accent",
+          icon: "sun",
+          title: "Easing back in?",
+          body: `After ${Math.round((daysBetween(back.starts_on, back.effective_end) + 1) / 7)} weeks off, ${easier} day${easier === 1 ? "" : "s"} a week for a fortnight is a kind start. Your current target is ${main.target}; it's your call.`,
+          primary: { kind: "link", label: "Adjust target", to: "/settings/training" },
+          dismissible: true,
+        });
+      }
+    }
     for (const chain of stats?.chains ?? []) {
       if (!chain.at_risk || (chain.current === 0 && chain.this_week_days === 0)) continue;
       const needed = Math.max(0, chain.this_week_target - (chain === main ? weekDays : chain.this_week_days));

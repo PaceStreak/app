@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { addDays, fmtMonthDay, parseDay, weekStart } from "../lib/dates";
 import type { HeatDay, WeekCell } from "../lib/types";
 
@@ -75,11 +75,62 @@ export function Heatmap({
       });
       cols.push({ start, cells });
     }
+    // A label needs about three columns. Only the first month can be shorter
+    // (the grid starts mid-month), and printing it anyway overlaps the next
+    // one ("SeptOct") - so the partial first month goes unlabelled.
+    if (monthLabels.length > 1 && monthLabels[1].col - monthLabels[0].col < 3) monthLabels.shift();
     return { columns: cols, months: monthLabels, active: activeCount };
   }, [days, weekCells, today, weekStartsOn, span, plannedDays, pauses]);
 
+  const [asTable, setAsTable] = useState(false);
+  const statusOf = new Map(weekCells.map((w) => [w.week_start, w.status]));
   return (
     <figure className="m-0" aria-label={label ?? `Activity over the last ${span} weeks: ${active} days trained`}>
+      {/* Left and sticky: the grid often sits in a horizontal scroller wider
+          than a phone, where a right-aligned control is off-screen. */}
+      <div className="sticky left-0 mb-1 flex w-fit">
+        <button
+          type="button"
+          className="chart-toggle"
+          aria-pressed={asTable}
+          onClick={(e) => {
+            // The grid often sits inside a link card; toggling must not navigate.
+            e.preventDefault();
+            e.stopPropagation();
+            setAsTable(!asTable);
+          }}
+        >
+          {asTable ? "Grid" : "Table"}
+        </button>
+      </div>
+      {asTable ? (
+        <div className="max-h-72 overflow-y-auto">
+          <table className="chart-table">
+            <caption className="sr-only">Training days per week, most recent first</caption>
+            <thead>
+              <tr>
+                <th scope="col">Week of</th>
+                <th scope="col">Days trained</th>
+                <th scope="col">Week</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...columns].reverse().map((col) => {
+                const trained = col.cells.filter((c) => c.cls.startsWith("lvl-") && /lvl-[1-4]/.test(c.cls)).length;
+                const st = statusOf.get(col.start);
+                return (
+                  <tr key={col.start}>
+                    <th scope="row">{fmtMonthDay(col.start)}</th>
+                    <td className="num">{trained}</td>
+                    <td className="capitalize">{st ?? "-"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+      <>
       {/* style via the CSSOM (React sets element.style), which a
           `style-src 'self'` policy permits; only style="" markup is blocked. */}
       <div className="heat-months" aria-hidden style={{ gridTemplateColumns: `repeat(${span}, 1fr)` }}>
@@ -98,6 +149,8 @@ export function Heatmap({
           </div>
         ))}
       </div>
+      </>
+      )}
     </figure>
   );
 }

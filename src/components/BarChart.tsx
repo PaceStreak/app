@@ -10,8 +10,10 @@ export interface Bar {
 
 /**
  * One series of bars, one hue. Identity comes from the title, so there is
- * no legend; the value is on hover or focus, and a visually hidden table
- * carries the same numbers for screen readers.
+ * no legend; the value is on hover or focus. A "Table" toggle shows the same
+ * numbers as a real table - for keyboard and low-vision use, and for anyone
+ * who wants the exact figures - and the table is always present for screen
+ * readers even while the bars are showing.
  */
 export function BarChart({
   title,
@@ -27,10 +29,17 @@ export function BarChart({
   axisLabels?: boolean;
 }) {
   const [active, setActive] = useState<string | null>(null);
+  const [asTable, setAsTable] = useState(false);
   const max = Math.max(1, target ?? 0, ...bars.map((b) => b.value)) * 1.08;
   const every = Math.ceil(bars.length / 6);
   return (
     <figure className="m-0">
+      <div className="mb-1 flex justify-end">
+        <button type="button" className="chart-toggle" aria-pressed={asTable} onClick={() => setAsTable(!asTable)}>
+          {asTable ? "Chart" : "Table"}
+        </button>
+      </div>
+      {!asTable && (
       <div className="bars" onPointerLeave={() => setActive(null)} aria-hidden>
         {target != null && target > 0 && <span className="bar-target" style={{ bottom: `${(target / max) * 100}%` }} />}
         {bars.map((b) => (
@@ -52,7 +61,8 @@ export function BarChart({
           </div>
         ))}
       </div>
-      {axisLabels && (
+      )}
+      {!asTable && axisLabels && (
         <div className="mt-1.5 grid grid-flow-col text-[0.7rem] text-dim" style={{ gridAutoColumns: "1fr" }} aria-hidden>
           {bars.map((b, i) => (
             <span key={b.key} className="truncate">
@@ -66,8 +76,14 @@ export function BarChart({
           <span className="inline-block w-5 border-t-[1.5px] border-dashed border-muted" /> {targetLabel}
         </figcaption>
       )}
-      <table className="sr-only">
-        <caption>{title}</caption>
+      <table className={asTable ? "chart-table" : "sr-only"}>
+        <caption className={asTable ? "sr-only" : undefined}>{title}</caption>
+        <thead className={asTable ? undefined : "sr-only"}>
+          <tr>
+            <th scope="col">When</th>
+            <th scope="col">Value</th>
+          </tr>
+        </thead>
         <tbody>
           {bars.map((b) => (
             <tr key={b.key}>

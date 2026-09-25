@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Navigate } from "react-router";
 import { MagnifyingGlass } from "../components/phosphor";
+import { Sheet } from "../components/Sheet";
 import { toast } from "../components/toast";
 import { Empty, ErrorState, Loading, PageHeader, Segmented } from "../components/ui";
 import { api, errorText } from "../lib/api";
@@ -120,22 +121,7 @@ function Users({ admin }: { admin: boolean }) {
       toast.error(errorText(err));
     }
   };
-  const setOfficial = async (u: UserRow) => {
-    // Granting may take a reserved handle (e.g. "pacestreak"); revoking from
-    // one needs an ordinary handle to move to. The API enforces both.
-    const handle = window.prompt(
-      u.official ? "Ordinary handle to move this account to (leave blank to keep the current one)" : "Handle for the official account (reserved handles allowed)",
-      u.official ? "" : (u.handle ?? ""),
-    );
-    if (handle === null) return;
-    try {
-      await api(`/admin/users/${u.id}/official`, { body: { official: !u.official, handle: handle.trim() || null } });
-      toast.success(u.official ? "Official status removed" : "Marked official");
-      void users.refetch();
-    } catch (err) {
-      toast.error(errorText(err));
-    }
-  };
+  const [officialFor, setOfficialFor] = useState<UserRow | null>(null);
   return (
     <>
       <div className="relative">
@@ -164,7 +150,7 @@ function Users({ admin }: { admin: boolean }) {
                     <option value="moderator">moderator</option>
                     <option value="admin">admin</option>
                   </select>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => void setOfficial(u)}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setOfficialFor(u)}>
                     {u.official ? "Remove official" : "Make official"}
                   </button>
                   <button type="button" className="btn btn-danger btn-sm" onClick={() => void patch(u.id, { is_active: !u.is_active })}>
@@ -176,6 +162,7 @@ function Users({ admin }: { admin: boolean }) {
           </li>
         ))}
       </ul>
+      <OfficialSheet user={officialFor} onClose={() => setOfficialFor(null)} onDone={() => void users.refetch()} />
     </>
   );
 }
@@ -208,5 +195,59 @@ function Metrics() {
         </div>
       ))}
     </div>
+  );
+}
+
+
+/** Grant or revoke official status. Granting may take a reserved handle such
+    as "pacestreak" - the only place that is allowed. Revoking from a reserved
+    handle needs an ordinary one to move to. The API enforces both and writes
+    the audit log; this just asks the right question. */
+function OfficialSheet({ user, onClose, onDone }: { user: UserRow | null; onClose: () => void; onDone: () => void }) {
+  const [handle, setHandle] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [lastId, setLastId] = useState<string | null>(null);
+  if ((user?.id ?? null) !== lastId) {
+    setLastId(user?.id ?? null);
+    setHandle(user && !user.official ? (user.handle ?? "") : "");
+  }
+  const granting = user ? !user.official : true;
+  const submit = async () => {
+    if (!user) return;
+    setBusy(true);
+    try {
+      await api(`/admin/users/${user.id}/official`, { body: { official: granting, handle: handle.trim() || null } });
+      toast.success(granting ? "Marked official" : "Official status removed");
+      onDone();
+      onClose();
+    } catch (err) {
+      toast.error(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet
+      open={user !== null}
+      onClose={onClose}
+      title={granting ? "Make official" : "Remove official status"}
+      footer={
+        <button type="button" className="btn btn-primary flex-1" disabled={busy} onClick={() => void submit()}>
+          {busy ? "Saving…" : granting ? "Make official" : "Remove"}
+        </button>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-sm text-dim">
+          {granting
+            ? "This account gets the verified mark and may hold a reserved handle such as @pacestreak. Recorded in the audit log."
+            : "The verified mark goes. If the account holds a reserved handle, give it an ordinary one."}
+        </p>
+        <label className="block">
+          <span className="field-label">{granting ? "Handle" : "New handle (only if the current one is reserved)"}</span>
+          <input className="input" value={handle} autoCapitalize="none" spellCheck={false} maxLength={30} placeholder={user?.handle ?? ""} onChange={(e) => setHandle(e.target.value)} />
+        </label>
+      </div>
+    </Sheet>
   );
 }

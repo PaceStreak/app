@@ -325,6 +325,8 @@ export interface Group {
   member_count: number;
   my_role: "owner" | "admin" | "coach" | "member" | null;
   shares_with_coach: boolean;
+  /** Push and email off for this group; the inbox still gets everything. */
+  muted?: boolean;
   invite_code: string | null;
   members?: (Person & {
     role: string;

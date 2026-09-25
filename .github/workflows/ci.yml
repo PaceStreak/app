@@ -1,0 +1,38 @@
+# Fails a pull request before it reaches main. Deployment is Cloudflare Pages'
+# Git integration, not this workflow.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      # npm ci, not install: it is what Cloudflare runs, and it has caught a
+      # peer-dependency conflict that passed locally on a newer npm.
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Build output keeps the CSP and routing guarantees
+        run: |
+          test -f dist/404.html
+          test -f dist/_redirects
+          grep -q "Disallow: /" dist/robots.txt
+          grep -q "X-Robots-Tag: noindex" dist/_headers
+          # No inline <script> bodies: script-src 'self' would block them.
+          ! grep -E '<script[^>]*>[^<]' dist/index.html

@@ -136,6 +136,17 @@ export default function GroupDetail() {
             </div>
           )}
 
+          {group.my_role && (
+            <div className="card mb-5">
+              <Switch
+                checked={Boolean(group.muted)}
+                onChange={(v) => void action(() => api(`/groups/${id}/me`, { method: "PATCH", body: { muted: v } }), v ? "Group muted" : "Group unmuted")}
+                label="Mute this group"
+                description="No push or email about it. Everything still shows up in your inbox."
+              />
+            </div>
+          )}
+
           <Segmented
             label="Section"
             value={tab}
