@@ -110,6 +110,8 @@ export interface WorkoutSet {
   duration_sec: number | null;
   distance_m: number | null;
   completed: boolean;
+  /** Exercises sharing a number are a superset. */
+  superset?: number | null;
 }
 
 export interface Workout {
@@ -128,6 +130,8 @@ export interface Workout {
   /** Private labels, lowercase slugs: "hills", "with-sam". */
   tags?: string[];
   gear_id?: string | null;
+  /** Per-kilometre times from an imported track. */
+  splits?: { m: number; sec: number }[];
   source: string;
   client_updated_at: string;
   deleted_at: string | null;

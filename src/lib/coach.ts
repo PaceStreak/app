@@ -199,6 +199,22 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
         });
       }
     }
+    // A lighter week after a hard block: suggested when the last four weeks'
+    // sessions were rated hard on average, or felt rough. Suggestion only.
+    const deload = deloadSignal(ctx.workouts, today);
+    if (!pause && deload) {
+      cards.push({
+        id: `deload:${deload.week}`,
+        tone: "neutral",
+        icon: "sun",
+        title: "Time for a lighter week?",
+        body: deload.reason === "effort"
+          ? `Your last ${deload.sessions} sessions averaged effort ${deload.value.toFixed(1)} out of 10. A week at about half the load or volume usually brings the strength back sharper. Your streak only needs the days.`
+          : `Your last ${deload.sessions} sessions mostly felt rough. An easier week, or a few rest days, is part of training, and your streak only needs the days.`,
+        primary: { kind: "link", label: "How streaks work", to: "/progress#streaks" },
+        dismissible: true,
+      });
+    }
     for (const chain of stats?.chains ?? []) {
       if (!chain.at_risk || (chain.current === 0 && chain.this_week_days === 0)) continue;
       const needed = Math.max(0, chain.this_week_target - (chain === main ? weekDays : chain.this_week_days));
@@ -365,4 +381,28 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
   }
 
   return cards.filter((c) => !(c.dismissible && ctx.dismissed(c.id)));
+}
+
+/**
+ * Four weeks of sessions rated hard (average effort 8+ of 10), or feeling
+ * rough (average feel 2 or under of 5), with at least eight rated sessions
+ * so a single bad week can't trigger it. Keyed by week so it's offered at
+ * most once a week.
+ */
+export function deloadSignal(workouts: Workout[], today: string): { reason: "effort" | "feel"; value: number; sessions: number; week: string } | null {
+  const since = addDaysIso(today, -28);
+  const recent = workouts.filter((w) => !w.deleted_at && w.local_date > since && w.local_date <= today);
+  const efforts = recent.map((w) => w.effort).filter((e): e is number => e != null);
+  const feels = recent.map((w) => w.feel).filter((f): f is number => f != null);
+  const week = addDaysIso(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7));
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  if (efforts.length >= 8 && mean(efforts) >= 8) return { reason: "effort", value: mean(efforts), sessions: efforts.length, week };
+  if (feels.length >= 8 && mean(feels) <= 2) return { reason: "feel", value: mean(feels), sessions: feels.length, week };
+  return null;
+}
+
+function addDaysIso(day: string, n: number): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
 }

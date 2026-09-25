@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { DisciplineIcon } from "../../components/icons";
-import { CalendarCheck, Plus } from "../../components/phosphor";
+import { CalendarCheck, Plus, UploadSimple } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { Empty, ErrorState, Loading, PageHeader, Section } from "../../components/ui";
-import { api, errorText } from "../../lib/api";
+import { ApiError, api, errorText } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
 import { queryClient } from "../../lib/queries";
 import type { Plan, PlanSummary, PlanTemplate } from "../../lib/types";
@@ -22,6 +22,30 @@ export default function Plans() {
     staleTime: Infinity,
   });
   const [busy, setBusy] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const importFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (fileRef.current) fileRef.current.value = "";
+    setBusy("import");
+    try {
+      if (file.size > 512_000) throw new Error("That file is too large to be a plan.");
+      let data: unknown;
+      try {
+        data = JSON.parse(await file.text());
+      } catch {
+        throw new Error("That isn't a PaceStreak plan file.");
+      }
+      const plan = await api<Plan>("/plans/import", { body: data });
+      await queryClient.invalidateQueries({ queryKey: ["plans"] });
+      toast.success(`Imported ${plan.name}`);
+      navigate(`/plans/${plan.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error && !(err instanceof ApiError) ? err.message : errorText(err));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const create = async (body: object, key: string) => {
     setBusy(key);
@@ -120,6 +144,10 @@ export default function Plans() {
         }
       >
         <Plus size={18} /> Build your own
+      </button>
+      <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => void importFile(e.target.files?.[0])} />
+      <button type="button" className="btn btn-ghost mt-2 w-full" disabled={busy !== null} onClick={() => fileRef.current?.click()}>
+        <UploadSimple size={18} /> {busy === "import" ? "Importing…" : "Import a shared plan"}
       </button>
     </div>
   );

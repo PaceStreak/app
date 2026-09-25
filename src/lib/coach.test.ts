@@ -47,3 +47,23 @@ describe("freeze preview", () => {
     expect(cards.some((c) => /freeze covers the week/.test(c.body))).toBe(true);
   });
 });
+
+import { deloadSignal } from "./coach";
+import type { Workout } from "./types";
+
+describe("deload signal", () => {
+  const rated = (n: number, effort: number | null, feel: number | null) =>
+    Array.from({ length: n }, (_, i) => ({ id: `${i}`, local_date: `2026-09-${String(10 + i).padStart(2, "0")}`, effort, feel, deleted_at: null }) as unknown as Workout);
+  it("fires after four hard weeks", () => {
+    expect(deloadSignal(rated(9, 9, null), "2026-09-23")?.reason).toBe("effort");
+  });
+  it("fires when sessions keep feeling rough", () => {
+    expect(deloadSignal(rated(8, null, 1), "2026-09-23")?.reason).toBe("feel");
+  });
+  it("needs enough rated sessions", () => {
+    expect(deloadSignal(rated(5, 10, 1), "2026-09-23")).toBeNull();
+  });
+  it("stays quiet at normal effort", () => {
+    expect(deloadSignal(rated(12, 6, 4), "2026-09-23")).toBeNull();
+  });
+});

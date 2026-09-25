@@ -11,7 +11,10 @@ import {
   Check,
   DotsThreeVertical,
   Info,
+  Link as Link2,
+  LinkBreak,
   Plus,
+  Thermometer,
   Timer,
   Trash,
   Trophy,
@@ -27,7 +30,7 @@ import { haptic, prefs } from "../../lib/prefs";
 import { useLibrary, useRoutines, useWorkouts, type LibraryIndex } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import { saveWorkout } from "../../lib/sync";
-import { EFFORT, FEEL, blankWorkout, suggestNext } from "../../lib/training";
+import { EFFORT, FEEL, blankWorkout, suggestNext, warmupSets } from "../../lib/training";
 import type { Exercise, SetKind, Workout, WorkoutSet } from "../../lib/types";
 import { clock, e1rm, parseDuration, parseNumber, toKg, weight as fmtWeight, type WeightUnit } from "../../lib/units";
 import { FeelIcon } from "./FeelIcon";
@@ -52,6 +55,8 @@ interface DraftExercise {
   target_rpe: number | null;
   note: string | null;
   sets: DraftSet[];
+  /** Same number = superset with the neighbouring exercises. */
+  superset?: number | null;
 }
 interface Draft {
   id: string;
@@ -85,6 +90,7 @@ function fromWorkout(w: Workout, unit: WeightUnit): Draft {
     const ex =
       byExercise.get(s.exercise_id) ??
       ({ key: uuid(), exercise_id: s.exercise_id, rest_sec: 90, reps_min: null, reps_max: null, target_rpe: null, note: null, sets: [] } as DraftExercise);
+    if (s.superset != null) ex.superset = s.superset;
     ex.sets.push({
       key: uuid(),
       kind: s.kind,
@@ -120,6 +126,78 @@ function lastTime(workouts: Workout[], exerciseId: string, excludeId: string) {
     if (sets.length) return { date: w.local_date, sets };
   }
   return null;
+}
+
+/** "Superset A", "B"... for grouped exercises, in order of appearance. */
+function supersetLabel(list: DraftExercise[], index: number): string | undefined {
+  const group = list[index].superset;
+  if (group == null) return undefined;
+  const groups: number[] = [];
+  for (const e of list) if (e.superset != null && !groups.includes(e.superset)) groups.push(e.superset);
+  return `Superset ${String.fromCharCode(65 + groups.indexOf(group))}`;
+}
+
+type MenuItem = { icon: typeof Link2; label: string; run: () => void; danger?: boolean; keep?: boolean };
+
+function supersetActions(list: DraftExercise[], key: string, update: (fn: (d: Draft) => Draft) => void): MenuItem[] {
+  const i = list.findIndex((e) => e.key === key);
+  const ex = list[i];
+  const next = list[i + 1];
+  const items: MenuItem[] = [];
+  if (next && (ex.superset == null || ex.superset !== next.superset)) {
+    items.push({
+      icon: Link2,
+      label: "Superset with the next exercise",
+      run: () =>
+        update((d) => {
+          const used = d.exercises.map((e) => e.superset ?? -1);
+          const group = d.exercises[i].superset ?? d.exercises[i + 1].superset ?? Math.max(0, ...used) + 1;
+          const old = d.exercises[i + 1].superset;
+          return {
+            ...d,
+            exercises: d.exercises.map((e, j) => (j === i || j === i + 1 || (old != null && e.superset === old) ? { ...e, superset: group } : e)),
+          };
+        }),
+    });
+  }
+  if (ex.superset != null) {
+    items.push({
+      icon: LinkBreak,
+      label: "Take out of the superset",
+      run: () =>
+        update((d) => {
+          const exercises = d.exercises.map((e) => (e.key === key ? { ...e, superset: null } : e));
+          // A group of one isn't a superset.
+          const left = exercises.filter((e) => e.superset === ex.superset);
+          return { ...d, exercises: left.length === 1 ? exercises.map((e) => (e.superset === ex.superset ? { ...e, superset: null } : e)) : exercises };
+        }),
+    });
+  }
+  return items;
+}
+
+function warmupAction(ex: DraftExercise | undefined, lib: NonNullable<ReturnType<typeof useLibrary>>, unit: WeightUnit, workouts: Workout[], workoutId: string, change: (fn: (e: DraftExercise) => DraftExercise) => void): MenuItem[] {
+  if (!ex) return [];
+  const meta = lib.byId.get(ex.exercise_id);
+  if (meta?.load_type !== "weight" || ex.sets.some((s) => s.kind === "warmup")) return [];
+  // The working weight: the first filled work set, else last time's top set.
+  const typed = ex.sets.find((s) => s.kind === "work" && parseNumber(s.weight))?.weight;
+  const last = lastTime(workouts, ex.exercise_id, workoutId)?.sets.filter((s) => s.kind !== "warmup" && s.weight_kg);
+  const working = typed ? toKg(parseNumber(typed)!, unit) : last?.length ? Math.max(...last.map((s) => s.weight_kg ?? 0)) : null;
+  if (!working) return [];
+  const ramp = warmupSets(working, unit);
+  if (!ramp.length) return [];
+  return [
+    {
+      icon: Thermometer,
+      label: `Add ${ramp.length} warm-up set${ramp.length === 1 ? "" : "s"} up to ${fmtWeight(working, unit)}`,
+      run: () =>
+        change((e) => ({
+          ...e,
+          sets: [...ramp.map((r) => ({ key: uuid(), kind: "warmup" as SetKind, weight: fmtWeight(r.weight_kg, unit, false), reps: String(r.reps), rpe: null, time: "", done: false })), ...e.sets],
+        })),
+    },
+  ];
 }
 
 function bestKnown(workouts: Workout[], exerciseId: string, excludeId: string) {
@@ -283,6 +361,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
           duration_sec: time,
           distance_m: null,
           completed: s.done,
+          superset: ex.superset ?? null,
         });
       });
     });
@@ -385,9 +464,14 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             onPlates={(w) => setPlates(w)}
             onSetDone={(restSec) => {
               haptic(14);
-              if (prefs.autoRest() && !draft.editing) rest.start(restSec);
+              // In a superset, go straight to the next exercise; rest comes
+              // after the last one in the group.
+              const next = draft.exercises[index + 1];
+              const midSuperset = ex.superset != null && next?.superset === ex.superset;
+              if (prefs.autoRest() && !draft.editing && !midSuperset) rest.start(restSec);
             }}
             first={index === 0}
+            supersetLabel={supersetLabel(draft.exercises, index)}
           />
         ))}
       </div>
@@ -444,6 +528,8 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
                     return { ...d, exercises: list };
                   }),
               },
+              ...supersetActions(draft.exercises, menu, update),
+              ...warmupAction(draft.exercises.find((e) => e.key === menu), lib, unit, workouts ?? [], draft.id, (fn) => updateExercise(menu, fn)),
               {
                 icon: Timer,
                 label: `Rest: ${clock(draft.exercises.find((e) => e.key === menu)?.rest_sec ?? 90)} (tap to change)`,
@@ -547,6 +633,7 @@ function ExerciseBlock({
   onPlates,
   onSetDone,
   first,
+  supersetLabel,
 }: {
   ex: DraftExercise;
   lib: LibraryIndex;
@@ -558,6 +645,7 @@ function ExerciseBlock({
   onPlates: (w: number) => void;
   onSetDone: (restSec: number) => void;
   first: boolean;
+  supersetLabel?: string;
 }) {
   const meta = lib.byId.get(ex.exercise_id);
   const loadType = meta?.load_type ?? "weight";
@@ -604,9 +692,14 @@ function ExerciseBlock({
 
   let workNumber = 0;
   return (
-    <section ref={blockRef} className="card overflow-hidden" aria-label={meta?.name}>
+    <section ref={blockRef} className={`card overflow-hidden ${supersetLabel ? "superset-block" : ""}`} aria-label={supersetLabel ? `${meta?.name}, ${supersetLabel}` : meta?.name}>
       <div className="flex items-start gap-2 p-4 pb-2">
         <div className="min-w-0 flex-1">
+          {supersetLabel && (
+            <p className="mb-1 flex items-center gap-1 text-xs font-semibold tracking-wide text-accent-text uppercase">
+              <Link2 size={12} aria-hidden /> {supersetLabel}
+            </p>
+          )}
           <h2 className="text-[1.05rem] font-semibold tracking-tight">{meta?.name ?? "Exercise"}</h2>
           <p className="num mt-0.5 text-sm text-dim">
             {last ? (

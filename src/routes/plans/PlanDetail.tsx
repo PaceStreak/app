@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { DisciplineIcon } from "../../components/icons";
-import { CalendarCheck, CheckCircle, Circle, Copy, MinusCircle, PencilSimple, Plus, Trash, XCircle } from "../../components/phosphor";
+import { CalendarCheck, CheckCircle, Circle, ShareNetwork, Copy, MinusCircle, PencilSimple, Plus, Trash, XCircle } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Empty, ErrorState, Field, Loading, PageHeader, Section } from "../../components/ui";
@@ -131,6 +131,28 @@ export default function PlanDetail() {
     await save(plan.weeks.filter((_, i) => i !== week));
     setShownWeek(Math.max(0, week - 1));
   };
+  /** Download the plan as a file anyone can import. Uses the share sheet
+   * where the browser can share files, a plain download otherwise. */
+  const share = async () => {
+    try {
+      const data = await api<object>(`/plans/${id}/export`);
+      const name = `${plan.name.replace(/[^\w-]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "plan"}.pacestreak-plan.json`;
+      const file = new File([JSON.stringify(data, null, 2)], name, { type: "application/json" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: plan.name }).catch(() => {});
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
   const remove = async () => {
     if (
       !(await ask({
@@ -298,7 +320,12 @@ export default function PlanDetail() {
         </div>
       </Section>
 
-      <button type="button" className="btn btn-ghost mt-8 w-full text-danger" onClick={() => void remove()}>
+      <button type="button" className="btn btn-secondary mt-8 w-full" onClick={() => void share()}>
+        <ShareNetwork size={18} /> Share as a file
+      </button>
+      <p className="field-hint">Your routines go with it; your logged sessions and progress don't.</p>
+
+      <button type="button" className="btn btn-ghost mt-4 w-full text-danger" onClick={() => void remove()}>
         Delete plan
       </button>
 

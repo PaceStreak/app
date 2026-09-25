@@ -111,3 +111,26 @@ describe("tags and search", () => {
     expect(defaultGear(gear, "ride")).toBeNull();
   });
 });
+
+import { warmupSets } from "./training";
+
+describe("warmupSets", () => {
+  it("ramps from the bar in plate-friendly steps", () => {
+    expect(warmupSets(100, "kg")).toEqual([
+      { weight_kg: 20, reps: 10 },
+      { weight_kg: 40, reps: 8 },
+      { weight_kg: 60, reps: 5 },
+      { weight_kg: 80, reps: 3 },
+    ]);
+  });
+  it("drops steps that collapse onto the bar", () => {
+    expect(warmupSets(40, "kg").map((s) => s.weight_kg)).toEqual([20, 25, 32.5]);
+  });
+  it("offers nothing for the empty bar or lighter", () => {
+    expect(warmupSets(20, "kg")).toEqual([]);
+  });
+  it("rounds to 5 lb in pounds", () => {
+    const lb = warmupSets(102.058, "lb").map((s) => Math.round(s.weight_kg / 0.45359237));
+    expect(lb).toEqual([45, 90, 135, 180]);
+  });
+});

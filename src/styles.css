@@ -992,6 +992,11 @@
   .week-mark.is-frozen { background: var(--info); opacity: 0.8; }
   .week-mark.is-repaired { background: transparent; box-shadow: inset 0 0 0 1.5px var(--chart); }
   .week-mark.is-open { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line-lit); }
+  /* Exercises in a superset share an accent edge, so the group reads as one
+     unit; the "Superset A" label says it in words too. */
+  .superset-block {
+    box-shadow: inset 3px 0 0 var(--accent-text);
+  }
   /* Paused: hatched, like paused days on the heatmap - distinct from missed
      without relying on hue. */
   .week-mark.is-paused {

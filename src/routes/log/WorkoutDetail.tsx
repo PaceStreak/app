@@ -15,7 +15,7 @@ import { useMe } from "../../lib/session";
 import { deleteWorkout, discardFailed, saveWorkout } from "../../lib/sync";
 import { EFFORT, FEEL, exerciseOrder, localWeek, volumeKg } from "../../lib/training";
 import type { RecordRow, Workout } from "../../lib/types";
-import { distance, duration, pace, speed, weight as fmtWeight, compact } from "../../lib/units";
+import { clock, distance, duration, pace, speed, weight as fmtWeight, compact } from "../../lib/units";
 import { FeelIcon } from "./FeelIcon";
 
 export default function WorkoutDetail() {
@@ -217,6 +217,8 @@ export default function WorkoutDetail() {
         </section>
       )}
 
+      {(w.splits?.length ?? 0) > 0 && <Splits splits={w.splits!} />}
+
       {((w.tags?.length ?? 0) > 0 || gear) && (
         <section className="mt-5 flex flex-wrap items-center gap-1.5" aria-label="Tags and gear">
           {w.tags?.map((t) => (
@@ -252,5 +254,44 @@ export default function WorkoutDetail() {
       </div>
       {confirmSheet}
     </div>
+  );
+}
+
+/** Per-kilometre times from an imported track. Private session detail:
+ * the fastest kilometre is marked in text, not only by colour. */
+function Splits({ splits }: { splits: { m: number; sec: number }[] }) {
+  const whole = splits.filter((s) => s.m === 1000);
+  const fastest = whole.length > 1 ? Math.min(...whole.map((s) => s.sec)) : null;
+  let km = 0;
+  return (
+    <section className="card mt-5 p-4" aria-labelledby="splits-title">
+      <h2 id="splits-title" className="font-semibold">Splits</h2>
+      <table className="mt-2 w-full text-sm">
+        <thead>
+          <tr className="text-left text-dim">
+            <th scope="col" className="py-1 font-medium">Km</th>
+            <th scope="col" className="py-1 text-right font-medium">Time</th>
+            <th scope="col" className="py-1 text-right font-medium">Pace /km</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {splits.map((s, i) => {
+            km += s.m / 1000;
+            const pace = s.sec / (s.m / 1000);
+            const best = s.m === 1000 && s.sec === fastest;
+            return (
+              <tr key={i} className={best ? "font-semibold" : ""}>
+                <th scope="row" className="num py-1.5 text-left font-normal">
+                  {s.m === 1000 ? Math.round(km) : km.toFixed(2)}
+                  {best && <span className="ml-1.5 text-accent-text">fastest</span>}
+                </th>
+                <td className="num py-1.5 text-right">{clock(s.sec)}</td>
+                <td className="num py-1.5 text-right">{clock(Math.round(pace))}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
   );
 }

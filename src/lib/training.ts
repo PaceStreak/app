@@ -202,3 +202,24 @@ export function searchWorkouts(workouts: Workout[], query: string, names: (exerc
 export function cleanTag(raw: string): string {
   return raw.trim().replace(/^#+/, "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
 }
+
+/**
+ * Warm-up ramp towards a working weight: about 40% x 8, 60% x 5 and 80% x 3,
+ * starting no lighter than the empty bar and rounded to what plates can
+ * make. Steps that round to the same load, or to the working weight
+ * itself, are dropped. Stored in kg; `unit` only decides the rounding.
+ */
+export function warmupSets(workingKg: number, unit: WeightUnit): { weight_kg: number; reps: number }[] {
+  const bar = unit === "kg" ? 20 : toKg(45, "lb");
+  if (!(workingKg > bar)) return [];
+  const step = unit === "kg" ? 2.5 : 5;
+  const round = (kg: number) => toKg(Math.round(fromKg(kg, unit) / step) * step, unit);
+  const out: { weight_kg: number; reps: number }[] = [];
+  for (const [pct, reps] of [[0, 10], [0.4, 8], [0.6, 5], [0.8, 3]] as const) {
+    const kg = pct === 0 ? bar : Math.max(bar, round(workingKg * pct));
+    if (kg >= workingKg - 0.01) break;
+    if (out.some((o) => Math.abs(o.weight_kg - kg) < 0.01)) continue;
+    out.push({ weight_kg: Math.round(kg * 1000) / 1000, reps });
+  }
+  return out;
+}
