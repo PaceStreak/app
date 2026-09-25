@@ -20,7 +20,7 @@ export const queryClient = new QueryClient({
 // Refresh everything derived from workouts once a sync lands.
 if (typeof window !== "undefined") {
   window.addEventListener("ps:synced", () => {
-    for (const key of ["stats", "progress", "records", "achievements", "xp", "chains", "feed", "exercise-history"]) {
+    for (const key of ["stats", "progress", "records", "achievements", "xp", "chains", "feed", "exercise-history", "plan-active", "plan", "gear", "review", "record-history"]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
   });

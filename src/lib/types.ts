@@ -432,3 +432,45 @@ export interface Gear {
   retired_at: string | null;
   note: string | null;
 }
+
+export interface PlanSession {
+  day: number;
+  discipline: string;
+  title: string;
+  minutes?: number | null;
+  distance_km?: number | null;
+  routine_id?: string | null;
+  note?: string | null;
+  /** Present once the plan is running and the week has begun. */
+  date?: string;
+  status?: "done" | "today" | "upcoming" | "skipped";
+  moved?: boolean;
+}
+
+export interface PlanSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  template_id: string | null;
+  weeks_count: number;
+  sessions_count: number;
+  started_on: string | null;
+  finished_at: string | null;
+  active: boolean;
+}
+
+export interface Plan extends PlanSummary {
+  weeks: PlanSession[][];
+  current_week: number | null;
+  today: PlanSession[];
+  progress: { done: number; due: number; total: number } | null;
+}
+
+export interface PlanTemplate {
+  id: string;
+  name: string;
+  summary: string;
+  weeks_count: number;
+  per_week: number;
+  disciplines: string[];
+}

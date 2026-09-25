@@ -12,6 +12,7 @@ import {
   Trophy,
   UsersThree,
   Wrench,
+  CalendarCheck,
 } from "../components/phosphor";
 import { personName } from "../components/social";
 import { Avatar, List, RowLink, Section } from "../components/ui";
@@ -61,9 +62,10 @@ export default function You() {
       <Section title="Training">
         <List>
           <RowLink to="/history" icon={<CalendarBlank size={20} />} title="Sessions" detail={stats ? `${stats.totals.sessions} logged` : undefined} />
+          <RowLink to="/plans" icon={<CalendarCheck size={20} />} title="Training plans" />
           <RowLink to="/routines" icon={<ListBullets size={20} />} title="Routines" />
           <RowLink to="/exercises" icon={<Barbell size={20} />} title="Exercises" />
-          <RowLink to="/tools" icon={<Wrench size={20} />} title="Tools" detail="Rest timer, plates, 1RM, pace" />
+          <RowLink to="/tools" icon={<Wrench size={20} />} title="Tools" detail="Rest and interval timers, plates, 1RM, pace" />
         </List>
       </Section>
       <Section title="Progress">

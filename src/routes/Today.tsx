@@ -5,6 +5,7 @@ import { Heatmap } from "../components/Heatmap";
 import {
   ArrowCounterClockwise,
   Bell,
+  CalendarCheck,
   CaretRight,
   ChartLineUp,
   CheckCircle,
@@ -33,7 +34,7 @@ import { canInstall, currentPushSubscription, enablePush, install, onInstallChan
 import { queryClient, useLibrary, useStats, useSyncState, useWorkouts } from "../lib/queries";
 import { useMe, useSession } from "../lib/session";
 import { localWeek } from "../lib/training";
-import type { Challenge } from "../lib/types";
+import type { Challenge, Plan } from "../lib/types";
 import { useProfilePatch } from "./settings/useProfilePatch";
 import { useLog } from "../shell/LogContext";
 
@@ -52,6 +53,7 @@ const ICONS: Record<CoachCard["icon"], ReactNode> = {
   sun: <Sun weight="fill" />,
   chart: <ChartLineUp weight="bold" />,
   globe: <GlobeHemisphereWest weight="fill" />,
+  calendar: <CalendarCheck weight="fill" />,
 };
 
 function deviceTimezone(): string | null {
@@ -83,6 +85,7 @@ export default function Today() {
     queryFn: () => api<Challenge[]>("/challenges"),
     enabled: me.social_allowed,
   });
+  const plan = useQuery({ queryKey: ["plan-active"], queryFn: () => api<Plan | null>("/plans/active") });
   const [active, setActive] = useState<{ startedAt: string; title: string } | null>(null);
   const [installable, setInstallable] = useState(canInstall());
   const [pushOffer, setPushOffer] = useState(false);
@@ -108,6 +111,7 @@ export default function Today() {
         today,
         week,
         challenges: challenges.data,
+        plan: plan.data,
         failed: sync.failed.length,
         activeWorkout: active,
         canInstall: installable && Date.now() - prefs.installDismissed() > 14 * 86_400_000,
@@ -117,7 +121,7 @@ export default function Today() {
       }),
     // bump re-renders after a dismissal
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [me, stats.data, workouts, today, week, challenges.data, sync.failed.length, active, installable, pushOffer, bump],
+    [me, stats.data, workouts, today, week, challenges.data, plan.data, sync.failed.length, active, installable, pushOffer, bump],
   );
 
   const run = async (action: CardAction) => {

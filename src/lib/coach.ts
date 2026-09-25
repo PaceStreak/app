@@ -1,5 +1,5 @@
 import { WEEKDAYS_LONG, daysBetween, fmtMonthDay, weekday } from "./dates";
-import type { Challenge, Me, Stats, Workout } from "./types";
+import type { Challenge, Me, Plan, Stats, Workout } from "./types";
 
 export type CardTone = "flame" | "accent" | "neutral" | "danger";
 export type CardAction =
@@ -15,7 +15,7 @@ export type CardAction =
 export interface CoachCard {
   id: string;
   tone: CardTone;
-  icon: "flame" | "check" | "warning" | "repair" | "trophy" | "users" | "bell" | "download" | "play" | "sparkle" | "mail" | "sun" | "chart" | "globe";
+  icon: "flame" | "check" | "warning" | "repair" | "trophy" | "users" | "bell" | "download" | "play" | "sparkle" | "mail" | "sun" | "chart" | "globe" | "calendar";
   title: string;
   body: string;
   primary?: CardAction;
@@ -30,6 +30,8 @@ export interface CoachContext {
   today: string;
   week: { count: number; trainedToday: boolean };
   challenges: Challenge[] | undefined;
+  /** The running training plan, if any. */
+  plan?: Plan | null;
   failed: number;
   activeWorkout: { startedAt: string; title: string } | null;
   canInstall: boolean;
@@ -108,6 +110,25 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
       body: `PaceStreak is still on ${placeName(me.profile.timezone)} time. Switch so today and your reminders line up where you are. Sessions you've already logged keep their dates.`,
       primary: { kind: "timezone", label: `Use ${placeName(tz)} time`, timezone: tz },
       secondary: { kind: "link", label: "Pause for the trip", to: "/settings/training#pause" },
+      dismissible: true,
+    });
+  }
+
+  // The plan's session for today, if one is still to do. Paused days get no
+  // plan nudge either: the pause card says rest.
+  const planned = ctx.plan?.today.find((p) => p.status === "today");
+  if (ctx.plan && planned && !stats?.paused_today) {
+    const extra = [planned.minutes ? `${planned.minutes} min` : null, planned.note].filter(Boolean).join(". ");
+    cards.push({
+      id: `plan:${ctx.plan.id}:${planned.date}:${planned.day}`,
+      tone: "accent",
+      icon: "calendar",
+      title: planned.title,
+      body: `${ctx.plan.name}, week ${(ctx.plan.current_week ?? 0) + 1} of ${ctx.plan.weeks_count}.${extra ? ` ${extra}` : ""}`,
+      primary: planned.routine_id
+        ? { kind: "link", label: "Start workout", to: `/workouts/live?routine=${planned.routine_id}` }
+        : { kind: "log", label: "Log it", discipline: planned.discipline },
+      secondary: { kind: "link", label: "See the plan", to: `/plans/${ctx.plan.id}` },
       dismissible: true,
     });
   }
