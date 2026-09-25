@@ -20,7 +20,7 @@ export const queryClient = new QueryClient({
 // Refresh everything derived from workouts once a sync lands.
 if (typeof window !== "undefined") {
   window.addEventListener("ps:synced", () => {
-    for (const key of ["stats", "progress", "records", "achievements", "xp", "chains", "feed", "exercise-history", "plan-active", "plan", "gear", "review", "record-history"]) {
+    for (const key of ["stats", "progress", "records", "achievements", "xp", "chains", "feed", "exercise-history", "plan-active", "plan", "gear", "review", "record-history", "monthly-goal"]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
   });
@@ -80,6 +80,10 @@ export function useLibrary(): LibraryIndex | null {
     const disciplines = new Map(lib.disciplines.map((d) => [d.id, d]));
     return { lib, exercises, byId, discipline: (id: string) => disciplines.get(id) };
   }, [lib, custom]);
+}
+
+export function useRestDays() {
+  return useCachedQuery<{ day: string; kind: string; note: string | null }[]>(["rest-days"], "/me/rest-days");
 }
 
 export function useGear() {

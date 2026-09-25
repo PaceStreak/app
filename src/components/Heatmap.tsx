@@ -25,12 +25,15 @@ export function Heatmap({
   label,
   plannedDays = null,
   pauses = [],
+  restDays = [],
 }: {
   days: Pick<HeatDay, "date" | "level">[];
   weeks?: Pick<WeekCell, "week_start" | "status">[];
   /** Bitmask of planned training days, bit 0 = Monday. */
   plannedDays?: number | null;
   pauses?: { starts_on: string; effective_end: string }[];
+  /** Rest days logged on purpose. Marked on the grid; never counted. */
+  restDays?: { day: string; kind: string }[];
   today: string;
   weekStartsOn: number;
   span?: number;
@@ -38,6 +41,7 @@ export function Heatmap({
 }) {
   const { columns, months, active } = useMemo(() => {
     const byDate = new Map(days.map((d) => [d.date, d.level]));
+    const rested = new Map(restDays.map((r) => [r.day, r.kind]));
     const kept = new Set(
       weekCells.filter((w) => w.status === "kept" || w.status === "frozen" || w.status === "repaired").map((w) => w.week_start),
     );
@@ -65,7 +69,9 @@ export function Heatmap({
             ? ["lvl-future", ""]
             : paused(date)
               ? ["lvl-paused", "paused"]
-              : kept.has(start)
+              : rested.has(date)
+                ? ["lvl-chosen", rested.get(date) === "rest" ? "rest day, logged" : `rest day, logged (${rested.get(date)})`]
+                : kept.has(start)
                 ? ["lvl-rest", "rest, week kept"]
                 : plannedRest(date)
                   ? ["lvl-planned", "planned rest day"]
@@ -80,7 +86,7 @@ export function Heatmap({
     // one ("SeptOct") - so the partial first month goes unlabelled.
     if (monthLabels.length > 1 && monthLabels[1].col - monthLabels[0].col < 3) monthLabels.shift();
     return { columns: cols, months: monthLabels, active: activeCount };
-  }, [days, weekCells, today, weekStartsOn, span, plannedDays, pauses]);
+  }, [days, weekCells, today, weekStartsOn, span, plannedDays, pauses, restDays]);
 
   const [asTable, setAsTable] = useState(false);
   const statusOf = new Map(weekCells.map((w) => [w.week_start, w.status]));
@@ -155,7 +161,7 @@ export function Heatmap({
   );
 }
 
-export function HeatLegend({ planned = false, paused = false }: { planned?: boolean; paused?: boolean }) {
+export function HeatLegend({ planned = false, paused = false, rested = false }: { planned?: boolean; paused?: boolean; rested?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-xs text-dim" aria-hidden>
       <span>Less</span>
@@ -183,6 +189,14 @@ export function HeatLegend({ planned = false, paused = false }: { planned?: bool
             <i className="lvl-paused size-2.5" />
           </span>
           <span>Paused</span>
+        </>
+      )}
+      {rested && (
+        <>
+          <span className="heat ml-3 inline-flex">
+            <i className="lvl-chosen size-2.5" />
+          </span>
+          <span>Rest logged</span>
         </>
       )}
     </div>

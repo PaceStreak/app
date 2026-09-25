@@ -32,7 +32,7 @@ import { fmtFullDay, localToday } from "../lib/dates";
 import { kvGet } from "../lib/db";
 import { haptic, prefs } from "../lib/prefs";
 import { canInstall, currentPushSubscription, enablePush, install, onInstallChange, pushSupported } from "../lib/pwa";
-import { queryClient, useLibrary, useStats, useSyncState, useWorkouts } from "../lib/queries";
+import { queryClient, useLibrary, useRestDays, useStats, useSyncState, useWorkouts } from "../lib/queries";
 import { useMe, useSession } from "../lib/session";
 import { localWeek } from "../lib/training";
 import type { Challenge, Plan } from "../lib/types";
@@ -71,6 +71,7 @@ export default function Today() {
   const patchProfile = useProfilePatch();
   const stats = useStats();
   const workouts = useWorkouts();
+  const restDays = useRestDays();
   const lib = useLibrary();
   const sync = useSyncState();
   const { openLog } = useLog();
@@ -249,6 +250,7 @@ export default function Today() {
             span={26}
             plannedDays={stats.data.training_days ?? me.profile.training_days}
             pauses={stats.data.pauses ?? []}
+            restDays={restDays.data ?? []}
           />
         </Link>
       )}

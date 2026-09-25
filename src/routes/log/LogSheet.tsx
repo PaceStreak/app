@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { DisciplineIcon } from "../../components/icons";
-import { ArrowLeft, Barbell, CaretDown, ListBullets, Play } from "../../components/phosphor";
+import { ArrowLeft, Barbell, CaretDown, ListBullets, Moon, Play } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
+import { Segmented } from "../../components/ui";
+import { api, errorText } from "../../lib/api";
 import { localDateOf, localToday, toLocalInput, uuid } from "../../lib/dates";
 import { favouriteDisciplines, haptic } from "../../lib/prefs";
-import { useGear, useLibrary, useRoutines, useWorkouts } from "../../lib/queries";
+import { queryClient, useGear, useLibrary, useRoutines, useWorkouts } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import { deleteWorkout, saveWorkout } from "../../lib/sync";
 import { EFFORT, FEEL, blankWorkout, defaultGear, localWeek } from "../../lib/training";
@@ -108,7 +110,49 @@ function Chooser({ onPick, onClose }: { onPick: (d: string) => void; onClose: ()
         <button type="button" onClick={() => go("/routines")} className="btn btn-ghost w-full">
           <ListBullets size={18} /> Routines
         </button>
+        <RestToday onDone={onClose} />
       </div>
+    </div>
+  );
+}
+
+const REST_KINDS = [
+  { value: "rest", label: "Rest" },
+  { value: "sleep", label: "Sleep" },
+  { value: "mobility", label: "Mobility" },
+  { value: "sick", label: "Unwell" },
+] as const;
+
+/** Log today as a rest day on purpose. It shows on the grid as a choice and
+ * never counts toward the streak - rest is already free here. */
+function RestToday({ onDone }: { onDone: () => void }) {
+  const me = useMe();
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<(typeof REST_KINDS)[number]["value"]>("rest");
+  const today = localToday(me.profile.timezone);
+  const save = async () => {
+    try {
+      await api(`/me/rest-days/${today}`, { method: "PUT", body: { kind } });
+      await queryClient.invalidateQueries({ queryKey: ["rest-days"] });
+      toast.success("Rest day logged", { body: "It shows on your grid. Rest never costs you the streak." });
+      onDone();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="btn btn-ghost w-full">
+        <Moon size={18} /> Resting today
+      </button>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-line p-3">
+      <Segmented label="Kind of rest" value={kind} onChange={setKind} options={REST_KINDS.map((k) => ({ ...k }))} />
+      <button type="button" className="btn btn-secondary mt-3 w-full" onClick={() => void save()}>
+        Log rest day
+      </button>
     </div>
   );
 }

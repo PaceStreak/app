@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { BellSlash } from "../../components/phosphor";
 import { toast } from "../../components/toast";
-import { Banner, Section } from "../../components/ui";
+import { Banner, Section, Switch } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { currentPushSubscription, disablePush, enablePush, pushSupported } from "../../lib/pwa";
 import { useMe } from "../../lib/session";
@@ -108,8 +108,22 @@ export function NotificationSettings() {
 
       <Section title="Timing">
         <div className="card space-y-4 p-4">
+          <div>
+            <Switch
+              checked={me.profile.reminder_mode === "smart"}
+              onChange={(v) => void save({ reminder_mode: v ? "smart" : "fixed" })}
+              label="Remind me before I usually train"
+              description={
+                me.profile.reminder_mode === "smart"
+                  ? me.profile.learned_reminder_hour != null
+                    ? `You usually train around ${hourLabel((me.profile.learned_reminder_hour + 1) % 24)}, so reminders come at ${hourLabel(me.profile.learned_reminder_hour)}.`
+                    : "Not enough sessions yet to spot a habit. Until then, the time below is used."
+                  : "Learns from the times you log sessions. Never during quiet hours."
+              }
+            />
+          </div>
           <div className="flex items-center justify-between gap-3">
-            <label htmlFor="rem-h" className="font-medium">Reminder time</label>
+            <label htmlFor="rem-h" className="font-medium">{me.profile.reminder_mode === "smart" ? "Fallback time" : "Reminder time"}</label>
             <select id="rem-h" className="input h-10 min-h-0 w-32" value={me.profile.reminder_hour} onChange={(e) => void save({ reminder_hour: Number(e.target.value) })}>
               {hours.map((h) => (
                 <option key={h} value={h}>{hourLabel(h)}</option>

@@ -2,13 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";
 import { BarChart } from "../../components/BarChart";
+import { MonthlyGoalCard } from "../../components/MonthlyGoal";
 import { Heatmap, HeatLegend } from "../../components/Heatmap";
 import { ArrowCounterClockwise, Barbell, CalendarCheck, CalendarStar, CaretDown, CheckCircle, Circle, Fire, Medal, Scales, Snowflake, Sparkle, Trophy } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { ErrorState, List, Loading, PageHeader, RowLink, Section, Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
-import { queryClient, useLibrary, useStats } from "../../lib/queries";
+import { queryClient, useLibrary, useRestDays, useStats } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import type { Chain } from "../../lib/types";
 import { compact, fromKg, fromMetres } from "../../lib/units";
@@ -34,6 +35,7 @@ type Metric = "days" | "minutes" | "distance" | "volume";
 export default function Progress() {
   const me = useMe();
   const stats = useStats();
+  const restDays = useRestDays();
   const [range, setRange] = useState(12);
   const [metric, setMetric] = useState<Metric>("days");
   const progress = useQuery({
@@ -87,6 +89,10 @@ export default function Progress() {
             ))}
           </div>
 
+          <div className="mt-4">
+            <MonthlyGoalCard />
+          </div>
+
           <Section title="Streaks" className="scroll-mt-20" action={<Link to="/settings/training" className="text-sm font-semibold text-accent-text">Manage</Link>}>
             <div id="streaks" className="space-y-3">
               {s.chains.map((c) => (
@@ -100,11 +106,11 @@ export default function Progress() {
             <div className="card p-4">
               <div className="-mx-4 overflow-x-auto px-4">
                 <div className="min-w-[640px]">
-                  <Heatmap days={s.heatmap} weeks={s.chains[0]?.weeks} today={s.today} weekStartsOn={s.week_starts_on} span={53} plannedDays={s.training_days} pauses={s.pauses ?? []} />
+                  <Heatmap days={s.heatmap} weeks={s.chains[0]?.weeks} today={s.today} weekStartsOn={s.week_starts_on} span={53} plannedDays={s.training_days} pauses={s.pauses ?? []} restDays={restDays.data ?? []} />
                 </div>
               </div>
               <div className="mt-3">
-                <HeatLegend planned={Boolean(s.training_days)} paused={(s.pauses ?? []).length > 0} />
+                <HeatLegend planned={Boolean(s.training_days)} paused={(s.pauses ?? []).length > 0} rested={(restDays.data ?? []).length > 0} />
               </div>
             </div>
           </Section>

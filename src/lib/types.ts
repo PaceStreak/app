@@ -24,6 +24,8 @@ export interface Profile {
   social_suspended: boolean;
   deletion_scheduled_at: string | null;
   reminder_hour: number;
+  reminder_mode?: "fixed" | "smart";
+  learned_reminder_hour?: number | null;
   quiet_start: number;
   quiet_end: number;
 }

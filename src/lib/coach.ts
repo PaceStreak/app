@@ -178,6 +178,27 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
         });
       }
     }
+    // Just lost a streak worth having: start again gently, and never with a
+    // guilt trip. Only when the week that broke it was a real miss, not a
+    // pause, and only for the first fortnight after.
+    if (!pause && main && main.current === 0 && main.longest >= 4 && main.target > 1) {
+      const closed = main.weeks.slice(0, -1);
+      const lastKept = closed.map((w) => w.status).lastIndexOf("kept");
+      const broke = lastKept >= 0 && closed.length - 1 - lastKept <= 2 && closed[closed.length - 1]?.status === "missed";
+      if (broke) {
+        const easier = Math.max(1, main.target - 1);
+        cards.push({
+          id: `comeback:${closed[lastKept].week_start}`,
+          tone: "neutral",
+          icon: "sun",
+          title: "Start again, gently",
+          body: `Your ${main.longest}-week best isn't going anywhere. A week at ${easier} day${easier === 1 ? "" : "s"} is a fine first step back, and your consistency score barely noticed.`,
+          primary: { kind: "log", label: "Log a session" },
+          secondary: { kind: "link", label: "Adjust target", to: "/settings/training" },
+          dismissible: true,
+        });
+      }
+    }
     for (const chain of stats?.chains ?? []) {
       if (!chain.at_risk || (chain.current === 0 && chain.this_week_days === 0)) continue;
       const needed = Math.max(0, chain.this_week_target - (chain === main ? weekDays : chain.this_week_days));
@@ -196,7 +217,11 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
           ? `You'd need ${needed} more by ${weekEnd}. If it's not happening, a freeze keeps your ${chain.current}-week streak. Rest if you need it.`
           : needed > chain.days_left
             ? `This week is out of reach. A repair can fix it later this month, so no need to train sore to save it.`
-            : `By ${weekEnd}${main_ ? "" : ` on '${chain.name}'`}. Skip it if you're hurt or wiped: one missed week a month can be repaired.`,
+            : `By ${weekEnd}${main_ ? "" : ` on '${chain.name}'`}. ${
+                chain.freezes_available > 0 && chain.current > 0
+                  ? `If it slips, one of your ${plural(chain.freezes_available, "freeze")} covers the week automatically.`
+                  : "Skip it if you're hurt or wiped: one missed week a month can be repaired."
+              }`,
         primary: { kind: "log", label: "Log a session", discipline: chain.disciplines.length === 1 ? chain.disciplines[0] : undefined },
         secondary: { kind: "link", label: "How streaks work", to: "/progress#streaks" },
       });

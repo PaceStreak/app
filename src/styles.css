@@ -425,6 +425,12 @@
     background: repeating-linear-gradient(135deg, var(--heat-0) 0 2px, transparent 2px 4px);
     box-shadow: inset 0 0 0 1px var(--heat-0);
   }
+  /* A rest day logged on purpose: a centred dot, so it reads as a choice
+     without depending on colour. */
+  .lvl-chosen {
+    background: radial-gradient(circle, var(--heat-2) 0 28%, transparent 32%);
+    box-shadow: inset 0 0 0 1px var(--heat-0);
+  }
   .lvl-future { background: transparent; }
 
   /* Chart <-> table switch. Small, but a real button with a pressed state. */
