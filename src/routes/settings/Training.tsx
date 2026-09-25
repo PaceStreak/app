@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { DisciplineIcon } from "../../components/icons";
-import { Minus, Plus, Trash } from "../../components/phosphor";
+import { Minus, Plus, Trash, X } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Section, Segmented } from "../../components/ui";
@@ -96,6 +96,7 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
   const [name, setName] = useState("");
   const [target, setTarget] = useState(3);
   const [disciplines, setDisciplines] = useState<string[]>([]);
+  const [reqs, setReqs] = useState<{ disciplines: string[]; days: number }[]>([]);
   const [lastId, setLastId] = useState<string | null>(null);
   const key = chain === "new" ? "new" : (existing?.id ?? null);
   if (key !== lastId) {
@@ -103,11 +104,17 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
     setName(existing?.name ?? "");
     setTarget(existing?.target ?? 3);
     setDisciplines(existing?.disciplines ?? []);
+    setReqs((existing?.requirements ?? []).map(({ disciplines, days }) => ({ disciplines, days })));
   }
+  // Requirements can only name disciplines this streak counts.
+  const countable = (lib?.lib.disciplines ?? []).filter((d) => !disciplines.length || disciplines.includes(d.id));
+  const required = reqs.reduce((n, r) => n + r.days, 0);
+  const reqsValid = reqs.every((r) => r.disciplines.length > 0) && required <= target;
   const submit = async () => {
     try {
-      if (existing) await api(`/chains/${existing.id}`, { method: "PATCH", body: { name, target, disciplines } });
-      else await api("/chains", { body: { name: name || "New streak", target, disciplines } });
+      const requirements = reqs.map((r) => ({ ...r, disciplines: r.disciplines.filter((d) => !disciplines.length || disciplines.includes(d)) }));
+      if (existing) await api(`/chains/${existing.id}`, { method: "PATCH", body: { name, target, disciplines, requirements } });
+      else await api("/chains", { body: { name: name || "New streak", target, disciplines, requirements } });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
       onSaved();
       onClose();
@@ -138,7 +145,7 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
               <Trash size={18} />
             </button>
           )}
-          <button type="button" className="btn btn-primary flex-1" onClick={submit}>Save</button>
+          <button type="button" className="btn btn-primary flex-1" disabled={!reqsValid} onClick={submit}>Save</button>
         </>
       }
     >
@@ -172,6 +179,50 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
           </div>
           <p className="field-hint">{disciplines.length ? "Only these count toward this streak." : "Nothing picked: everything counts."}</p>
         </div>
+        <fieldset>
+          <legend className="field-label">Must include (optional)</legend>
+          <p className="mb-3 text-sm text-dim">For a balanced week, e.g. at least 2 of your days are runs and 1 is strength. Applies from this week on.</p>
+          <ul className="space-y-3">
+            {reqs.map((r, i) => (
+              <li key={i} className="rounded-2xl bg-surface-2 p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted">At least</span>
+                  <button type="button" className="btn btn-secondary btn-icon btn-sm" aria-label="Fewer days" onClick={() => setReqs(reqs.map((x, j) => (j === i ? { ...x, days: Math.max(1, x.days - 1) } : x)))}>
+                    <Minus size={14} />
+                  </button>
+                  <span className="num w-5 text-center font-semibold" aria-live="polite">{r.days}</span>
+                  <button type="button" className="btn btn-secondary btn-icon btn-sm" aria-label="More days" onClick={() => setReqs(reqs.map((x, j) => (j === i ? { ...x, days: Math.min(7, x.days + 1) } : x)))}>
+                    <Plus size={14} />
+                  </button>
+                  <span className="flex-1 text-sm text-muted">{r.days === 1 ? "day of" : "days of"}</span>
+                  <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label="Remove requirement" onClick={() => setReqs(reqs.filter((_, j) => j !== i))}>
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Disciplines for this requirement">
+                  {countable.map((d) => {
+                    const on = r.disciplines.includes(d.id);
+                    return (
+                      <button key={d.id} type="button" aria-pressed={on} onClick={() => setReqs(reqs.map((x, j) => (j === i ? { ...x, disciplines: on ? x.disciplines.filter((y) => y !== d.id) : [...x.disciplines, d.id] } : x)))} className={`press chip ${on ? "chip-accent" : ""}`}>
+                        {d.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {reqs.length < 3 && (
+            <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={() => setReqs([...reqs, { disciplines: [], days: 1 }])}>
+              <Plus size={14} /> Add a requirement
+            </button>
+          )}
+          {required > target && (
+            <p className="field-error" role="alert">
+              These add up to {required} days, more than your target of {target}. Raise the target or ask for fewer days.
+            </p>
+          )}
+        </fieldset>
       </div>
     </Sheet>
   );

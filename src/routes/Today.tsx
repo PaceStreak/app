@@ -11,6 +11,7 @@ import {
   DownloadSimple,
   EnvelopeSimple,
   Fire,
+  GlobeHemisphereWest,
   Play,
   Sparkle,
   Sun,
@@ -24,7 +25,7 @@ import { WeekDots } from "../components/WeekDots";
 import { WorkoutRow } from "../components/WorkoutRow";
 import { Skeleton } from "../components/ui";
 import { api, errorText } from "../lib/api";
-import { buildCards, type CardAction, type CoachCard } from "../lib/coach";
+import { buildCards, placeName, type CardAction, type CoachCard } from "../lib/coach";
 import { fmtFullDay, localToday } from "../lib/dates";
 import { kvGet } from "../lib/db";
 import { haptic, prefs } from "../lib/prefs";
@@ -33,6 +34,7 @@ import { queryClient, useLibrary, useStats, useSyncState, useWorkouts } from "..
 import { useMe, useSession } from "../lib/session";
 import { localWeek } from "../lib/training";
 import type { Challenge } from "../lib/types";
+import { useProfilePatch } from "./settings/useProfilePatch";
 import { useLog } from "../shell/LogContext";
 
 const ICONS: Record<CoachCard["icon"], ReactNode> = {
@@ -49,11 +51,21 @@ const ICONS: Record<CoachCard["icon"], ReactNode> = {
   mail: <EnvelopeSimple weight="fill" />,
   sun: <Sun weight="fill" />,
   chart: <ChartLineUp weight="bold" />,
+  globe: <GlobeHemisphereWest weight="fill" />,
 };
+
+function deviceTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Today() {
   const me = useMe();
   const { reloadMe } = useSession();
+  const patchProfile = useProfilePatch();
   const stats = useStats();
   const workouts = useWorkouts();
   const lib = useLibrary();
@@ -101,6 +113,7 @@ export default function Today() {
         canInstall: installable && Date.now() - prefs.installDismissed() > 14 * 86_400_000,
         pushOffer,
         dismissed: prefs.dismissed,
+        deviceTimezone: deviceTimezone(),
       }),
     // bump re-renders after a dismissal
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,6 +152,10 @@ export default function Today() {
         case "resend":
           await api("/auth/resend-verification", { body: { email: me.user.email }, auth: false });
           toast.success("Sent", { body: `Check ${me.user.email}.` });
+          break;
+        case "timezone":
+          await patchProfile({ timezone: action.timezone }, `Now on ${placeName(action.timezone)} time`);
+          await queryClient.invalidateQueries({ queryKey: ["stats"] });
           break;
         case "cancel-deletion":
           await api("/me/delete/cancel", { method: "POST" });

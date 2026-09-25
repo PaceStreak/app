@@ -9,12 +9,13 @@ export type CardAction =
   | { kind: "install"; label: string }
   | { kind: "push"; label: string }
   | { kind: "resend"; label: string }
-  | { kind: "cancel-deletion"; label: string };
+  | { kind: "cancel-deletion"; label: string }
+  | { kind: "timezone"; label: string; timezone: string };
 
 export interface CoachCard {
   id: string;
   tone: CardTone;
-  icon: "flame" | "check" | "warning" | "repair" | "trophy" | "users" | "bell" | "download" | "play" | "sparkle" | "mail" | "sun" | "chart";
+  icon: "flame" | "check" | "warning" | "repair" | "trophy" | "users" | "bell" | "download" | "play" | "sparkle" | "mail" | "sun" | "chart" | "globe";
   title: string;
   body: string;
   primary?: CardAction;
@@ -34,6 +35,13 @@ export interface CoachContext {
   canInstall: boolean;
   pushOffer: boolean;
   dismissed: (id: string) => boolean;
+  /** The device's IANA timezone, when the browser will say. */
+  deviceTimezone?: string | null;
+}
+
+/** "America/New_York" -> "New York". Good enough to recognise a place. */
+export function placeName(tz: string): string {
+  return (tz.split("/").pop() ?? tz).replace(/_/g, " ");
 }
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -83,6 +91,24 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
       title: `${plural(ctx.failed, "session")} couldn't be saved`,
       body: "The server refused it. Open it to fix the problem or discard it.",
       primary: { kind: "link", label: "Review", to: "/history?filter=unsaved" },
+    });
+  }
+
+  // Travel: the phone moved timezone and the profile didn't. Switching keeps
+  // "today", reminders and the week boundary where the person actually is;
+  // days already logged keep the date they were logged on. Offered once per
+  // destination, and never nagged.
+  const tz = ctx.deviceTimezone;
+  if (tz && tz !== me.profile.timezone && !ctx.dismissed(`tz:${tz}`)) {
+    cards.push({
+      id: `tz:${tz}`,
+      tone: "neutral",
+      icon: "globe",
+      title: `Travelling? Your phone is on ${placeName(tz)} time`,
+      body: `PaceStreak is still on ${placeName(me.profile.timezone)} time. Switch so today and your reminders line up where you are. Sessions you've already logged keep their dates.`,
+      primary: { kind: "timezone", label: `Use ${placeName(tz)} time`, timezone: tz },
+      secondary: { kind: "link", label: "Pause for the trip", to: "/settings/training#pause" },
+      dismissible: true,
     });
   }
 

@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useConfirm } from "../../components/Confirm";
 import { DownloadSimple, Moon, Sun, CircleHalf } from "../../components/phosphor";
 import { toast } from "../../components/toast";
-import { Section, Switch } from "../../components/ui";
+import { Section, Segmented, Switch } from "../../components/ui";
 import { wipe } from "../../lib/db";
-import { prefs, type Theme } from "../../lib/prefs";
+import { prefs, type BadgeMode, type Theme } from "../../lib/prefs";
 import { canInstall, install, isStandalone, onInstallChange } from "../../lib/pwa";
 import { syncNow } from "../../lib/sync";
 import { useSyncState } from "../../lib/queries";
@@ -43,6 +43,7 @@ export function Appearance() {
         </div>
         <p className="field-hint">Light is easier to read in bright sun at a trailhead.</p>
       </Section>
+      <BadgeSetting />
       <Section title="During workouts">
         <div className="card divide-y divide-line">
           <Switch checked={prefs.autoRest()} onChange={(v) => flip(prefs.setAutoRest, v)} label="Start the rest timer when a set is done" />
@@ -129,5 +130,31 @@ export function About() {
       </ul>
       <p className="text-sm">Not medical advice. If something hurts, rest; a freeze or a repair will look after the streak.</p>
     </div>
+  );
+}
+
+/** Only shown where the browser can badge an installed app's icon. */
+function BadgeSetting() {
+  const [mode, setMode] = useState(prefs.badge());
+  if (!("setAppBadge" in navigator)) return null;
+  return (
+    <Section title="App icon badge">
+      <Segmented
+        label="App icon badge"
+        value={mode}
+        onChange={(m: BadgeMode) => {
+          prefs.setBadge(m);
+          setMode(m);
+        }}
+        options={[
+          { value: "unread", label: "Unread" },
+          { value: "needed", label: "Days to go" },
+          { value: "off", label: "Off" },
+        ]}
+      />
+      <p className="field-hint">
+        {mode === "needed" ? "How many more days this week keep your main streak. Hidden while you're paused." : mode === "unread" ? "Unread notifications." : "No number on the icon."}
+      </p>
+    </Section>
   );
 }

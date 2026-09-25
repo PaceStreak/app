@@ -68,7 +68,7 @@ export default function Records() {
                 <ul className="card divide-y divide-line">
                   {rows.map((r) => (
                     <li key={r.key}>
-                      <Link to={r.kind === "e1rm" || r.kind === "reps" || r.kind === "hold" ? `/exercises/${r.subject}` : r.workout_id ? `/workouts/${r.workout_id}` : "#"} className="press flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2/60">
+                      <Link to={`/records/history?key=${encodeURIComponent(r.key)}`} className="press flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2/60">
                         <span className="min-w-0">
                           <span className="block truncate">{r.label.replace(/ · estimated 1RM| · most reps| · longest hold/, "")}</span>
                           <span className="block text-sm text-dim">

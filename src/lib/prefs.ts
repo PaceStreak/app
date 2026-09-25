@@ -3,6 +3,8 @@
 // wrapped because storage can be unavailable (private mode, blocked site data).
 
 export type Theme = "system" | "dark" | "light";
+/** What the number on the home-screen icon means. */
+export type BadgeMode = "unread" | "needed" | "off";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -35,6 +37,11 @@ export const prefs = {
   setAutoRest: (on: boolean) => write("autoRest", on),
   keepAwake: () => read<boolean>("keepAwake", true),
   setKeepAwake: (on: boolean) => write("keepAwake", on),
+  badge: () => read<BadgeMode>("badge", "unread"),
+  setBadge: (m: BadgeMode) => {
+    write("badge", m);
+    window.dispatchEvent(new Event("ps:badge"));
+  },
   installDismissed: () => read<number>("installDismissed", 0),
   dismissInstall: () => write("installDismissed", Date.now()),
   dismissed: (key: string) => read<string[]>("dismissed", []).includes(key),

@@ -15,6 +15,7 @@ import type { Pause, PauseReason, PauseState } from "../../lib/types";
 const REASONS: { value: PauseReason; label: string }[] = [
   { value: "injury", label: "Injury" },
   { value: "illness", label: "Illness" },
+  { value: "travel", label: "Travel" },
   { value: "life", label: "Life" },
   { value: "other", label: "Other" },
 ];

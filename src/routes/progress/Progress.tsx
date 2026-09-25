@@ -3,12 +3,12 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { BarChart } from "../../components/BarChart";
 import { Heatmap, HeatLegend } from "../../components/Heatmap";
-import { ArrowCounterClockwise, Barbell, CaretDown, Fire, Medal, Scales, Snowflake, Sparkle, Trophy, CalendarCheck } from "../../components/phosphor";
+import { ArrowCounterClockwise, Barbell, CalendarCheck, CalendarStar, CaretDown, CheckCircle, Circle, Fire, Medal, Scales, Snowflake, Sparkle, Trophy } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { ErrorState, List, Loading, PageHeader, RowLink, Section, Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
-import { queryClient, useStats } from "../../lib/queries";
+import { queryClient, useLibrary, useStats } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import type { Chain } from "../../lib/types";
 import { compact, fromKg, fromMetres } from "../../lib/units";
@@ -166,6 +166,7 @@ export default function Progress() {
           <Section title="More">
             <List>
               <RowLink to="/recap" icon={<CalendarCheck size={20} />} title="Weekly recap" detail="Last week, summed up" />
+              <RowLink to="/review" icon={<CalendarStar size={20} />} title="Year in review" detail="The weeks you kept this year" />
               <RowLink to="/records" icon={<Trophy size={20} />} title="Personal records" detail={`${s.totals.records} so far`} />
               <RowLink to="/achievements" icon={<Medal size={20} />} title="Achievements" />
               {s.gamification_enabled && <RowLink to="/progress/xp" icon={<Sparkle size={20} />} title="Level and XP" detail={`Level ${s.level.level} · ${s.level.title}`} />}
@@ -188,6 +189,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: boolean }) {
+  const lib = useLibrary();
   const [busy, setBusy] = useState(false);
   const repair = async () => {
     if (!chain.repairable_week) return;
@@ -230,8 +232,36 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
         <span className="flex items-center gap-1.5">
           <Snowflake size={14} /> {chain.freezes_available} {chain.freezes_available === 1 ? "freeze" : "freezes"} saved
         </span>
-        <span>{chain.consistency}% consistency, last 4 weeks</span>
       </div>
+      {chain.requirements.length > 0 && (
+        <ul className="mt-3 space-y-1 text-sm" aria-label="This week's requirements">
+          {chain.requirements.map((r, i) => {
+            const met = r.done >= r.days;
+            return (
+              <li key={i} className="flex items-center gap-2">
+                {met ? <CheckCircle size={16} weight="fill" className="text-accent-text" aria-hidden /> : <Circle size={16} className="text-dim" aria-hidden />}
+                <span className={met ? "" : "text-muted"}>
+                  {r.disciplines.map((d) => lib?.discipline(d)?.name ?? d).join(" or ")}: {r.done} of {r.days}
+                  <span className="sr-only">{met ? ", done" : ", not yet"}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <dl className="mt-3 grid grid-cols-3 gap-2 text-center" aria-label="Consistency">
+        {[
+          ["4 weeks", chain.consistency],
+          ["12 weeks", chain.consistency_12],
+          ["52 weeks", chain.consistency_52],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-xl bg-surface-2 px-2 py-2">
+            <dt className="text-xs text-dim">{label}</dt>
+            <dd className="num text-lg font-semibold">{value}%</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-1 text-xs text-dim">Consistency: how much of each week's plan you did, on average. It survives a broken streak.</p>
       {chain.repairable_week && repairAvailable && (
         <button type="button" className="btn btn-secondary btn-sm mt-4" disabled={busy} onClick={repair}>
           <ArrowCounterClockwise size={16} /> Repair week of {fmtMonthDay(chain.repairable_week)}

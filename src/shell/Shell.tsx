@@ -1,6 +1,6 @@
 import { t } from "../lib/i18n";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import {
   Bell,
@@ -17,11 +17,11 @@ import {
 } from "../components/phosphor";
 import { toast } from "../components/toast";
 import { api } from "../lib/api";
-import { useOnline, useSyncState } from "../lib/queries";
+import { useOnline, useStats, useSyncState } from "../lib/queries";
 import { useSession } from "../lib/session";
 import { onOutcome } from "../lib/sync";
 import { setBadge } from "../lib/pwa";
-import { haptic } from "../lib/prefs";
+import { haptic, prefs } from "../lib/prefs";
 import { weight as fmtWeight } from "../lib/units";
 import { LogProvider, useLog } from "./LogContext";
 
@@ -54,8 +54,25 @@ function useUnread() {
     return () => navigator.serviceWorker?.removeEventListener("message", onPush);
   }, [q]);
   const unread = q.data?.unread ?? 0;
-  useEffect(() => setBadge(unread), [unread]);
   return unread;
+}
+
+/** The number on the installed app's icon: unread notifications, sessions
+ * still needed this week, or nothing - the person's choice in Settings.
+ * "Needed" hides while a pause shelters the week: nobody on an injury break
+ * should be looking at a number telling them to train. */
+function useAppBadge(unread: number) {
+  const stats = useStats();
+  const [mode, setMode] = useState(prefs.badge());
+  useEffect(() => {
+    const onChange = () => setMode(prefs.badge());
+    window.addEventListener("ps:badge", onChange);
+    return () => window.removeEventListener("ps:badge", onChange);
+  }, []);
+  const main = stats.data?.chains[0];
+  const needed = main && !main.paused_now ? main.needed : 0;
+  const count = mode === "unread" ? unread : mode === "needed" ? needed : 0;
+  useEffect(() => setBadge(count), [count]);
 }
 
 function ShellInner() {
@@ -64,6 +81,7 @@ function ShellInner() {
   const online = useOnline();
   const sync = useSyncState();
   const unread = useUnread();
+  useAppBadge(unread);
   const location = useLocation();
   const navigate = useNavigate();
 

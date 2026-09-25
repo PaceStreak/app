@@ -155,12 +155,16 @@ export interface Chain {
   repairable_week: string | null;
   run_started: string | null;
   consistency: number;
+  consistency_12: number;
+  consistency_52: number;
   /** The current week is sheltered by a pause. */
   paused_now: boolean;
+  /** This week's compound goals: at least `days` days on these disciplines. */
+  requirements: { disciplines: string[]; days: number; done: number }[];
   weeks: WeekCell[];
 }
 
-export type PauseReason = "injury" | "illness" | "life" | "other";
+export type PauseReason = "injury" | "illness" | "travel" | "life" | "other";
 
 export interface Pause {
   id: string;
