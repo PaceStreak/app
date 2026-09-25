@@ -10,11 +10,14 @@ export function ExercisePicker({
   onClose,
   onPick,
   title = "Add exercise",
+  similarTo,
 }: {
   open: boolean;
   onClose: () => void;
   onPick: (e: Exercise) => void;
   title?: string;
+  /** When swapping: list stand-ins for this exercise first. */
+  similarTo?: string;
 }) {
   const lib = useLibrary();
   const workouts = useWorkouts();
@@ -50,6 +53,46 @@ export function ExercisePicker({
       });
   }, [lib, q, pattern, recent]);
 
+  // Stand-ins for a swap: the same movement pattern, most shared primary
+  // muscles first, then the closest names.
+  const similar = useMemo(() => {
+    const from = similarTo ? lib?.byId.get(similarTo) : undefined;
+    if (!lib || !from) return [];
+    const overlap = (e: Exercise) => e.primary.filter((m) => from.primary.includes(m)).length;
+    // "Dumbbell bench press" is closer to "Bench press" than a dip is.
+    const words = new Set(from.name.toLowerCase().split(/\W+/));
+    const named = (e: Exercise) => e.name.toLowerCase().split(/\W+/).filter((w) => words.has(w)).length;
+    return lib.exercises
+      .filter((e) => !e.archived && e.id !== from.id && e.pattern === from.pattern && overlap(e) > 0)
+      .sort((a, b) => overlap(b) - overlap(a) || named(b) - named(a) || a.name.localeCompare(b.name))
+      .slice(0, 6);
+  }, [lib, similarTo]);
+  const showSimilar = similar.length > 0 && !q.trim() && !pattern;
+
+  const row = (e: Exercise) => (
+    <li key={e.id}>
+      <button
+        type="button"
+        className="press flex w-full items-center gap-3 py-3 text-left"
+        onClick={() => {
+          onPick(e);
+          setQ("");
+        }}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-medium">
+            {e.name}
+            {e.custom && <span className="chip ml-2 h-5 px-1.5 text-[0.7rem]">Yours</span>}
+          </span>
+          <span className="block truncate text-sm text-dim">
+            {e.primary.map((m) => lib?.lib.muscles[m] ?? m).join(", ")} · {lib?.lib.equipment[e.equipment] ?? e.equipment}
+          </span>
+        </span>
+        <Plus size={18} className="shrink-0 text-dim" />
+      </button>
+    </li>
+  );
+
   return (
     <>
       <Sheet open={open && !creating} onClose={onClose} title={title} size="full">
@@ -69,31 +112,16 @@ export function ExercisePicker({
             ))}
           </div>
         </div>
-        <ul className="divide-y divide-line">
-          {results.map((e) => (
-            <li key={e.id}>
-              <button
-                type="button"
-                className="press flex w-full items-center gap-3 py-3 text-left"
-                onClick={() => {
-                  onPick(e);
-                  setQ("");
-                }}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">
-                    {e.name}
-                    {e.custom && <span className="chip ml-2 h-5 px-1.5 text-[0.7rem]">Yours</span>}
-                  </span>
-                  <span className="block truncate text-sm text-dim">
-                    {e.primary.map((m) => lib?.lib.muscles[m] ?? m).join(", ")} · {lib?.lib.equipment[e.equipment] ?? e.equipment}
-                  </span>
-                </span>
-                <Plus size={18} className="shrink-0 text-dim" />
-              </button>
-            </li>
-          ))}
-        </ul>
+        {showSimilar && (
+          <>
+            <h3 className="mt-1 text-xs font-semibold tracking-wide text-dim uppercase">Similar</h3>
+            <ul className="divide-y divide-line" aria-label="Similar exercises">
+              {similar.map(row)}
+            </ul>
+            <h3 className="mt-4 text-xs font-semibold tracking-wide text-dim uppercase">Everything</h3>
+          </>
+        )}
+        <ul className="divide-y divide-line">{results.map(row)}</ul>
         {results.length === 0 && <p className="py-8 text-center text-muted">Nothing matches "{q}".</p>}
         <button type="button" className="btn btn-secondary mt-4 w-full" onClick={() => setCreating(true)}>
           <Plus size={18} /> Create your own{q ? `: "${q}"` : ""}

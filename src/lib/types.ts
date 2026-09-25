@@ -78,6 +78,8 @@ export interface RoutineItem {
   target_rpe: number | null;
   /** Starting weight in kg, for a movement with no history yet. */
   weight_kg?: number | null;
+  /** Load added when progression says go up, in kg. Default 2.5 kg / 5 lb. */
+  increment_kg?: number | null;
   note: string | null;
 }
 

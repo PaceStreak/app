@@ -55,6 +55,8 @@ interface DraftExercise {
   target_rpe: number | null;
   /** The routine's starting weight in kg; drafts saved before it have none. */
   target_kg?: number | null;
+  /** The routine's load step in kg for progression. */
+  step_kg?: number | null;
   note: string | null;
   sets: DraftSet[];
   /** Same number = superset with the neighbouring exercises. */
@@ -281,6 +283,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             reps_max: it.reps_max,
             target_rpe: it.target_rpe,
             target_kg: it.weight_kg ?? null,
+            step_kg: it.increment_kg ?? null,
             note: it.note,
             sets: Array.from({ length: it.sets }, () => blankSet()),
           }));
@@ -493,6 +496,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
       <ExercisePicker
         open={picker !== null}
         title={picker?.mode === "swap" ? "Swap for" : "Add exercise"}
+        similarTo={picker?.mode === "swap" ? draft.exercises.find((x) => x.key === picker.key)?.exercise_id : undefined}
         onClose={() => setPicker(null)}
         onPick={(e) => {
           if (picker?.mode === "swap") {
@@ -660,6 +664,7 @@ function ExerciseBlock({
     ? suggestNext(last.sets.map((s) => ({ weight_kg: s.weight_kg, reps: s.reps, rpe: s.rpe, kind: s.kind, duration_sec: s.duration_sec })), {
         repsMax: ex.reps_max,
         targetRpe: ex.target_rpe,
+        stepKg: ex.step_kg,
         unit,
         exercise: meta,
       })

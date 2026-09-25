@@ -26,6 +26,10 @@ describe("suggestNext", () => {
     );
     expect(s?.weight_kg).toBe(102.5);
   });
+  it("uses the routine's own step", () => {
+    const s = suggestNext([{ weight_kg: 140, reps: 5, rpe: 8 }], { repsMax: 5, stepKg: 5, unit: "kg" });
+    expect(s?.weight_kg).toBe(145);
+  });
   it("chases reps otherwise", () => {
     const s = suggestNext([{ weight_kg: 100, reps: 6, rpe: null }], { repsMax: 8, unit: "kg" });
     expect(s).toMatchObject({ weight_kg: 100, reps: 7 });

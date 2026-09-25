@@ -101,13 +101,14 @@ export interface Suggestion {
 
 export function suggestNext(
   last: { weight_kg: number | null; reps: number | null; rpe: number | null; kind?: string; duration_sec?: number | null }[],
-  opts: { repsMax?: number | null; targetRpe?: number | null; unit: WeightUnit; exercise?: Exercise },
+  opts: { repsMax?: number | null; targetRpe?: number | null; stepKg?: number | null; unit: WeightUnit; exercise?: Exercise },
 ): Suggestion | null {
   const work = last.filter((s) => s.kind !== "warmup" && s.weight_kg && s.reps);
   if (!work.length) return suggestUnloaded(last, opts.repsMax ?? null);
   const top = work.reduce((a, b) => ((b.weight_kg ?? 0) > (a.weight_kg ?? 0) ? b : a));
   const lastSet = work[work.length - 1];
-  const step = opts.unit === "kg" ? 2.5 : toKg(5, "lb");
+  // A routine can set its own jump: 5 kg suits a deadlift, 1 kg a raise.
+  const step = opts.stepKg || (opts.unit === "kg" ? 2.5 : toKg(5, "lb"));
   const round = (kg: number) => {
     const inUnit = fromKg(kg, opts.unit);
     const inc = opts.unit === "kg" ? 1.25 : 2.5;

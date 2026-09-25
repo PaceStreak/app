@@ -121,8 +121,8 @@ export default function RoutineEditor() {
             </div>
             <div className="mt-2 grid grid-cols-4 gap-2">
               {lib?.byId.get(it.exercise_id)?.load_type === "weight" && (
-                <label className="col-span-2 text-xs text-dim">
-                  Start weight ({unit})
+                <label className="text-xs text-dim">
+                  Start ({unit})
                   <input
                     className="set-input num mt-1"
                     inputMode="decimal"
@@ -132,6 +132,21 @@ export default function RoutineEditor() {
                     onChange={(e) => {
                       const v = parseNumber(e.target.value);
                       patchItem(i, { weight_kg: v == null || v < 0 ? null : Math.round(toKg(v, unit) * 100) / 100 });
+                    }}
+                  />
+                </label>
+              )}
+              {lib?.byId.get(it.exercise_id)?.load_type === "weight" && (
+                <label className="text-xs text-dim">
+                  Step ({unit})
+                  <input
+                    className="set-input num mt-1"
+                    inputMode="decimal"
+                    placeholder={unit === "kg" ? "2.5" : "5"}
+                    defaultValue={it.increment_kg != null ? fmtWeight(it.increment_kg, unit, false) : ""}
+                    onChange={(e) => {
+                      const v = parseNumber(e.target.value);
+                      patchItem(i, { increment_kg: v == null || v <= 0 ? null : Math.round(toKg(v, unit) * 100) / 100 });
                     }}
                   />
                 </label>

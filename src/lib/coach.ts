@@ -146,7 +146,9 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
       primary: planned.routine_id
         ? { kind: "link", label: "Start workout", to: `/workouts/live?routine=${planned.routine_id}` }
         : { kind: "log", label: "Log it", discipline: planned.discipline },
-      secondary: { kind: "link", label: "See the plan", to: `/plans/${ctx.plan.id}` },
+      // Not feeling it? Any strength session still completes a strength plan
+      // day, so another routine is a swap, not a skip.
+      secondary: planned.routine_id ? { kind: "link", label: "Another routine", to: "/routines" } : { kind: "link", label: "See the plan", to: `/plans/${ctx.plan.id}` },
       dismissible: true,
     });
   }
