@@ -100,7 +100,7 @@ export default function EventDetail() {
             <ul className="space-y-3">
               {(comments.data ?? []).map((c) => (
                 <li key={c.id} className="flex gap-3">
-                  <Link to={`/u/${c.author.handle}`}>
+                  <Link to={`/u/${c.author.handle}`} aria-label={`${personName(c.author)}'s profile`}>
                     <Avatar name={personName(c.author)} hue={c.author.avatar_hue} size={32} />
                   </Link>
                   <div className="min-w-0 flex-1 rounded-2xl bg-surface px-3.5 py-2.5">

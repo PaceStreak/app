@@ -67,10 +67,10 @@
   --accent-text: #4a6300;
   --accent-soft: rgb(120 160 0 / 0.14);
   --flame: #f25a1f;
-  --flame-text: #b83f0c;
+  --flame-text: #a8390b;
   --flame-soft: rgb(242 90 31 / 0.12);
-  --info: #0b6fb8;
-  --danger: #c62828;
+  --info: #095f9e;
+  --danger: #b71c1c;
   --danger-soft: rgb(198 40 40 / 0.09);
   --shadow: 0 1px 2px rgb(17 18 20 / 0.06), 0 12px 28px -14px rgb(17 18 20 / 0.22);
   --heat-0: #e3e6e9;
