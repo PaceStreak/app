@@ -334,6 +334,15 @@ export interface Group {
   shares_with_coach: boolean;
   /** Push and email off for this group; the inbox still gets everything. */
   muted?: boolean;
+  /** Share of members (%) who must keep their week for the group's to count. */
+  streak_threshold?: number;
+  streak?: {
+    current: number;
+    longest: number;
+    threshold: number;
+    weeks: ("kept" | "missed" | "paused" | "open")[];
+    this_week: { kept: number; counted: number } | null;
+  };
   invite_code: string | null;
   members?: (Person & {
     role: string;

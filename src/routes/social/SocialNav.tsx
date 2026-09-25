@@ -6,6 +6,7 @@ import { useMe } from "../../lib/session";
 
 const LINKS = [
   { to: "/feed", label: "Feed" },
+  { to: "/buddies", label: "Buddies" },
   { to: "/groups", label: "Groups" },
   { to: "/challenges", label: "Challenges" },
   { to: "/leaderboards", label: "Boards" },

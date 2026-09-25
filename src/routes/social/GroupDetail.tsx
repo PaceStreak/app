@@ -147,6 +147,8 @@ export default function GroupDetail() {
             </div>
           )}
 
+          {group.streak && <GroupStreak group={group} onThreshold={(v) => void action(() => api(`/groups/${id}`, { method: "PATCH", body: { streak_threshold: v } }), "Updated")} />}
+
           <Segmented
             label="Section"
             value={tab}
@@ -340,5 +342,58 @@ function EditGroup({ open, group, onClose, onSaved }: { open: boolean; group: Gr
         <textarea className="input" value={description} maxLength={280} onChange={(e) => setDescription(e.target.value)} aria-label="Description" />
       </div>
     </Sheet>
+  );
+}
+
+/** The crew's shared streak. A week counts when enough members keep their
+ * own; paused members sit it out. Same rules for everyone looking. */
+function GroupStreak({ group, onThreshold }: { group: Group; onThreshold: (v: number) => void }) {
+  const st = group.streak!;
+  const manager = group.my_role === "owner" || group.my_role === "admin";
+  const needed = st.this_week ? Math.ceil((st.threshold / 100) * st.this_week.counted) : 0;
+  return (
+    <section className="card mb-5 p-4" aria-labelledby="group-streak">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id="group-streak" className="font-semibold">
+            Group streak
+          </h2>
+          <p className="text-sm text-dim">
+            A week counts when {st.threshold === 100 ? "everyone" : `${st.threshold}% of the group`} keeps theirs.
+          </p>
+        </div>
+        <p className="num flex items-center gap-1 text-2xl font-semibold tracking-tight" aria-label={`${st.current} week group streak`}>
+          <Fire size={20} weight="fill" className="text-flame" aria-hidden />
+          {st.current}
+        </p>
+      </div>
+      <ol className="mt-3 grid grid-cols-12 gap-[3px]" aria-label="The group's last 12 weeks">
+        {st.weeks.map((w, i) => (
+          <li key={i} className={`week-mark is-${w}`}>
+            <span className="sr-only">{w === "kept" ? "kept" : w === "open" ? "in progress" : w}</span>
+          </li>
+        ))}
+      </ol>
+      {st.this_week && st.this_week.counted > 0 && (
+        <p className="mt-3 text-sm text-muted">
+          This week: {st.this_week.kept} of {st.this_week.counted} kept so far
+          {st.this_week.kept < needed ? `, ${needed - st.this_week.kept} more to go` : ", week secured"}. Best: {st.longest}.
+        </p>
+      )}
+      {manager && (
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
+          <label htmlFor="grp-threshold" className="text-sm text-muted">
+            Counts when
+          </label>
+          <select id="grp-threshold" className="input h-10 min-h-0 w-36" value={st.threshold} onChange={(e) => onThreshold(Number(e.target.value))}>
+            {[50, 60, 75, 90, 100].map((v) => (
+              <option key={v} value={v}>
+                {v === 100 ? "everyone" : `${v}% keep it`}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </section>
   );
 }

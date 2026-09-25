@@ -2,8 +2,9 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
+import { EncourageButton } from "../../components/Encourage";
 import { Heatmap } from "../../components/Heatmap";
-import { DotsThreeVertical, Fire, Lock, Medal } from "../../components/phosphor";
+import { DotsThreeVertical, Fire, Handshake, Lock, Medal } from "../../components/phosphor";
 import { FeedCard, FollowButton, OfficialMark, ReportSheet, personName } from "../../components/social";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
@@ -123,6 +124,12 @@ export default function Profile() {
             </span>
           </div>
           {p.relationship?.follows_you === "accepted" && <p className="mt-2 text-sm text-dim">Follows you</p>}
+          {!p.me && p.handle && (p.relationship?.follows_you === "accepted" || p.relationship?.following === "accepted") && (
+            <div className="mt-3 flex gap-2">
+              {p.relationship?.follows_you === "accepted" && <EncourageButton handle={p.handle} />}
+              <BuddyButton handle={p.handle} />
+            </div>
+          )}
 
           {!p.visible ? (
             <div className="card mt-8 flex flex-col items-center px-6 py-10 text-center">
@@ -199,5 +206,24 @@ export default function Profile() {
       )}
       {confirmSheet}
     </div>
+  );
+}
+
+/** Invite to a buddy streak - offered only where the API would allow it. */
+function BuddyButton({ handle }: { handle: string }) {
+  const [sent, setSent] = useState(false);
+  const invite = async () => {
+    try {
+      await api("/buddies", { body: { handle } });
+      setSent(true);
+      toast.success("Buddy invite sent", { body: "A week counts when you both keep yours." });
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  return (
+    <button type="button" className="btn btn-secondary btn-sm" disabled={sent} onClick={() => void invite()}>
+      <Handshake size={16} aria-hidden /> {sent ? "Invited" : "Buddy up"}
+    </button>
   );
 }
