@@ -11,6 +11,8 @@
  *   refresh. It is useless without the cookie, which is the point of it.
  */
 
+import { t } from "./i18n";
+
 export const API_BASE =
   import.meta.env.PUBLIC_API_BASE_URL ??
   (import.meta.env.PROD ? "https://api.pacestreak.com" : "http://localhost:8000");
@@ -30,7 +32,7 @@ export class ApiError extends Error {
 /** The request never reached the server: offline, DNS, CORS, timeout. */
 export class NetworkError extends Error {
   constructor() {
-    super("You're offline, or the server can't be reached.");
+    super(t("errors.offline"));
   }
 }
 
@@ -113,9 +115,9 @@ function message(status: number, data: unknown): string {
     const msg = (first.msg ?? "is invalid").replace(/^Value error, /, "");
     return field ? `${field}: ${msg}` : msg;
   }
-  if (status === 429) return "Too many attempts. Wait a minute and try again.";
-  if (status >= 500) return "Something went wrong on our side. Try again in a moment.";
-  return "That didn't work.";
+  if (status === 429) return t("errors.tooMany");
+  if (status >= 500) return t("errors.server");
+  return t("errors.generic");
 }
 
 export interface RequestOptions {
@@ -174,5 +176,5 @@ export const del = <T,>(path: string) => api<T>(path, { method: "DELETE" });
 
 export function errorText(err: unknown): string {
   if (err instanceof ApiError || err instanceof NetworkError) return err.message;
-  return "Something went wrong.";
+  return t("errors.unknown");
 }

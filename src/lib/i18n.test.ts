@@ -14,3 +14,18 @@ describe("t", () => {
     expect(t("nav.today")).toBe("Today");
   });
 });
+
+import { isValidElement } from "react";
+import { rich } from "./i18n-rich";
+
+describe("rich", () => {
+  it("wraps tagged text and keeps the rest", () => {
+    const out = rich("auth.signup.agree", { terms: (x) => `[${x}]`, privacy: (x) => `(${x})` }) as unknown[];
+    const text = out.map((n) => (isValidElement(n) ? (n.props as { children: string }).children : n)).join("");
+    expect(text).toBe("By continuing you agree to the [terms] and (privacy policy).");
+  });
+  it("leaves unknown tags as plain text", () => {
+    const out = rich("auth.login.newHere", {}) as unknown[];
+    expect(out.join("")).toBe("New here? <signup>Create an account</signup>");
+  });
+});

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, errorText } from "../../lib/api";
 import { AuthLayout } from "./AuthLayout";
+import { t } from "../../lib/i18n";
 
 // Deliberately a button, not an automatic request on page load: mail
 // scanners prefetch links, and a prefetch must not change anyone's settings.
@@ -22,13 +23,13 @@ export default function Unsubscribe() {
   };
   return (
     <AuthLayout
-      title={result ? "Unsubscribed." : "Stop these emails?"}
-      subtitle={result ?? error ?? "You can turn any category back on in Settings, Notifications."}
-      footer={<Link to="/settings/notifications" className="font-semibold text-accent-text">Notification settings</Link>}
+      title={result ? t("auth.unsubscribe.doneTitle") : t("auth.unsubscribe.title")}
+      subtitle={result ?? error ?? t("auth.unsubscribe.body")}
+      footer={<Link to="/settings/notifications" className="font-semibold text-accent-text">{t("auth.unsubscribe.settings")}</Link>}
     >
       {!result && (
         <button type="button" className="btn btn-primary w-full" onClick={run}>
-          Unsubscribe
+          {t("auth.unsubscribe.submit")}
         </button>
       )}
     </AuthLayout>

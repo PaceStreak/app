@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { AuthLayout } from "./AuthLayout";
+import { t } from "../../lib/i18n";
 
 export default function VerifyEmail() {
   const [params] = useSearchParams();
@@ -16,7 +17,7 @@ export default function VerifyEmail() {
     const token = params.get("token");
     if (!token) {
       setState("error");
-      setError("This link has no token in it.");
+      setError(t("auth.verify.noToken"));
       return;
     }
     api("/auth/verify-email", { body: { token }, auth: false })
@@ -31,9 +32,9 @@ export default function VerifyEmail() {
   }, [params, status, reloadMe]);
   return (
     <AuthLayout
-      title={state === "working" ? "Confirming…" : state === "done" ? "Email confirmed." : "That link didn't work."}
-      subtitle={state === "done" ? "Social features are unlocked." : state === "error" ? `${error} Links expire after a day; you can send a new one from Settings.` : undefined}
-      footer={<Link to="/" className="font-semibold text-accent-text">Open PaceStreak</Link>}
+      title={state === "working" ? t("auth.verify.working") : state === "done" ? t("auth.verify.doneTitle") : t("auth.verify.failTitle")}
+      subtitle={state === "done" ? t("auth.verify.doneBody") : state === "error" ? t("auth.verify.failBody", { error: error ?? "" }) : undefined}
+      footer={<Link to="/" className="font-semibold text-accent-text">{t("auth.verify.open")}</Link>}
     />
   );
 }

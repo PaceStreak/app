@@ -13,7 +13,15 @@
  * - Numbers and dates go through Intl with the active locale. Stored values
  *   stay in kg/metres/ISO dates; only display changes (see units.ts).
  *
- * Migrate strings to `t()` as screens are touched. The navigation is done.
+ * Migrated so far: navigation, every signed-out screen (sign in, sign up,
+ * password reset, email confirmation, unsubscribe), the shared loading and
+ * error states, and the API client's own error messages - everything a new
+ * person sees before their first session. i18n.guard.test.ts keeps those
+ * files free of hard-coded text. Migrate the rest as screens are touched.
+ *
+ * Sentences with links or emphasis inside use tags in the message
+ * ("agree to the <terms>terms</terms>") and `rich()` from i18n-rich.tsx,
+ * so a translation can move the link to wherever its grammar needs it.
  */
 
 type Plural = { one?: string; other: string; zero?: string; two?: string; few?: string; many?: string };
@@ -34,6 +42,71 @@ const en = {
   "nav.unread": { one: "{count} unread", other: "{count} unread" },
   "streak.weeks": { one: "{count} week", other: "{count} weeks" },
   "streak.sessions": { one: "{count} session", other: "{count} sessions" },
+
+  "common.loading": "Loading",
+  "common.email": "Email",
+  "common.password": "Password",
+  "common.signIn": "Sign in",
+  "common.back": "Back",
+
+  "errors.tooMany": "Too many attempts. Wait a minute and try again.",
+  "errors.server": "Something went wrong on our side. Try again in a moment.",
+  "errors.generic": "That didn't work.",
+  "errors.unknown": "Something went wrong.",
+  "errors.offline": "You're offline, or the server can't be reached.",
+
+  "auth.login.title": "Welcome back.",
+  "auth.login.subtitle": "Log in to keep the streak going.",
+  "auth.login.newHere": "New here? <signup>Create an account</signup>",
+  "auth.login.submit": "Sign in",
+  "auth.login.busy": "Signing in…",
+  "auth.login.passkey": "Sign in with a passkey",
+  "auth.login.forgot": "Forgot your password?",
+  "auth.mfa.title": "Two-factor code",
+  "auth.mfa.subtitle": "Open your authenticator app, or use one of your recovery codes.",
+  "auth.mfa.code": "Code",
+  "auth.mfa.busy": "Checking…",
+
+  "auth.signup.title": "Start your first streak.",
+  "auth.signup.subtitle": "Ten seconds a session. Rest days never break it.",
+  "auth.signup.haveAccount": "Already have an account? <signin>Sign in</signin>",
+  "auth.signup.more": { one: "{count} more character", other: "{count} more characters" },
+  "auth.signup.hint": "At least 16 characters. A short sentence is easier to remember than symbols.",
+  "auth.signup.submit": "Create account",
+  "auth.signup.busy": "Creating…",
+  "auth.signup.agree": "By continuing you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>.",
+
+  "auth.forgot.title": "Reset your password.",
+  "auth.forgot.sentTitle": "Check your inbox.",
+  "auth.forgot.subtitle": "We'll email you a link. It works once and expires in 30 minutes.",
+  "auth.forgot.submit": "Send reset link",
+  "auth.forgot.busy": "Sending…",
+  "auth.forgot.back": "Back to sign in",
+
+  "auth.reset.incompleteTitle": "That link is incomplete.",
+  "auth.reset.incompleteBody": "Open the link from the email again, or ask for a new one.",
+  "auth.reset.requestNew": "Request a new link",
+  "auth.reset.title": "Choose a new password.",
+  "auth.reset.doneTitle": "Password updated.",
+  "auth.reset.doneBody": "Every other session was signed out, which is the point of a reset.",
+  "auth.reset.newPassword": "New password",
+  "auth.reset.hint": "At least 16 characters.",
+  "auth.reset.submit": "Set password",
+  "auth.reset.busy": "Saving…",
+
+  "auth.verify.working": "Confirming…",
+  "auth.verify.doneTitle": "Email confirmed.",
+  "auth.verify.doneBody": "Social features are unlocked.",
+  "auth.verify.failTitle": "That link didn't work.",
+  "auth.verify.failBody": "{error} Links expire after a day; you can send a new one from Settings.",
+  "auth.verify.noToken": "This link has no token in it.",
+  "auth.verify.open": "Open PaceStreak",
+
+  "auth.unsubscribe.title": "Stop these emails?",
+  "auth.unsubscribe.doneTitle": "Unsubscribed.",
+  "auth.unsubscribe.body": "You can turn any category back on in Settings, Notifications.",
+  "auth.unsubscribe.submit": "Unsubscribe",
+  "auth.unsubscribe.settings": "Notification settings",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof en;

@@ -4,6 +4,8 @@ import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
+import { t } from "../../lib/i18n";
+import { rich } from "../../lib/i18n-rich";
 
 export default function Signup() {
   const { signIn } = useSession();
@@ -38,25 +40,24 @@ export default function Signup() {
 
   return (
     <AuthLayout
-      title="Start your first streak."
-      subtitle="Ten seconds a session. Rest days never break it."
-      footer={
-        <>
-          Already have an account?{" "}
+      title={t("auth.signup.title")}
+      subtitle={t("auth.signup.subtitle")}
+      footer={rich("auth.signup.haveAccount", {
+        signin: (text) => (
           <Link to="/login" className="font-semibold text-accent-text">
-            Sign in
+            {text}
           </Link>
-        </>
-      }
+        ),
+      })}
     >
       <form onSubmit={submit} className="space-y-5">
-        <Field label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+        <Field label={t("common.email")} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         <PasswordField
           value={password}
           onChange={setPassword}
           autoComplete="new-password"
-          error={short ? `${16 - password.length} more characters` : null}
-          hint="At least 16 characters. A short sentence is easier to remember than symbols."
+          error={short ? t("auth.signup.more", { count: 16 - password.length }) : null}
+          hint={t("auth.signup.hint")}
         />
         {error && (
           <p className="field-error" role="alert">
@@ -64,18 +65,21 @@ export default function Signup() {
           </p>
         )}
         <button className="btn btn-primary w-full" disabled={busy || password.length < 16}>
-          {busy ? "Creating…" : "Create account"}
+          {busy ? t("auth.signup.busy") : t("auth.signup.submit")}
         </button>
         <p className="text-center text-sm text-dim">
-          By continuing you agree to the{" "}
-          <a className="underline" href="https://www.pacestreak.com/terms" target="_blank" rel="noopener">
-            terms
-          </a>{" "}
-          and{" "}
-          <a className="underline" href="https://www.pacestreak.com/privacy" target="_blank" rel="noopener">
-            privacy policy
-          </a>
-          .
+          {rich("auth.signup.agree", {
+            terms: (text) => (
+              <a className="underline" href="https://www.pacestreak.com/terms" target="_blank" rel="noopener">
+                {text}
+              </a>
+            ),
+            privacy: (text) => (
+              <a className="underline" href="https://www.pacestreak.com/privacy" target="_blank" rel="noopener">
+                {text}
+              </a>
+            ),
+          })}
         </p>
       </form>
     </AuthLayout>

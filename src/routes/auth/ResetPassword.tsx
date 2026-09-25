@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, errorText } from "../../lib/api";
 import { AuthLayout, PasswordField } from "./AuthLayout";
+import { t } from "../../lib/i18n";
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
@@ -24,19 +25,19 @@ export default function ResetPassword() {
     }
   };
   if (!token) {
-    return <AuthLayout title="That link is incomplete." subtitle="Open the link from the email again, or ask for a new one." footer={<Link to="/forgot-password" className="font-semibold text-accent-text">Request a new link</Link>} />;
+    return <AuthLayout title={t("auth.reset.incompleteTitle")} subtitle={t("auth.reset.incompleteBody")} footer={<Link to="/forgot-password" className="font-semibold text-accent-text">{t("auth.reset.requestNew")}</Link>} />;
   }
   return (
     <AuthLayout
-      title={done ? "Password updated." : "Choose a new password."}
-      subtitle={done ? "Every other session was signed out, which is the point of a reset." : undefined}
-      footer={<Link to="/login" className="font-semibold text-accent-text">Sign in</Link>}
+      title={done ? t("auth.reset.doneTitle") : t("auth.reset.title")}
+      subtitle={done ? t("auth.reset.doneBody") : undefined}
+      footer={<Link to="/login" className="font-semibold text-accent-text">{t("common.signIn")}</Link>}
     >
       {!done && (
         <form onSubmit={submit} className="space-y-5">
-          <PasswordField value={password} onChange={setPassword} autoComplete="new-password" label="New password" error={error} hint="At least 16 characters." />
+          <PasswordField value={password} onChange={setPassword} autoComplete="new-password" label={t("auth.reset.newPassword")} error={error} hint={t("auth.reset.hint")} />
           <button className="btn btn-primary w-full" disabled={busy || password.length < 16}>
-            {busy ? "Saving…" : "Set password"}
+            {busy ? t("auth.reset.busy") : t("auth.reset.submit")}
           </button>
         </form>
       )}

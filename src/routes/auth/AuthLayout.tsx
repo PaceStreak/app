@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { t } from "../../lib/i18n";
 
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle?: ReactNode; children?: ReactNode; footer?: ReactNode }) {
   return (
@@ -23,7 +24,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
 export function PasswordField({
   value,
   onChange,
-  label = "Password",
+  label = t("common.password"),
   autoComplete,
   error,
   hint,

@@ -6,6 +6,8 @@ import { api, errorText } from "../../lib/api";
 import { conditionalSupported, passkeysSupported, signInWithPasskey, wasCancelled } from "../../lib/passkeys";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
+import { t } from "../../lib/i18n";
+import { rich } from "../../lib/i18n-rich";
 
 type Tokens = { access_token: string; expires_in: number; csrf_token?: string };
 type Challenge = { mfa_token: string; expires_in: number };
@@ -81,10 +83,10 @@ export default function Login() {
 
   if (mfa) {
     return (
-      <AuthLayout title="Two-factor code" subtitle="Open your authenticator app, or use one of your recovery codes.">
+      <AuthLayout title={t("auth.mfa.title")} subtitle={t("auth.mfa.subtitle")}>
         <form onSubmit={submit} className="space-y-5">
           <Field
-            label="Code"
+            label={t("auth.mfa.code")}
             inputMode="text"
             autoComplete="one-time-code"
             autoFocus
@@ -95,10 +97,10 @@ export default function Login() {
             required
           />
           <button className="btn btn-primary w-full" disabled={busy || code.length < 6}>
-            {busy ? "Checking…" : "Sign in"}
+            {busy ? t("auth.mfa.busy") : t("auth.login.submit")}
           </button>
           <button type="button" className="btn btn-ghost w-full" onClick={() => setMfa(null)}>
-            Back
+            {t("common.back")}
           </button>
         </form>
       </AuthLayout>
@@ -107,19 +109,18 @@ export default function Login() {
 
   return (
     <AuthLayout
-      title="Welcome back."
-      subtitle="Log in to keep the streak going."
-      footer={
-        <>
-          New here?{" "}
+      title={t("auth.login.title")}
+      subtitle={t("auth.login.subtitle")}
+      footer={rich("auth.login.newHere", {
+        signup: (text) => (
           <Link to="/signup" className="font-semibold text-accent-text">
-            Create an account
+            {text}
           </Link>
-        </>
-      }
+        ),
+      })}
     >
       <form onSubmit={submit} className="space-y-5">
-        <Field label="Email" type="email" autoComplete="username webauthn" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+        <Field label={t("common.email")} type="email" autoComplete="username webauthn" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
         {error && (
           <p className="field-error" role="alert">
@@ -127,16 +128,16 @@ export default function Login() {
           </p>
         )}
         <button className="btn btn-primary w-full" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? t("auth.login.busy") : t("auth.login.submit")}
         </button>
         {passkeysSupported() && (
           <button type="button" className="btn btn-secondary w-full" onClick={passkey} disabled={busy}>
-            <Fingerprint size={18} aria-hidden /> Sign in with a passkey
+            <Fingerprint size={18} aria-hidden /> {t("auth.login.passkey")}
           </button>
         )}
         <p className="text-center text-sm">
           <Link to="/forgot-password" className="text-muted underline">
-            Forgot your password?
+            {t("auth.login.forgot")}
           </Link>
         </p>
       </form>

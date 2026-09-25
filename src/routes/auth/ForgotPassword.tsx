@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { AuthLayout } from "./AuthLayout";
+import { t } from "../../lib/i18n";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -24,15 +25,15 @@ export default function ForgotPassword() {
   };
   return (
     <AuthLayout
-      title={sent ? "Check your inbox." : "Reset your password."}
-      subtitle={sent ?? "We'll email you a link. It works once and expires in 30 minutes."}
-      footer={<Link to="/login" className="font-semibold text-accent-text">Back to sign in</Link>}
+      title={sent ? t("auth.forgot.sentTitle") : t("auth.forgot.title")}
+      subtitle={sent ?? t("auth.forgot.subtitle")}
+      footer={<Link to="/login" className="font-semibold text-accent-text">{t("auth.forgot.back")}</Link>}
     >
       {!sent && (
         <form onSubmit={submit} className="space-y-5">
-          <Field label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus error={error} />
+          <Field label={t("common.email")} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus error={error} />
           <button className="btn btn-primary w-full" disabled={busy}>
-            {busy ? "Sending…" : "Send reset link"}
+            {busy ? t("auth.forgot.busy") : t("auth.forgot.submit")}
           </button>
         </form>
       )}

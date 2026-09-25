@@ -1,6 +1,7 @@
 import { forwardRef, useId, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, CaretRight, CloudSlash } from "./phosphor";
+import { t } from "../lib/i18n";
 
 export function Avatar({
   name,
@@ -177,7 +178,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
 
 export function Loading({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-3" role="status" aria-label="Loading">
+    <div className="space-y-3" role="status" aria-label={t("common.loading")}>
       {Array.from({ length: rows }, (_, i) => (
         <Skeleton key={i} className="h-20" />
       ))}
