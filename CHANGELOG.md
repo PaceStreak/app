@@ -9,6 +9,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Mute a group; Chart/Table toggles on every chart and the grid; i18n
+  groundwork (`src/lib/i18n.ts`); distinct shortcut icons; an "Easing back
+  in?" suggestion after a long pause; an admin sheet for official status.
+- Outbox tests against a real IndexedDB, i18n tests, and CI.
+
 - Streak pause: declare and end injury/illness/life pauses in Settings →
   Training; a "Streak paused" card on Today replaces streak-risk nudges;
   "Paused" weeks in History.
