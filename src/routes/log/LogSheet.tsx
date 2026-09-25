@@ -6,10 +6,11 @@ import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { localDateOf, localToday, toLocalInput, uuid } from "../../lib/dates";
 import { favouriteDisciplines, haptic } from "../../lib/prefs";
-import { useLibrary, useRoutines, useWorkouts } from "../../lib/queries";
+import { useGear, useLibrary, useRoutines, useWorkouts } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import { deleteWorkout, saveWorkout } from "../../lib/sync";
-import { EFFORT, FEEL, blankWorkout, localWeek } from "../../lib/training";
+import { EFFORT, FEEL, blankWorkout, defaultGear, localWeek } from "../../lib/training";
+import { GearPicker, TagInput } from "../../components/TagsGear";
 import { parseDuration, parseNumber, pace, toMetres, type DistanceUnit } from "../../lib/units";
 import type { Workout } from "../../lib/types";
 import type { LogRequest } from "../../shell/LogContext";
@@ -139,6 +140,11 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
   const [feel, setFeel] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const gear = useGear();
+  // The discipline's default gear, until the person picks otherwise.
+  const [gearId, setGearId] = useState<string | null | undefined>(undefined);
+  const chosenGear = gearId === undefined ? defaultGear(gear.data, discipline) : gearId;
   const [more, setMore] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -174,6 +180,8 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
       feel,
       title: title.trim() || null,
       notes: notes.trim() || null,
+      tags,
+      gear_id: chosenGear,
     };
     const saved = await saveWorkout(workout);
     haptic([12, 30, 18]);
@@ -313,7 +321,7 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
       </fieldset>
 
       <button type="button" className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-muted" aria-expanded={more} onClick={() => setMore(!more)}>
-        <CaretDown size={14} className={`transition-transform duration-200 ${more ? "rotate-180" : ""}`} /> Title, notes{metrics.has("elevation") ? ", elevation" : ""}
+        <CaretDown size={14} className={`transition-transform duration-200 ${more ? "rotate-180" : ""}`} /> Title, notes, tags{metrics.has("elevation") ? ", elevation" : ""}
       </button>
       {more && (
         <div className="mt-3 space-y-4">
@@ -322,8 +330,12 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
             <input className="input" inputMode="decimal" placeholder="Elevation gain (m)" value={elevationText} onChange={(e) => setElevationText(e.target.value)} aria-label="Elevation gain in metres" />
           )}
           <textarea className="input" placeholder="Notes. Private: nobody else ever sees these." maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Private notes" />
+          <TagInput value={tags} onChange={setTags} />
         </div>
       )}
+      <div className="mt-4">
+        <GearPicker value={chosenGear} onChange={setGearId} discipline={discipline} />
+      </div>
 
       <div className="sticky bottom-0 -mx-5 mt-6 bg-surface px-5 pt-3 pb-1">
         <button type="button" className="btn btn-primary h-14 w-full text-base" disabled={saving} onClick={save}>

@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { IntervalTimer } from "../components/IntervalTimer";
 import { PlateCalculator } from "../components/PlateCalculator";
 import { RestBar, useRestTimer } from "../components/RestTimer";
 import { PageHeader, Segmented } from "../components/ui";
 import { useMe } from "../lib/session";
 import { clock, e1rm, fromMetres, parseDuration, parseNumber, toMetres, type DistanceUnit } from "../lib/units";
 
-type Tool = "timer" | "plates" | "max" | "pace";
+type Tool = "timer" | "intervals" | "plates" | "max" | "pace";
 
 export default function Tools() {
   const me = useMe();
@@ -13,9 +14,10 @@ export default function Tools() {
   return (
     <div>
       <PageHeader title="Tools" back="/you" />
-      <Segmented label="Tool" value={tool} onChange={setTool} options={[{ value: "timer", label: "Rest" }, { value: "plates", label: "Plates" }, { value: "max", label: "1RM" }, { value: "pace", label: "Pace" }]} />
+      <Segmented label="Tool" value={tool} onChange={setTool} options={[{ value: "timer", label: "Rest" }, { value: "intervals", label: "Intervals" }, { value: "plates", label: "Plates" }, { value: "max", label: "1RM" }, { value: "pace", label: "Pace" }]} />
       <div className="mt-6">
         {tool === "timer" && <Timer />}
+        {tool === "intervals" && <IntervalTimer />}
         {tool === "plates" && (
           <div className="card p-5">
             <PlateCalculator unit={me.profile.weight_unit} />

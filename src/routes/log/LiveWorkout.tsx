@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
+import { TagInput } from "../../components/TagsGear";
 import { ExercisePicker } from "../../components/ExercisePicker";
 import {
   ArrowDown,
@@ -59,6 +60,9 @@ interface Draft {
   routine_id: string | null;
   editing: boolean;
   notes: string | null;
+  /** Optional: drafts saved before tags existed have none. */
+  tags?: string[];
+  gear_id?: string | null;
   effort: number | null;
   feel: number | null;
   duration_sec: number | null;
@@ -99,6 +103,8 @@ function fromWorkout(w: Workout, unit: WeightUnit): Draft {
     routine_id: w.routine_id,
     editing: true,
     notes: w.notes,
+    tags: w.tags ?? [],
+    gear_id: w.gear_id ?? null,
     effort: w.effort,
     feel: w.feel,
     duration_sec: w.duration_sec,
@@ -286,6 +292,8 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
       local_date: localDateOf(start, me.profile.timezone),
       title: d.title?.trim() || null,
       notes: d.notes?.trim() || null,
+      tags: d.tags ?? [],
+      gear_id: d.gear_id ?? null,
       routine_id: d.routine_id,
       effort: d.effort,
       feel: d.feel,
@@ -519,6 +527,9 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
           onChange={(e) => update((d) => ({ ...d, notes: e.target.value }))}
           aria-label="Private notes"
         />
+        <div className="mt-5">
+          <TagInput value={draft.tags ?? []} onChange={(tags) => update((d) => ({ ...d, tags }))} />
+        </div>
       </Sheet>
       {confirmSheet}
     </div>
@@ -555,7 +566,7 @@ function ExerciseBlock({
   const [cue, setCue] = useState(first && !last);
   const [rpeFor, setRpeFor] = useState<string | null>(null);
   const suggestion = last
-    ? suggestNext(last.sets.map((s) => ({ weight_kg: s.weight_kg, reps: s.reps, rpe: s.rpe, kind: s.kind })), {
+    ? suggestNext(last.sets.map((s) => ({ weight_kg: s.weight_kg, reps: s.reps, rpe: s.rpe, kind: s.kind, duration_sec: s.duration_sec })), {
         repsMax: ex.reps_max,
         targetRpe: ex.target_rpe,
         unit,
@@ -608,8 +619,13 @@ function ExerciseBlock({
           </p>
           {suggestion && (
             <p className="mt-1 text-sm text-accent-text">
-              Try {loadType === "bodyweight" ? `${suggestion.reps} reps` : fmtWeight(suggestion.weight_kg, unit)}
-              {suggestion.reps && loadType !== "bodyweight" ? ` × ${suggestion.reps}` : ""} · {suggestion.reason.toLowerCase()}
+              Try{" "}
+              {suggestion.duration_sec
+                ? clock(suggestion.duration_sec)
+                : !suggestion.weight_kg
+                  ? `${suggestion.reps} reps`
+                  : `${fmtWeight(suggestion.weight_kg, unit)}${suggestion.reps ? ` × ${suggestion.reps}` : ""}`}{" "}
+              · {suggestion.reason.toLowerCase()}
             </p>
           )}
           {(ex.reps_min || ex.reps_max) && (

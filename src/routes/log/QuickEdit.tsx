@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { GearPicker, TagInput } from "../../components/TagsGear";
 import { PageHeader } from "../../components/ui";
 import { toast } from "../../components/toast";
 import { localDateOf, toLocalInput } from "../../lib/dates";
@@ -25,6 +26,8 @@ export function QuickEdit({ workout }: { workout: Workout }) {
   const [feel, setFeel] = useState(workout.feel);
   const [title, setTitle] = useState(workout.title ?? "");
   const [notes, setNotes] = useState(workout.notes ?? "");
+  const [tags, setTags] = useState<string[]>(workout.tags ?? []);
+  const [gearId, setGearId] = useState<string | null>(workout.gear_id ?? null);
   const metrics = new Set(lib?.discipline(discipline)?.metrics ?? ["duration"]);
 
   const save = async () => {
@@ -42,6 +45,8 @@ export function QuickEdit({ workout }: { workout: Workout }) {
       feel,
       title: title.trim() || null,
       notes: notes.trim() || null,
+      tags,
+      gear_id: gearId,
     });
     toast.success("Saved");
     navigate(`/workouts/${workout.id}`, { replace: true });
@@ -104,6 +109,8 @@ export function QuickEdit({ workout }: { workout: Workout }) {
         </fieldset>
         <input className="input" placeholder="Title" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} aria-label="Title" />
         <textarea className="input" placeholder="Private notes" value={notes} maxLength={1000} onChange={(e) => setNotes(e.target.value)} aria-label="Private notes" />
+        <TagInput value={tags} onChange={setTags} />
+        <GearPicker value={gearId} onChange={setGearId} discipline={discipline} />
         <button type="button" className="btn btn-primary h-13 w-full" onClick={save}>
           Save
         </button>

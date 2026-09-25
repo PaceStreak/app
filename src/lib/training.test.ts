@@ -52,3 +52,62 @@ describe("parseDuration", () => {
     expect(parseDuration("1:05:00")).toBe(3900);
   });
 });
+
+describe("suggestNext without a bar", () => {
+  it("asks for one more bodyweight rep", () => {
+    expect(suggestNext([{ weight_kg: null, reps: 9, rpe: null }, { weight_kg: null, reps: 7, rpe: null }], { unit: "kg" })).toMatchObject({ reps: 10 });
+  });
+  it("stops adding reps at the top of the range", () => {
+    const s = suggestNext([{ weight_kg: null, reps: 12, rpe: null }], { repsMax: 12, unit: "kg" });
+    expect(s?.reps).toBe(12);
+    expect(s?.reason).toMatch(/harder variation/);
+  });
+  it("adds a few seconds to a hold", () => {
+    expect(suggestNext([{ weight_kg: null, reps: null, rpe: null, duration_sec: 45 }], { unit: "kg" })?.duration_sec).toBe(50);
+    expect(suggestNext([{ weight_kg: null, reps: null, rpe: null, duration_sec: 90 }], { unit: "kg" })?.duration_sec).toBe(100);
+  });
+  it("ignores warm-ups", () => {
+    expect(suggestNext([{ weight_kg: null, reps: 30, rpe: null, kind: "warmup" }], { unit: "kg" })).toBeNull();
+  });
+});
+
+import { cleanTag, defaultGear, searchWorkouts } from "./training";
+import type { Gear } from "./types";
+
+describe("tags and search", () => {
+  it("cleans tags the way the API does", () => {
+    expect(cleanTag("#Hill Reps")).toBe("hill-reps");
+    expect(cleanTag("  With Sam! ")).toBe("with-sam");
+    expect(cleanTag("###")).toBe("");
+  });
+
+  const base = { deleted_at: null, sets: [] } as unknown as Workout;
+  const rows = [
+    { ...base, id: "a", discipline: "run", title: "Hill repeats", notes: "legs heavy", tags: ["hills", "with-sam"], local_date: "2026-09-20" },
+    { ...base, id: "b", discipline: "strength", title: null, notes: null, tags: [], local_date: "2026-09-21", sets: [{ exercise_id: "back-squat" }] },
+    { ...base, id: "c", discipline: "run", title: "Easy", notes: "sam came too", tags: [], local_date: "2026-09-22" },
+  ] as Workout[];
+  const names = (id: string) => ({ "back-squat": "Back squat" })[id];
+  const disc = (id: string) => ({ run: "Run", strength: "Strength" })[id];
+
+  it("needs every word to match somewhere", () => {
+    expect(searchWorkouts(rows, "hill sam", names, disc).map((w) => w.id)).toEqual(["a"]);
+    expect(searchWorkouts(rows, "sam", names, disc).map((w) => w.id)).toEqual(["a", "c"]);
+  });
+  it("finds exercises and disciplines by name", () => {
+    expect(searchWorkouts(rows, "squat", names, disc).map((w) => w.id)).toEqual(["b"]);
+    expect(searchWorkouts(rows, "strength", names, disc).map((w) => w.id)).toEqual(["b"]);
+  });
+  it("treats #word as a tag prefix only", () => {
+    expect(searchWorkouts(rows, "#hil", names, disc).map((w) => w.id)).toEqual(["a"]);
+    expect(searchWorkouts(rows, "#sam", names, disc)).toEqual([]);
+  });
+  it("picks the default gear for a discipline, never a retired one", () => {
+    const gear = [
+      { id: "old", retired: true, default_for: ["run"] },
+      { id: "new", retired: false, default_for: ["run"] },
+    ] as Gear[];
+    expect(defaultGear(gear, "run")).toBe("new");
+    expect(defaultGear(gear, "ride")).toBeNull();
+  });
+});

@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { DisciplineIcon } from "../components/icons";
-import { CalendarBlank } from "../components/phosphor";
+import { CalendarBlank, MagnifyingGlass } from "../components/phosphor";
 import { Empty, PageHeader } from "../components/ui";
 import { WorkoutRow } from "../components/WorkoutRow";
 import { addDays, fmtMonthDay, localToday, weekStart } from "../lib/dates";
 import { useLibrary, useStats, useWorkouts } from "../lib/queries";
 import { useMe } from "../lib/session";
+import { searchWorkouts } from "../lib/training";
 import { useLog } from "../shell/LogContext";
 
 export default function History() {
@@ -17,15 +18,24 @@ export default function History() {
   const { openLog } = useLog();
   const [params, setParams] = useSearchParams();
   const filter = params.get("filter");
+  const query = params.get("q") ?? "";
+  const setQuery = (q: string) => {
+    const next = new URLSearchParams(params);
+    if (q) next.set("q", q);
+    else next.delete("q");
+    setParams(next, { replace: true });
+  };
   const [shown, setShown] = useState(60);
   const today = stats.data?.today ?? localToday(me.profile.timezone);
   const cells = new Map((stats.data?.chains[0]?.weeks ?? []).map((w) => [w.week_start, w]));
 
   const disciplines = useMemo(() => [...new Set((workouts ?? []).map((w) => w.discipline))], [workouts]);
-  const rows = useMemo(
-    () => (workouts ?? []).filter((w) => (filter === "unsaved" ? w._error : !filter || w.discipline === filter)),
-    [workouts, filter],
-  );
+  const rows = useMemo(() => {
+    const filtered = (workouts ?? []).filter((w) => (filter === "unsaved" ? w._error : !filter || w.discipline === filter));
+    return query.trim()
+      ? searchWorkouts(filtered, query, (id) => lib?.byId.get(id)?.name, (id) => lib?.discipline(id)?.name)
+      : filtered;
+  }, [workouts, filter, query, lib]);
 
   const groups = useMemo(() => {
     const out: { week: string; items: typeof rows }[] = [];
@@ -45,13 +55,29 @@ export default function History() {
   return (
     <div>
       <PageHeader title="Sessions" subtitle={workouts ? `${workouts.length} logged` : undefined} back="/you" />
+      <div className="relative mb-4">
+        <MagnifyingGlass size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-dim" aria-hidden />
+        <input
+          type="search"
+          className="input pl-10"
+          placeholder="Search notes, titles, exercises, #tags"
+          aria-label="Search your sessions"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      {query.trim() && (
+        <p className="mb-3 px-1 text-sm text-dim" role="status">
+          {rows.length} session{rows.length === 1 ? "" : "s"} match
+        </p>
+      )}
       {disciplines.length > 1 && (
         <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
-          <button type="button" className={`chip h-9 px-3.5 ${!filter ? "chip-accent" : ""}`} onClick={() => setParams({})}>
+          <button type="button" className={`chip h-9 px-3.5 ${!filter ? "chip-accent" : ""}`} onClick={() => setParams(query ? { q: query } : {})}>
             All
           </button>
           {disciplines.map((d) => (
-            <button key={d} type="button" className={`chip h-9 px-3.5 ${filter === d ? "chip-accent" : ""}`} onClick={() => setParams(filter === d ? {} : { filter: d })}>
+            <button key={d} type="button" className={`chip h-9 px-3.5 ${filter === d ? "chip-accent" : ""}`} onClick={() => setParams({ ...(filter === d ? {} : { filter: d }), ...(query ? { q: query } : {}) })}>
               <DisciplineIcon id={d} size={16} /> {lib?.discipline(d)?.name ?? d}
             </button>
           ))}
@@ -61,10 +87,10 @@ export default function History() {
       {workouts && rows.length === 0 ? (
         <Empty
           icon={<CalendarBlank size={26} />}
-          title={filter ? "Nothing here" : "No sessions yet"}
-          body={filter ? "Nothing matches this filter." : "Your first one takes ten seconds."}
+          title={filter || query ? "Nothing here" : "No sessions yet"}
+          body={query ? "No session matches that search. Searching covers this device's history: titles, notes, exercises and tags." : filter ? "Nothing matches this filter." : "Your first one takes ten seconds."}
           action={
-            !filter && (
+            !filter && !query && (
               <button type="button" className="btn btn-primary" onClick={() => openLog()}>
                 Log a session
               </button>

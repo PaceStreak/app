@@ -46,11 +46,13 @@ export function useRestTimer() {
 }
 
 let audio: AudioContext | null = null;
-function chime() {
+/** Two rising notes for "time's up"; one short tick for a countdown second. */
+export function chime(kind: "done" | "tick" = "done") {
   try {
     audio ??= new AudioContext();
     const t = audio.currentTime;
-    for (const [i, freq] of [880, 1320].entries()) {
+    const notes = kind === "tick" ? [660] : [880, 1320];
+    for (const [i, freq] of notes.entries()) {
       const osc = audio.createOscillator();
       const gain = audio.createGain();
       osc.frequency.value = freq;

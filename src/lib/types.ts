@@ -120,6 +120,9 @@ export interface Workout {
   effort: number | null;
   feel: number | null;
   routine_id: string | null;
+  /** Private labels, lowercase slugs: "hills", "with-sam". */
+  tags?: string[];
+  gear_id?: string | null;
   source: string;
   client_updated_at: string;
   deleted_at: string | null;
@@ -411,4 +414,21 @@ export interface Routine {
   position: number;
   last_used_at: string | null;
   updated_at: string | null;
+}
+
+export interface Gear {
+  id: string;
+  name: string;
+  kind: "shoes" | "bike" | "other";
+  default_for: string[];
+  limit_km: number | null;
+  initial_km: number;
+  distance_m: number;
+  sessions: number;
+  last_used: string | null;
+  /** Share of the replacement distance used, 0-1+. Null without a limit. */
+  worn: number | null;
+  retired: boolean;
+  retired_at: string | null;
+  note: string | null;
 }

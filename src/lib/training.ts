@@ -1,6 +1,6 @@
 import { addDays, localDateOf, weekStart } from "./dates";
 import { e1rm, fromKg, toKg, type WeightUnit } from "./units";
-import type { Chain, Exercise, Workout, WorkoutSet } from "./types";
+import type { Chain, Exercise, Gear, Workout, WorkoutSet } from "./types";
 
 export const FEEL = [
   { value: 1, label: "Rough" },
@@ -31,6 +31,8 @@ export function blankWorkout(id: string, discipline: string, startedAt = new Dat
     effort: null,
     feel: null,
     routine_id: null,
+    tags: [],
+    gear_id: null,
     source: "app",
     client_updated_at: new Date().toISOString(),
     deleted_at: null,
@@ -90,12 +92,19 @@ export function bestE1rm(sets: Pick<WorkoutSet, "weight_kg" | "reps" | "kind" | 
  * predecessor's auto-regulation rule, capped at 12%). Purely a suggestion -
  * it is shown as a hint and never filled in for the person.
  */
+export interface Suggestion {
+  weight_kg: number;
+  reps: number | null;
+  duration_sec?: number | null;
+  reason: string;
+}
+
 export function suggestNext(
-  last: { weight_kg: number | null; reps: number | null; rpe: number | null; kind?: string }[],
+  last: { weight_kg: number | null; reps: number | null; rpe: number | null; kind?: string; duration_sec?: number | null }[],
   opts: { repsMax?: number | null; targetRpe?: number | null; unit: WeightUnit; exercise?: Exercise },
-): { weight_kg: number; reps: number | null; reason: string } | null {
+): Suggestion | null {
   const work = last.filter((s) => s.kind !== "warmup" && s.weight_kg && s.reps);
-  if (!work.length) return null;
+  if (!work.length) return suggestUnloaded(last, opts.repsMax ?? null);
   const top = work.reduce((a, b) => ((b.weight_kg ?? 0) > (a.weight_kg ?? 0) ? b : a));
   const lastSet = work[work.length - 1];
   const step = opts.unit === "kg" ? 2.5 : toKg(5, "lb");
@@ -122,6 +131,32 @@ export function suggestNext(
   return { weight_kg: top.weight_kg ?? 0, reps: (top.reps ?? 0) + 1, reason: "Same weight, one more rep" };
 }
 
+/**
+ * Bodyweight reps and timed holds: the same idea without a bar. One more
+ * rep, or a few more seconds, until the top of the rep range - then say so,
+ * because past that point progress means a harder variation or added load,
+ * not an ever-longer set.
+ */
+function suggestUnloaded(
+  last: { reps: number | null; kind?: string; duration_sec?: number | null }[],
+  repsMax: number | null,
+): Suggestion | null {
+  const work = last.filter((s) => s.kind !== "warmup");
+  const holds = work.filter((s) => s.duration_sec && !s.reps);
+  if (holds.length) {
+    const best = Math.max(...holds.map((s) => s.duration_sec ?? 0));
+    const step = best < 60 ? 5 : 10;
+    return { weight_kg: 0, reps: null, duration_sec: best + step, reason: `${step} seconds more than your best hold` };
+  }
+  const reps = work.filter((s) => s.reps);
+  if (!reps.length) return null;
+  const best = Math.max(...reps.map((s) => s.reps ?? 0));
+  if (repsMax != null && reps.every((s) => (s.reps ?? 0) >= repsMax)) {
+    return { weight_kg: 0, reps: repsMax, reason: "Top of the range: time for a harder variation or a little load" };
+  }
+  return { weight_kg: 0, reps: best + 1, reason: "One more rep than last time" };
+}
+
 export const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5];
 export const PLATES_LB = [45, 35, 25, 10, 5, 2.5];
 
@@ -137,4 +172,33 @@ export function platesFor(target: number, bar: number, available: number[]): { p
     }
   }
   return { plates, remainder: Math.round(perSide * 2 * 100) / 100 };
+}
+
+/** The gear new sessions of this discipline use by default, if any. */
+export function defaultGear(gear: Gear[] | undefined, discipline: string): string | null {
+  return gear?.find((g) => !g.retired && g.default_for.includes(discipline))?.id ?? null;
+}
+
+/**
+ * Search the sessions on this device: title, notes, tags, discipline and
+ * exercise names. Offline by construction - everything searched is already
+ * in IndexedDB. Every word must match somewhere ("hill sam" finds the hill
+ * session tagged with-sam); a leading # searches tags only.
+ */
+export function searchWorkouts(workouts: Workout[], query: string, names: (exerciseId: string) => string | undefined, disciplineName: (id: string) => string | undefined): Workout[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return workouts;
+  return workouts.filter((w) => {
+    const tags = (w.tags ?? []).join(" ");
+    const text = [w.title, w.notes, disciplineName(w.discipline), ...w.sets.map((s) => names(s.exercise_id))]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return words.every((word) => (word.startsWith("#") ? (w.tags ?? []).some((t) => t.startsWith(word.slice(1))) : text.includes(word) || tags.includes(word)));
+  });
+}
+
+/** Same rules as the API (clean_tags): "#Hill Reps" -> "hill-reps". */
+export function cleanTag(raw: string): string {
+  return raw.trim().replace(/^#+/, "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
 }

@@ -1015,3 +1015,24 @@
   .badge-icon[data-tier="silver"] { background: var(--surface-3); color: var(--ink); }
   .badge-icon[data-tier="bronze"] { background: var(--flame-soft); color: var(--flame-text); }
 }
+
+@layer components {
+  /* Interval timer. The phase is always named in text; colour only reinforces
+     it (work = accent, rest and get-ready = info blue), so it reads without colour. */
+  .interval-face.is-work {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+  .interval-face.is-work .interval-fill {
+    background: var(--accent);
+  }
+  .interval-face.is-rest .interval-fill,
+  .interval-fill {
+    background: var(--info);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .interval-fill {
+      transition: width 200ms linear;
+    }
+  }
+}

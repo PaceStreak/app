@@ -8,6 +8,7 @@ import {
   Palette,
   ShieldCheck,
   SignOut,
+  Sneaker,
   Target,
   UserCircle,
 } from "../../components/phosphor";
@@ -15,6 +16,7 @@ import { List, PageHeader, RowLink } from "../../components/ui";
 import { useSession } from "../../lib/session";
 import { About, AppSection, Appearance } from "./AppSettings";
 import { Data } from "./Data";
+import { GearSettings } from "./GearSettings";
 import { NotificationSettings } from "./NotificationSettings";
 import { Privacy } from "./Privacy";
 import { ProfileSettings } from "./ProfileSettings";
@@ -24,6 +26,7 @@ import { Training } from "./Training";
 const SECTIONS = {
   profile: { title: "Profile", icon: UserCircle, Component: ProfileSettings },
   training: { title: "Training", icon: Target, Component: Training },
+  gear: { title: "Gear", icon: Sneaker, Component: GearSettings },
   privacy: { title: "Privacy", icon: Lock, Component: Privacy },
   notifications: { title: "Notifications", icon: Bell, Component: NotificationSettings },
   security: { title: "Security", icon: ShieldCheck, Component: Security },

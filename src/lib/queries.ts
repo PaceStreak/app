@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ApiError, api } from "./api";
 import { allWorkouts, kvGet, kvSet, onWorkoutsChanged } from "./db";
 import { subscribeSync, type SyncState } from "./sync";
-import type { Exercise, Library, Routine, Stats, Workout } from "./types";
+import type { Exercise, Gear, Library, Routine, Stats, Workout } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +80,10 @@ export function useLibrary(): LibraryIndex | null {
     const disciplines = new Map(lib.disciplines.map((d) => [d.id, d]));
     return { lib, exercises, byId, discipline: (id: string) => disciplines.get(id) };
   }, [lib, custom]);
+}
+
+export function useGear() {
+  return useCachedQuery<Gear[]>(["gear"], "/gear");
 }
 
 export function useRoutines() {

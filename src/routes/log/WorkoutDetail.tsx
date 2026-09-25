@@ -3,14 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { DisciplineIcon } from "../../components/icons";
-import { ArrowsClockwise, CloudArrowUp, Fire, Lock, PencilSimple, Trash, Trophy, WarningCircle } from "../../components/phosphor";
+import { ArrowsClockwise, CloudArrowUp, Fire, Lock, PencilSimple, Sneaker, Trash, Trophy, WarningCircle } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { Banner, PageHeader } from "../../components/ui";
 import { workoutTitle } from "../../components/WorkoutRow";
 import { api } from "../../lib/api";
 import { fmtFullDay, localToday, timeOfDay, uuid } from "../../lib/dates";
 import { getWorkout, onWorkoutsChanged } from "../../lib/db";
-import { useLibrary, useStats, useWorkouts } from "../../lib/queries";
+import { useGear, useLibrary, useStats, useWorkouts } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import { deleteWorkout, discardFailed, saveWorkout } from "../../lib/sync";
 import { EFFORT, FEEL, exerciseOrder, localWeek, volumeKg } from "../../lib/training";
@@ -25,6 +25,7 @@ export default function WorkoutDetail() {
   const lib = useLibrary();
   const stats = useStats();
   const all = useWorkouts();
+  const gearList = useGear();
   const navigate = useNavigate();
   const [w, setW] = useState<Workout | null | undefined>(undefined);
   const [confirmSheet, ask] = useConfirm();
@@ -46,6 +47,8 @@ export default function WorkoutDetail() {
     () => [...(records.data?.recent ?? []), ...(records.data?.current ?? [])].filter((r, i, arr) => r.workout_id === id && r.previous != null && arr.findIndex((x) => x.key === r.key && x.date === r.date) === i),
     [records.data, id],
   );
+
+  const gear = w?.gear_id ? gearList.data?.find((g) => g.id === w.gear_id) : undefined;
 
   if (w === undefined) return <div className="skeleton mt-6 h-64" />;
   if (w === null)
@@ -211,6 +214,22 @@ export default function WorkoutDetail() {
               </div>
             );
           })}
+        </section>
+      )}
+
+      {((w.tags?.length ?? 0) > 0 || gear) && (
+        <section className="mt-5 flex flex-wrap items-center gap-1.5" aria-label="Tags and gear">
+          {w.tags?.map((t) => (
+            <Link key={t} to={`/history?q=${encodeURIComponent(`#${t}`)}`} className="press chip">
+              #{t}
+            </Link>
+          ))}
+          {gear && (
+            <Link to="/settings/gear" className="press chip">
+              <Sneaker size={14} aria-hidden /> {gear.name}
+            </Link>
+          )}
+          <span className="sr-only">Tags and gear are private.</span>
         </section>
       )}
 
