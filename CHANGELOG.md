@@ -9,6 +9,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Terms gate, /recover, email change in Security, crash reporting with a
+  proper error screen, an admin Ops tab, and a getting-started checklist.
+- Smart reminders, a monthly goal, rest days on the grid, comeback and
+  deload suggestions, a spare-freeze note on the at-risk card.
+- Supersets, warm-up ramps, kilometre splits, plan sharing.
+- Plan challenges, coach plan suggestions, group announcements.
+
 - Passkeys: sign in from a button or the email field's autofill; add,
   rename and remove them in Settings → Security. New 2FA recovery codes
   from Settings, with a low-count warning.
@@ -28,6 +35,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   a guard test; `rich()` for sentences with links.
 
 ### Fixed
+
+- A false "Travelling?" card for legacy timezone aliases (Asia/Calcutta).
+- "just now ago", "1 members", "1 days" and similar wording.
+- Week strips that were one stretched box for new streaks, pairs and groups.
+- A sync test that raced the background push.
 
 - A comment author's avatar link had no accessible name.
 - Light-theme flame, danger and info text measured under 4.5:1 on the
