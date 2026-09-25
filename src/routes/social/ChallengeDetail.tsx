@@ -96,9 +96,12 @@ export default function ChallengeDetail() {
               </div>
             )}
             {!c.joined && c.status !== "finished" && (
-              <button type="button" className="btn btn-primary mt-5 w-full" onClick={() => void act(() => api(`/challenges/${id}/join`, { method: "POST" }), "You're in")}>
-                Join
-              </button>
+              <>
+                <button type="button" className="btn btn-primary mt-5 w-full" onClick={() => void act(() => api(`/challenges/${id}/join`, { method: "POST" }), c.kind === "plan_sessions" ? "You're in. Your copy of the plan is running." : "You're in")}>
+                  Join
+                </button>
+                {c.kind === "plan_sessions" && <p className="field-hint">You get your own copy of the plan, and it becomes your running plan. Any other plan you're following is paused, not deleted.</p>}
+              </>
             )}
           </div>
 
