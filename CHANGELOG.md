@@ -9,6 +9,31 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Passkeys: sign in from a button or the email field's autofill; add,
+  rename and remove them in Settings → Security. New 2FA recovery codes
+  from Settings, with a low-count warning.
+- Training plans (`/plans`) with templates, a week editor and a Today card;
+  an interval timer (intervals, EMOM, Tabata); private tags and offline
+  search in History; gear with mileage (Settings → Gear); progression hints
+  for bodyweight reps and holds.
+- Balanced-week requirements in the streak editor; consistency over 4, 12
+  and 52 weeks; a year in review (`/review`); a timeline per record.
+- A travel card when the phone changes timezone; `travel` pauses; an icon
+  badge that can show the days still to go.
+- Buddies (`/buddies`), a group streak card with a threshold setting, and
+  preset encouragement from profiles and buddy cards.
+- The admin Metrics tab shows the scheduler's health per job; the monthly
+  backup reminder opens a one-tap download.
+- Every signed-out screen and API error goes through the i18n catalog, with
+  a guard test; `rich()` for sentences with links.
+
+### Fixed
+
+- A comment author's avatar link had no accessible name.
+- Light-theme flame, danger and info text measured under 4.5:1 on the
+  darkest surface.
+- Paused weeks looked identical to missed ones in week strips.
+
 - Mute a group; Chart/Table toggles on every chart and the grid; i18n
   groundwork (`src/lib/i18n.ts`); distinct shortcut icons; an "Easing back
   in?" suggestion after a long pause; an admin sheet for official status.
