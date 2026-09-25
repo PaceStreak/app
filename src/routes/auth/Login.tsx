@@ -135,9 +135,12 @@ export default function Login() {
             <Fingerprint size={18} aria-hidden /> {t("auth.login.passkey")}
           </button>
         )}
-        <p className="text-center text-sm">
+        <p className="flex flex-col items-center gap-2 text-sm">
           <Link to="/forgot-password" className="text-muted underline">
             {t("auth.login.forgot")}
+          </Link>
+          <Link to="/recover" className="text-muted underline">
+            {t("auth.login.lostAccess")}
           </Link>
         </p>
       </form>

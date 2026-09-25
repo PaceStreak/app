@@ -14,6 +14,9 @@ const MIGRATED = [
   "src/routes/auth/VerifyEmail.tsx",
   "src/routes/auth/Unsubscribe.tsx",
   "src/routes/auth/AuthLayout.tsx",
+  "src/routes/auth/Recover.tsx",
+  "src/routes/auth/ConfirmEmail.tsx",
+  "src/components/TermsGate.tsx",
 ];
 
 // Brand and product names are not translated.

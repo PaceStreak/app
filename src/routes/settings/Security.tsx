@@ -54,6 +54,17 @@ export function Security() {
   const [setup, setSetup] = useState<{ secret: string; uri: string; password: string; code: string; codes?: string[] } | null>(null);
   const [disable, setDisable] = useState<{ password: string; code: string } | null>(null);
   const [regen, setRegen] = useState<{ code: string; codes?: string[] } | null>(null);
+  const [emailChange, setEmailChange] = useState<{ email: string; password: string } | null>(null);
+  const startEmailChange = async () => {
+    if (!emailChange) return;
+    try {
+      const res = await api<{ detail: string }>("/auth/change-email", { body: { new_email: emailChange.email.trim(), password: emailChange.password } });
+      setEmailChange(null);
+      toast.success("Check the new inbox", { body: res.detail });
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
 
   const changePassword = async () => {
     if (!pw) return;
@@ -136,7 +147,32 @@ export function Security() {
         </Banner>
       )}
 
-      <Section title="Password" className="mt-4">
+      <Section title="Email address" className="mt-4">
+        {emailChange ? (
+          <form
+            className="card space-y-4 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void startEmailChange();
+            }}
+          >
+            <Field label="New email address" type="email" autoComplete="email" required value={emailChange.email} onChange={(e) => setEmailChange({ ...emailChange, email: e.target.value })} />
+            <Field label="Your password" type="password" autoComplete="current-password" required value={emailChange.password} onChange={(e) => setEmailChange({ ...emailChange, password: e.target.value })} hint="Nothing changes until you open the link we send to the new address. Your old address will be told." />
+            <div className="flex gap-2">
+              <button type="button" className="btn btn-secondary flex-1" onClick={() => setEmailChange(null)}>Cancel</button>
+              <button className="btn btn-primary flex-1" disabled={!emailChange.email.includes("@") || !emailChange.password}>Send link</button>
+            </div>
+          </form>
+        ) : (
+          <div className="card flex items-center gap-3 p-4">
+            <EnvelopeSimple size={22} className="text-dim" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">{me.user.email}</span>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEmailChange({ email: "", password: "" })}>Change</button>
+          </div>
+        )}
+      </Section>
+
+      <Section title="Password">
         {pw ? (
           <div className="card space-y-4 p-4">
             <Field label="Current password" type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />

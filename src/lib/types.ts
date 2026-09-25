@@ -32,6 +32,9 @@ export interface Me {
   user: { id: string; email: string; is_verified: boolean; role: "user" | "moderator" | "admin"; totp_enabled: boolean };
   profile: Profile;
   needs_onboarding: boolean;
+  /** Onboarded under an older version of the terms. */
+  needs_terms?: boolean;
+  terms_version?: string;
   social_allowed: boolean;
   min_age: number;
   social_min_age: number;

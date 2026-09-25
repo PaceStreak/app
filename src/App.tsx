@@ -48,72 +48,83 @@ function PublicOnly({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+const routeError = page(() => import("./routes/RouteError"));
+
 const router = createBrowserRouter([
   {
-    element: (
-      <PublicOnly>
-        <Outlet />
-      </PublicOnly>
-    ),
+    // One boundary around everything: any route that throws while rendering
+    // gets the friendly screen, and the crash is reported.
+    errorElement: routeError,
     children: [
-      { path: "/login", element: page(() => import("./routes/auth/Login")) },
-      { path: "/signup", element: page(() => import("./routes/auth/Signup")) },
-      { path: "/forgot-password", element: page(() => import("./routes/auth/ForgotPassword")) },
-    ],
-  },
-  // Reachable signed in or out: they arrive from an email.
-  { path: "/reset-password", element: page(() => import("./routes/auth/ResetPassword")) },
-  { path: "/verify-email", element: page(() => import("./routes/auth/VerifyEmail")) },
-  { path: "/unsubscribe", element: page(() => import("./routes/auth/Unsubscribe")) },
-  {
-    path: "/welcome",
-    element: <RequireSession onboarding>{page(() => import("./routes/Welcome"))}</RequireSession>,
-  },
-  {
-    element: (
-      <RequireSession>
-        <Shell />
-      </RequireSession>
-    ),
-    children: [
-      { path: "/", element: <Today /> },
-      { path: "/log", element: page(() => import("./routes/log/LogPage")) },
-      { path: "/workouts/live", element: page(() => import("./routes/log/LiveWorkout")) },
-      { path: "/workouts/:id", element: page(() => import("./routes/log/WorkoutDetail")) },
-      { path: "/workouts/:id/edit", element: page(() => import("./routes/log/EditWorkout")) },
-      { path: "/history", element: page(() => import("./routes/History")) },
-      { path: "/progress", element: page(() => import("./routes/progress/Progress")) },
-      { path: "/progress/xp", element: page(() => import("./routes/progress/Xp")) },
-      { path: "/recap", element: page(() => import("./routes/Recap")) },
-      { path: "/records", element: page(() => import("./routes/progress/Records")) },
-      { path: "/records/history", element: page(() => import("./routes/progress/RecordHistory")) },
-      { path: "/review", element: page(() => import("./routes/Review")) },
-      { path: "/achievements", element: page(() => import("./routes/progress/Achievements")) },
-      { path: "/body", element: page(() => import("./routes/progress/Body")) },
-      { path: "/exercises", element: page(() => import("./routes/library/Exercises")) },
-      { path: "/exercises/:id", element: page(() => import("./routes/library/ExerciseDetail")) },
-      { path: "/routines", element: page(() => import("./routes/library/Routines")) },
-      { path: "/plans", element: page(() => import("./routes/plans/Plans")) },
-      { path: "/plans/:id", element: page(() => import("./routes/plans/PlanDetail")) },
-      { path: "/routines/:id", element: page(() => import("./routes/library/RoutineEditor")) },
-      { path: "/feed", element: page(() => import("./routes/social/Feed")) },
-      { path: "/feed/:id", element: page(() => import("./routes/social/EventDetail")) },
-      { path: "/people", element: page(() => import("./routes/social/People")) },
-      { path: "/u/:handle", element: page(() => import("./routes/social/Profile")) },
-      { path: "/u/:handle/:list", element: page(() => import("./routes/social/FollowList")) },
-      { path: "/groups", element: page(() => import("./routes/social/Groups")) },
-      { path: "/buddies", element: page(() => import("./routes/social/Buddies")) },
-      { path: "/groups/:id", element: page(() => import("./routes/social/GroupDetail")) },
-      { path: "/challenges", element: page(() => import("./routes/social/Challenges")) },
-      { path: "/challenges/:id", element: page(() => import("./routes/social/ChallengeDetail")) },
-      { path: "/leaderboards", element: page(() => import("./routes/social/Leaderboards")) },
-      { path: "/notifications", element: page(() => import("./routes/Notifications")) },
-      { path: "/you", element: page(() => import("./routes/You")) },
-      { path: "/settings", element: page(() => import("./routes/settings/Settings")) },
-      { path: "/settings/:section", element: page(() => import("./routes/settings/Settings")) },
-      { path: "/tools", element: page(() => import("./routes/Tools")) },
-      { path: "/admin", element: page(() => import("./routes/Admin")) },
-      { path: "*", element: page(() => import("./routes/NotFound")) },
+      {
+        element: (
+          <PublicOnly>
+            <Outlet />
+          </PublicOnly>
+        ),
+        children: [
+          { path: "/login", element: page(() => import("./routes/auth/Login")) },
+          { path: "/signup", element: page(() => import("./routes/auth/Signup")) },
+          { path: "/forgot-password", element: page(() => import("./routes/auth/ForgotPassword")) },
+          { path: "/recover", element: page(() => import("./routes/auth/Recover")) },
+        ],
+      },
+      // Reachable signed in or out: they arrive from an email.
+      { path: "/reset-password", element: page(() => import("./routes/auth/ResetPassword")) },
+      { path: "/verify-email", element: page(() => import("./routes/auth/VerifyEmail")) },
+      { path: "/confirm-email", element: page(() => import("./routes/auth/ConfirmEmail")) },
+      { path: "/unsubscribe", element: page(() => import("./routes/auth/Unsubscribe")) },
+      {
+        path: "/welcome",
+        element: <RequireSession onboarding>{page(() => import("./routes/Welcome"))}</RequireSession>,
+      },
+      {
+        element: (
+          <RequireSession>
+            <Shell />
+          </RequireSession>
+        ),
+        children: [
+          { path: "/", element: <Today /> },
+          { path: "/log", element: page(() => import("./routes/log/LogPage")) },
+          { path: "/workouts/live", element: page(() => import("./routes/log/LiveWorkout")) },
+          { path: "/workouts/:id", element: page(() => import("./routes/log/WorkoutDetail")) },
+          { path: "/workouts/:id/edit", element: page(() => import("./routes/log/EditWorkout")) },
+          { path: "/history", element: page(() => import("./routes/History")) },
+          { path: "/progress", element: page(() => import("./routes/progress/Progress")) },
+          { path: "/progress/xp", element: page(() => import("./routes/progress/Xp")) },
+          { path: "/recap", element: page(() => import("./routes/Recap")) },
+          { path: "/records", element: page(() => import("./routes/progress/Records")) },
+          { path: "/records/history", element: page(() => import("./routes/progress/RecordHistory")) },
+          { path: "/review", element: page(() => import("./routes/Review")) },
+          { path: "/achievements", element: page(() => import("./routes/progress/Achievements")) },
+          { path: "/body", element: page(() => import("./routes/progress/Body")) },
+          { path: "/exercises", element: page(() => import("./routes/library/Exercises")) },
+          { path: "/exercises/:id", element: page(() => import("./routes/library/ExerciseDetail")) },
+          { path: "/routines", element: page(() => import("./routes/library/Routines")) },
+          { path: "/plans", element: page(() => import("./routes/plans/Plans")) },
+          { path: "/plans/:id", element: page(() => import("./routes/plans/PlanDetail")) },
+          { path: "/routines/:id", element: page(() => import("./routes/library/RoutineEditor")) },
+          { path: "/feed", element: page(() => import("./routes/social/Feed")) },
+          { path: "/feed/:id", element: page(() => import("./routes/social/EventDetail")) },
+          { path: "/people", element: page(() => import("./routes/social/People")) },
+          { path: "/u/:handle", element: page(() => import("./routes/social/Profile")) },
+          { path: "/u/:handle/:list", element: page(() => import("./routes/social/FollowList")) },
+          { path: "/groups", element: page(() => import("./routes/social/Groups")) },
+          { path: "/buddies", element: page(() => import("./routes/social/Buddies")) },
+          { path: "/groups/:id", element: page(() => import("./routes/social/GroupDetail")) },
+          { path: "/challenges", element: page(() => import("./routes/social/Challenges")) },
+          { path: "/challenges/:id", element: page(() => import("./routes/social/ChallengeDetail")) },
+          { path: "/leaderboards", element: page(() => import("./routes/social/Leaderboards")) },
+          { path: "/notifications", element: page(() => import("./routes/Notifications")) },
+          { path: "/you", element: page(() => import("./routes/You")) },
+          { path: "/settings", element: page(() => import("./routes/settings/Settings")) },
+          { path: "/settings/:section", element: page(() => import("./routes/settings/Settings")) },
+          { path: "/tools", element: page(() => import("./routes/Tools")) },
+          { path: "/admin", element: page(() => import("./routes/Admin")) },
+          { path: "*", element: page(() => import("./routes/NotFound")) },
+        ],
+      },
     ],
   },
 ]);

@@ -15,6 +15,7 @@ import {
   Wrench,
   ShieldCheck,
 } from "../components/phosphor";
+import { TermsGate } from "../components/TermsGate";
 import { toast } from "../components/toast";
 import { api } from "../lib/api";
 import { useOnline, useStats, useSyncState } from "../lib/queries";
@@ -36,6 +37,7 @@ export function Shell() {
   return (
     <LogProvider>
       <ShellInner />
+      <TermsGate />
     </LogProvider>
   );
 }

@@ -9,7 +9,7 @@ import { api, errorText } from "../lib/api";
 import { timeAgo } from "../lib/dates";
 import { useMe } from "../lib/session";
 
-type Tab = "reports" | "users" | "audit" | "metrics";
+type Tab = "reports" | "users" | "audit" | "metrics" | "ops";
 
 interface ReportRow {
   id: string;
@@ -32,12 +32,24 @@ export default function Admin() {
   return (
     <div>
       <PageHeader title="Moderation" subtitle="Every action here is recorded in the audit log." />
-      <Segmented label="Section" value={tab} onChange={setTab} options={[{ value: "reports", label: "Reports" }, { value: "users", label: "People" }, { value: "audit", label: "Audit" }, { value: "metrics", label: "Metrics" }]} />
+      <Segmented
+        label="Section"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "reports", label: "Reports" },
+          { value: "users", label: "People" },
+          { value: "audit", label: "Audit" },
+          { value: "metrics", label: "Metrics" },
+          ...(me.user.role === "admin" ? [{ value: "ops" as const, label: "Ops" }] : []),
+        ]}
+      />
       <div className="mt-5">
         {tab === "reports" && <Reports />}
         {tab === "users" && <Users admin={me.user.role === "admin"} />}
         {tab === "audit" && <Audit />}
         {tab === "metrics" && <Metrics />}
+        {tab === "ops" && <Ops />}
       </div>
     </div>
   );
@@ -314,5 +326,121 @@ function OfficialSheet({ user, onClose, onDone }: { user: UserRow | null; onClos
         </label>
       </div>
     </Sheet>
+  );
+}
+
+interface ClientErrorRow {
+  id: string;
+  message: string;
+  stack: string | null;
+  path: string | null;
+  release: string | null;
+  user_agent: string | null;
+  count: number;
+  first_seen: string;
+  last_seen: string;
+}
+
+interface AbuseView {
+  failures: Record<string, number>;
+  by_ip: { ip: string | null; failures: number; accounts: number }[];
+  by_account: { account: string; failures: number; ips: number }[];
+  signups_by_ip: { ip: string | null; signups: number }[];
+}
+
+/** Admin only: crashes reported by the app, and the last day's failed
+    sign-ins and sign-ups. Nothing here is visible to moderators. */
+function Ops() {
+  const errors = useQuery({ queryKey: ["admin-client-errors"], queryFn: () => api<ClientErrorRow[]>("/admin/client-errors") });
+  const abuse = useQuery({ queryKey: ["admin-abuse"], queryFn: () => api<AbuseView>("/admin/abuse"), refetchInterval: 60_000 });
+  const [open, setOpen] = useState<string | null>(null);
+  const resolve = async (e: ClientErrorRow) => {
+    try {
+      await api(`/admin/client-errors/${e.id}`, { method: "DELETE" });
+      toast.success("Marked fixed", { body: "If it happens again it comes back, counting from one." });
+      void errors.refetch();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const total = Object.values(abuse.data?.failures ?? {}).reduce((a, b) => a + b, 0);
+  return (
+    <div className="space-y-6">
+      <section aria-labelledby="crashes">
+        <h2 id="crashes" className="mb-2 font-semibold">App crashes</h2>
+        {!errors.data ? (
+          <Loading rows={2} />
+        ) : errors.data.length === 0 ? (
+          <p className="card px-4 py-6 text-center text-muted">No crashes reported in the last 30 days.</p>
+        ) : (
+          <ul className="card divide-y divide-line">
+            {errors.data.map((e) => (
+              <li key={e.id} className="px-4 py-3">
+                <button type="button" className="w-full text-left" aria-expanded={open === e.id} onClick={() => setOpen(open === e.id ? null : e.id)}>
+                  <span className="block font-mono text-sm break-words">{e.message}</span>
+                  <span className="mt-0.5 block text-sm text-dim">
+                    {e.count}× · last {timeAgo(e.last_seen)} ago{e.path ? ` · ${e.path}` : ""}{e.release ? ` · ${e.release}` : ""}
+                  </span>
+                </button>
+                {open === e.id && (
+                  <div className="mt-2 space-y-2">
+                    {e.stack && <pre className="max-h-60 overflow-auto rounded-xl bg-surface-2 p-3 text-xs">{e.stack}</pre>}
+                    {e.user_agent && <p className="text-xs text-dim">{e.user_agent}</p>}
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => void resolve(e)}>Mark fixed</button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="abuse">
+        <h2 id="abuse" className="mb-2 font-semibold">Last 24 hours</h2>
+        {!abuse.data ? (
+          <Loading rows={2} />
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted">
+              {total} failed attempt{total === 1 ? "" : "s"}
+              {total > 0 && ` (${Object.entries(abuse.data.failures).map(([k, n]) => `${n} ${k}`).join(", ")})`}.
+            </p>
+            <OpsTable caption="Failed attempts by address" head={["IP", "Failures", "Accounts tried"]} rows={abuse.data.by_ip.map((r) => [r.ip ?? "unknown", r.failures, r.accounts])} />
+            <OpsTable caption="Accounts being tried" head={["Account", "Failures", "From IPs"]} rows={abuse.data.by_account.map((r) => [r.account, r.failures, r.ips])} />
+            <OpsTable caption="Sign-ups by address" head={["IP", "Sign-ups"]} rows={abuse.data.signups_by_ip.map((r) => [r.ip ?? "unknown", r.signups])} />
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function OpsTable({ caption, head, rows }: { caption: string; head: string[]; rows: (string | number)[][] }) {
+  return (
+    <div className="card overflow-x-auto p-4">
+      <table className="w-full text-sm">
+        <caption className="mb-2 text-left font-medium">{caption}</caption>
+        <thead>
+          <tr className="text-left text-dim">
+            {head.map((h, i) => (
+              <th key={h} scope="col" className={`py-1 font-medium ${i ? "text-right" : ""}`}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.length === 0 ? (
+            <tr><td colSpan={head.length} className="py-2 text-muted">Nothing.</td></tr>
+          ) : (
+            rows.map((r, i) => (
+              <tr key={i}>
+                {r.map((c, j) => (
+                  <td key={j} className={`num py-1.5 ${j ? "text-right" : "break-all"}`}>{c}</td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

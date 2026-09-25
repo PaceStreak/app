@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
+import { GettingStarted } from "../components/GettingStarted";
 import { Heatmap } from "../components/Heatmap";
 import {
   ArrowCounterClockwise,
@@ -209,7 +210,10 @@ export default function Today() {
         {!stats.seeded || !workouts ? (
           <Skeleton className="h-64 rounded-[20px]" />
         ) : (
-          <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
+          <>
+            <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} />
+            <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
+          </>
         )}
       </div>
 

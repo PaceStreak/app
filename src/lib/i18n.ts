@@ -107,6 +107,31 @@ const en = {
   "auth.unsubscribe.body": "You can turn any category back on in Settings, Notifications.",
   "auth.unsubscribe.submit": "Unsubscribe",
   "auth.unsubscribe.settings": "Notification settings",
+
+  "auth.login.lostAccess": "Lost access to your email?",
+  "auth.recover.title": "Use a recovery code.",
+  "auth.recover.subtitle": "If you turned on two-factor, each of the recovery codes you saved works once to set a new password, with no email needed.",
+  "auth.recover.code": "Recovery code",
+  "auth.recover.newPassword": "New password",
+  "auth.recover.hint": "At least 16 characters. Every other session will be signed out.",
+  "auth.recover.submit": "Set new password",
+  "auth.recover.busy": "Checking…",
+  "auth.recover.doneTitle": "Password updated.",
+  "auth.recover.doneBody": "Sign in with it now. If your email address has changed, update it in Settings, Security.",
+  "auth.recover.noCodes": "No two-factor, and no access to your email? Write to <mail>hello@pacestreak.com</mail> from any address and we'll help.",
+
+  "auth.confirmEmail.working": "Confirming…",
+  "auth.confirmEmail.doneTitle": "Email address updated.",
+  "auth.confirmEmail.doneBody": "Use it to sign in from now on. We've told your old address.",
+  "auth.confirmEmail.failTitle": "That link didn't work.",
+  "auth.confirmEmail.failBody": "{error} Start the change again from Settings, Security.",
+  "auth.confirmEmail.noToken": "This link has no token in it.",
+
+  "terms.title": "We've updated the terms",
+  "terms.body": "Please read what changed in the <terms>terms</terms> and the <privacy>privacy policy</privacy>. Everything you've logged stays yours either way.",
+  "terms.accept": "I agree",
+  "terms.busy": "Saving…",
+  "terms.export": "Export my data first",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof en;

@@ -4,7 +4,7 @@
     "/", "/log", "/history", "/workouts", "/progress", "/recap", "/review", "/records", "/achievements",
     "/exercises", "/routines", "/plans", "/body", "/feed", "/people", "/u", "/groups", "/buddies", "/challenges",
     "/leaderboards", "/notifications", "/you", "/settings", "/tools", "/admin",
-    "/login", "/signup", "/forgot-password", "/reset-password", "/verify-email",
+    "/login", "/signup", "/forgot-password", "/recover", "/confirm-email", "/reset-password", "/verify-email",
     "/welcome", "/unsubscribe", "/offline"
   ]
 }
