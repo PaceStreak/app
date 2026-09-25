@@ -142,7 +142,7 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
       tone: "accent",
       icon: "calendar",
       title: planned.title,
-      body: `${ctx.plan.name}, week ${(ctx.plan.current_week ?? 0) + 1} of ${ctx.plan.weeks_count}.${extra ? ` ${extra}` : ""}`,
+      body: `${ctx.plan.repeat && ctx.plan.weeks_count === 1 ? `From ${ctx.plan.name}` : `${ctx.plan.name}, week ${(ctx.plan.current_week ?? 0) + 1} of ${ctx.plan.weeks_count}`}.${extra ? ` ${extra}` : ""}`,
       primary: planned.routine_id
         ? { kind: "link", label: "Start workout", to: `/workouts/live?routine=${planned.routine_id}` }
         : { kind: "log", label: "Log it", discipline: planned.discipline },

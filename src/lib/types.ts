@@ -76,6 +76,8 @@ export interface RoutineItem {
   reps_max: number | null;
   rest_sec: number | null;
   target_rpe: number | null;
+  /** Starting weight in kg, for a movement with no history yet. */
+  weight_kg?: number | null;
   note: string | null;
 }
 
@@ -477,6 +479,8 @@ export interface PlanSummary {
   started_on: string | null;
   finished_at: string | null;
   active: boolean;
+  /** Loops its weeks until stopped: a weekly schedule. */
+  repeat: boolean;
 }
 
 export interface Plan extends PlanSummary {
@@ -484,6 +488,8 @@ export interface Plan extends PlanSummary {
   current_week: number | null;
   today: PlanSession[];
   progress: { done: number; due: number; total: number } | null;
+  /** Which time round a repeating plan is on, from 1. */
+  cycle?: number;
 }
 
 export interface PlanTemplate {

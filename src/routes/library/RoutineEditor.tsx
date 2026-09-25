@@ -7,12 +7,15 @@ import { toast } from "../../components/toast";
 import { PageHeader } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { queryClient, useLibrary, useRoutines } from "../../lib/queries";
+import { useMe } from "../../lib/session";
 import type { Routine, RoutineItem } from "../../lib/types";
+import { weight as fmtWeight, parseNumber, toKg, type WeightUnit } from "../../lib/units";
 
 export default function RoutineEditor() {
   const { id = "new" } = useParams();
   const isNew = id === "new";
   const lib = useLibrary();
+  const unit = useMe().profile.weight_unit as WeightUnit;
   const routines = useRoutines();
   const navigate = useNavigate();
   const [confirmSheet, ask] = useConfirm();
@@ -116,6 +119,45 @@ export default function RoutineEditor() {
                 </label>
               ))}
             </div>
+            <div className="mt-2 grid grid-cols-4 gap-2">
+              {lib?.byId.get(it.exercise_id)?.load_type === "weight" && (
+                <label className="col-span-2 text-xs text-dim">
+                  Start weight ({unit})
+                  <input
+                    className="set-input num mt-1"
+                    inputMode="decimal"
+                    placeholder="Optional"
+                    // Uncontrolled: typing "2.5" must not be re-rounded through kg mid-keystroke.
+                    defaultValue={it.weight_kg != null ? fmtWeight(it.weight_kg, unit, false) : ""}
+                    onChange={(e) => {
+                      const v = parseNumber(e.target.value);
+                      patchItem(i, { weight_kg: v == null || v < 0 ? null : Math.round(toKg(v, unit) * 100) / 100 });
+                    }}
+                  />
+                </label>
+              )}
+              <label className="col-span-2 text-xs text-dim">
+                Rest (seconds)
+                <input
+                  className="set-input num mt-1"
+                  inputMode="numeric"
+                  placeholder={String(lib?.byId.get(it.exercise_id)?.rest_sec ?? 90)}
+                  value={it.rest_sec ?? ""}
+                  onChange={(e) => {
+                    const v = num(e.target.value);
+                    patchItem(i, { rest_sec: v == null ? null : Math.min(900, v) });
+                  }}
+                />
+              </label>
+            </div>
+            <input
+              className="input mt-2 text-sm"
+              placeholder="Note, e.g. pause at the bottom"
+              maxLength={140}
+              value={it.note ?? ""}
+              onChange={(e) => patchItem(i, { note: e.target.value || null })}
+              aria-label={`Note for ${lib?.byId.get(it.exercise_id)?.name ?? "exercise"}`}
+            />
           </div>
         ))}
       </div>

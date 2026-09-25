@@ -9,6 +9,7 @@ import { ApiError, api, errorText } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
 import { queryClient } from "../../lib/queries";
 import type { Plan, PlanSummary, PlanTemplate } from "../../lib/types";
+import { plural } from "../../lib/units";
 
 export default function Plans() {
   const navigate = useNavigate();
@@ -79,7 +80,7 @@ export default function Plans() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{p.name}</span>
                     <span className="block text-sm text-dim">
-                      {p.weeks_count} week{p.weeks_count === 1 ? "" : "s"} · {p.sessions_count} sessions
+                      {p.repeat ? (p.weeks_count === 1 ? "Every week" : `Repeats every ${p.weeks_count} weeks`) : plural(p.weeks_count, "week")} · {plural(p.sessions_count, "session")}
                       {p.active && p.started_on ? ` · running since ${fmtMonthDay(p.started_on)}` : p.finished_at ? " · finished" : ""}
                     </span>
                   </span>
@@ -118,9 +119,13 @@ export default function Plans() {
         <p className="field-hint">Starting points for healthy adults, not coaching or medical advice. Easy means you could talk in sentences. Sore or hurt? Rest, or pause the streak.</p>
       </Section>
 
+      <button type="button" className="btn btn-primary mt-6 w-full" disabled={busy !== null} onClick={() => void create({ plan: { name: "My week", weeks: [[]], repeat: true } }, "week")}>
+        <CalendarCheck size={18} /> {busy === "week" ? "Creating…" : "Build a weekly schedule"}
+      </button>
+      <p className="field-hint">One week, repeated until you stop it: say, push on Monday, pull on Wednesday and legs on Friday.</p>
       <button
         type="button"
-        className="btn btn-secondary mt-6 w-full"
+        className="btn btn-secondary mt-4 w-full"
         disabled={busy !== null}
         onClick={() =>
           void create(

@@ -6,12 +6,13 @@ import { DisciplineIcon } from "../../components/icons";
 import { CalendarCheck, CheckCircle, Circle, ShareNetwork, Copy, MinusCircle, PencilSimple, Plus, Trash, XCircle } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Empty, ErrorState, Field, Loading, PageHeader, Section } from "../../components/ui";
+import { Empty, ErrorState, Field, Loading, PageHeader, Section, Switch } from "../../components/ui";
 import { ApiError, api, errorText } from "../../lib/api";
 import { WEEKDAYS_LONG, fmtMonthDay } from "../../lib/dates";
 import { queryClient, useLibrary, useRoutines } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import type { Plan, PlanSession } from "../../lib/types";
+import { plural } from "../../lib/units";
 import { useLog } from "../../shell/LogContext";
 
 type Editing = { week: number; index: number | null; session: PlanSession };
@@ -92,17 +93,21 @@ export default function PlanDetail() {
   const sessions = plan.weeks[week] ?? [];
   const dayName = (d: number) => WEEKDAYS_LONG[(me.profile.week_starts_on + d) % 7];
 
-  const save = (weeks: PlanSession[][]) =>
-    act(() =>
-      api<Plan>(`/plans/${id}`, {
-        method: "PUT",
-        body: {
-          name: plan.name,
-          description: plan.description,
-          weeks: clean(weeks),
-        },
-      }),
+  const save = (weeks: PlanSession[][], repeat = plan.repeat, success?: string) =>
+    act(
+      () =>
+        api<Plan>(`/plans/${id}`, {
+          method: "PUT",
+          body: {
+            name: plan.name,
+            description: plan.description,
+            weeks: clean(weeks),
+            repeat,
+          },
+        }),
+      success,
     );
+  const length = plan.weeks_count === 1 ? "week" : `${plan.weeks_count} weeks`;
 
   const saveSession = () => {
     if (!editing) return;
@@ -179,10 +184,14 @@ export default function PlanDetail() {
         back="/plans"
         subtitle={
           plan.active && plan.started_on
-            ? `Week ${(plan.current_week ?? 0) + 1} of ${plan.weeks_count} · started ${fmtMonthDay(plan.started_on)}`
+            ? plan.repeat
+              ? plan.weeks_count === 1
+                ? `Every week · since ${fmtMonthDay(plan.started_on)}`
+                : `Week ${(plan.current_week ?? 0) + 1} of ${plan.weeks_count}, round ${plan.cycle ?? 1} · since ${fmtMonthDay(plan.started_on)}`
+              : `Week ${(plan.current_week ?? 0) + 1} of ${plan.weeks_count} · started ${fmtMonthDay(plan.started_on)}`
             : plan.finished_at
               ? "Finished"
-              : `${plan.weeks_count} weeks · not started`
+              : `${plan.repeat ? `Repeats every ${length}` : plural(plan.weeks_count, "week")} · not started`
         }
         action={
           <button
@@ -208,7 +217,9 @@ export default function PlanDetail() {
             {plan.progress.done}
             <span className="text-base font-normal text-dim"> of {plan.progress.due} due so far</span>
           </p>
-          <p className="mt-1 text-sm text-dim">{plan.progress.total} sessions in the whole plan. Sessions moved to another day that week still count.</p>
+          <p className="mt-1 text-sm text-dim">
+            {plural(plan.progress.total, "session")} {plan.repeat ? "each time round; the count starts again every round." : "in the whole plan."} Sessions moved to another day that week still count.
+          </p>
         </div>
       )}
 
@@ -227,6 +238,15 @@ export default function PlanDetail() {
             </button>
           </>
         )}
+      </div>
+
+      <div className="card mt-4">
+        <Switch
+          checked={plan.repeat}
+          onChange={(v) => void save(plan.weeks, v, v ? `Repeats every ${length}` : "Runs once")}
+          label={`Repeat every ${length}`}
+          description={plan.repeat ? "Keeps going until you stop it." : `Stops after week ${plan.weeks_count}.`}
+        />
       </div>
 
       <Section title="Weeks">

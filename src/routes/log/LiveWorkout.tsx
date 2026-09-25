@@ -53,6 +53,8 @@ interface DraftExercise {
   reps_min: number | null;
   reps_max: number | null;
   target_rpe: number | null;
+  /** The routine's starting weight in kg; drafts saved before it have none. */
+  target_kg?: number | null;
   note: string | null;
   sets: DraftSet[];
   /** Same number = superset with the neighbouring exercises. */
@@ -183,7 +185,7 @@ function warmupAction(ex: DraftExercise | undefined, lib: NonNullable<ReturnType
   // The working weight: the first filled work set, else last time's top set.
   const typed = ex.sets.find((s) => s.kind === "work" && parseNumber(s.weight))?.weight;
   const last = lastTime(workouts, ex.exercise_id, workoutId)?.sets.filter((s) => s.kind !== "warmup" && s.weight_kg);
-  const working = typed ? toKg(parseNumber(typed)!, unit) : last?.length ? Math.max(...last.map((s) => s.weight_kg ?? 0)) : null;
+  const working = typed ? toKg(parseNumber(typed)!, unit) : last?.length ? Math.max(...last.map((s) => s.weight_kg ?? 0)) : (ex.target_kg ?? null);
   if (!working) return [];
   const ramp = warmupSets(working, unit);
   if (!ramp.length) return [];
@@ -278,6 +280,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             reps_min: it.reps_min,
             reps_max: it.reps_max,
             target_rpe: it.target_rpe,
+            target_kg: it.weight_kg ?? null,
             note: it.note,
             sets: Array.from({ length: it.sets }, () => blankSet()),
           }));
@@ -674,6 +677,12 @@ function ExerciseBlock({
     const patch: Partial<DraftSet> = { done: true };
     if (!s.weight && ghost?.weight_kg != null && loadType !== "bodyweight" && loadType !== "time") patch.weight = fmtWeight(ghost.weight_kg, unit, false);
     if (!s.reps && ghost?.reps != null) patch.reps = String(ghost.reps);
+    // No history: the routine's own targets stand in for last time.
+    if (!ghost && s.kind !== "warmup") {
+      if (!s.weight && ex.target_kg != null && loadType === "weight") patch.weight = fmtWeight(ex.target_kg, unit, false);
+      const reps = ex.reps_max ?? ex.reps_min;
+      if (!s.reps && reps != null && loadType !== "time") patch.reps = String(reps);
+    }
     if (!s.time && ghost?.duration_sec != null) patch.time = String(ghost.duration_sec);
     setSet(s.key, patch);
     onSetDone(ex.rest_sec);
@@ -706,6 +715,8 @@ function ExerciseBlock({
               <>
                 Last: {lastWork.map((s) => (loadType === "bodyweight" ? `${s.reps}` : loadType === "time" ? `${s.duration_sec}s` : `${fmtWeight(s.weight_kg, unit, false)}×${s.reps}`)).join(", ")}
               </>
+            ) : ex.target_kg != null && loadType === "weight" ? (
+              `First time: start at ${fmtWeight(ex.target_kg, unit)}, and adjust if it's too easy or too hard.`
             ) : (
               "First time: pick a weight that leaves 2-3 reps in the tank."
             )}
@@ -721,12 +732,14 @@ function ExerciseBlock({
               · {suggestion.reason.toLowerCase()}
             </p>
           )}
-          {(ex.reps_min || ex.reps_max) && (
+          {ex.reps_min || ex.reps_max ? (
             <p className="mt-1 text-sm text-muted">
               Target {ex.reps_min && ex.reps_max && ex.reps_min !== ex.reps_max ? `${ex.reps_min}-${ex.reps_max}` : (ex.reps_max ?? ex.reps_min)} reps
+              {ex.target_kg != null && loadType === "weight" ? ` at ${fmtWeight(ex.target_kg, unit)}` : ""}
               {ex.target_rpe ? ` · RPE ${ex.target_rpe}` : ""}
             </p>
-          )}
+          ) : null}
+          {ex.note && <p className="mt-1 text-sm text-muted italic">{ex.note}</p>}
         </div>
         {meta?.cue && (
           <button type="button" className="btn btn-ghost btn-icon btn-sm text-dim" aria-expanded={cue} aria-label="How to do it" onClick={() => setCue(!cue)}>
@@ -771,7 +784,7 @@ function ExerciseBlock({
                   <input
                     className="set-input num"
                     inputMode="decimal"
-                    placeholder={ghost?.weight_kg != null ? fmtWeight(ghost.weight_kg, unit, false) : "0"}
+                    placeholder={ghost?.weight_kg != null ? fmtWeight(ghost.weight_kg, unit, false) : ex.target_kg != null && s.kind !== "warmup" ? fmtWeight(ex.target_kg, unit, false) : "0"}
                     value={s.weight}
                     onChange={(e) => setSet(s.key, { weight: e.target.value.replace(/[^\d.,]/g, "") })}
                     aria-label={`Set ${i + 1} weight in ${unit}`}
