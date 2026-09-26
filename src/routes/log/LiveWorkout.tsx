@@ -11,9 +11,11 @@ import {
   Check,
   DotsThreeVertical,
   Info,
+  Keyboard,
   Link as Link2,
   LinkBreak,
   Plus,
+  PushPin,
   Thermometer,
   Timer,
   Trash,
@@ -27,12 +29,13 @@ import { toast } from "../../components/toast";
 import { localDateOf, uuid } from "../../lib/dates";
 import { getWorkout, kvGet, kvSet } from "../../lib/db";
 import { haptic, prefs } from "../../lib/prefs";
-import { useLibrary, useRoutines, useWorkouts, type LibraryIndex } from "../../lib/queries";
+import { queryClient, useExerciseNotes, useGyms, useLibrary, useRoutines, useWorkouts, type LibraryIndex } from "../../lib/queries";
+import { sendOrQueue } from "../../lib/requests";
 import { useMe } from "../../lib/session";
 import { saveWorkout } from "../../lib/sync";
-import { EFFORT, FEEL, blankWorkout, suggestNext, warmupSets } from "../../lib/training";
+import { EFFORT, FEEL, blankWorkout, parseShorthand, sessionTops, suggestNext, warmupSets } from "../../lib/training";
 import type { Exercise, SetKind, Workout, WorkoutSet } from "../../lib/types";
-import { clock, e1rm, parseDuration, parseNumber, toKg, weight as fmtWeight, plural, type WeightUnit } from "../../lib/units";
+import { clock, e1rm, fromKg, parseDuration, parseNumber, toKg, weight as fmtWeight, plural, type WeightUnit } from "../../lib/units";
 import { FeelIcon } from "./FeelIcon";
 
 const DRAFT_KEY = "active-workout";
@@ -72,6 +75,7 @@ interface Draft {
   /** Optional: drafts saved before tags existed have none. */
   tags?: string[];
   gear_id?: string | null;
+  gym_id?: string | null;
   effort: number | null;
   feel: number | null;
   duration_sec: number | null;
@@ -115,6 +119,7 @@ function fromWorkout(w: Workout, unit: WeightUnit): Draft {
     notes: w.notes,
     tags: w.tags ?? [],
     gear_id: w.gear_id ?? null,
+    gym_id: w.gym_id ?? null,
     effort: w.effort,
     feel: w.feel,
     duration_sec: w.duration_sec,
@@ -221,6 +226,9 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
   const lib = useLibrary();
   const routines = useRoutines();
   const workouts = useWorkouts();
+  const gyms = useGyms();
+  const notes = useExerciseNotes();
+  const [noteFor, setNoteFor] = useState<{ exerciseId: string; text: string } | null>(null);
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -267,6 +275,8 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
         effort: null,
         feel: null,
         duration_sec: null,
+        // undefined = not chosen yet; filled from the default gym once gyms load.
+        gym_id: gyms.data ? (gyms.data.find((g) => g.is_default)?.id ?? null) : undefined,
         exercises: [],
       };
       if (routineId) {
@@ -297,7 +307,16 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
     return () => {
       alive = false;
     };
+    // gyms.data is read once when the draft is made; the effect below fills it in if it loads later.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId, storeKey, params, routines.data, lib, unit]);
+
+  useEffect(() => {
+    if (draft && draft.gym_id === undefined && gyms.data) {
+      const fallback = gyms.data.find((g) => g.is_default)?.id ?? null;
+      setDraft((d) => (d && d.gym_id === undefined ? { ...d, gym_id: fallback } : d));
+    }
+  }, [draft, gyms.data]);
 
   // Every change is on disk within a beat: a crash or a closed tab loses nothing.
   useEffect(() => {
@@ -379,6 +398,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
       notes: d.notes?.trim() || null,
       tags: d.tags ?? [],
       gear_id: d.gear_id ?? null,
+      gym_id: d.gym_id ?? null,
       routine_id: d.routine_id,
       effort: d.effort,
       feel: d.feel,
@@ -468,6 +488,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             onChange={(fn) => updateExercise(ex.key, fn)}
             onMenu={() => setMenu(ex.key)}
             onPlates={(w) => setPlates(w)}
+            pinned={notes.data?.[ex.exercise_id] ?? null}
             onSetDone={(restSec) => {
               haptic(14);
               // In a superset, go straight to the next exercise; rest comes
@@ -497,6 +518,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
         open={picker !== null}
         title={picker?.mode === "swap" ? "Swap for" : "Add exercise"}
         similarTo={picker?.mode === "swap" ? draft.exercises.find((x) => x.key === picker.key)?.exercise_id : undefined}
+        gymId={draft.gym_id}
         onClose={() => setPicker(null)}
         onPick={(e) => {
           if (picker?.mode === "swap") {
@@ -536,6 +558,14 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
                   }),
               },
               ...supersetActions(draft.exercises, menu, update),
+              {
+                icon: PushPin,
+                label: notes.data?.[draft.exercises.find((e) => e.key === menu)?.exercise_id ?? ""] ? "Edit pinned note" : "Pin a note to this exercise",
+                run: () => {
+                  const id = draft.exercises.find((e) => e.key === menu)?.exercise_id ?? "";
+                  setNoteFor({ exerciseId: id, text: notes.data?.[id] ?? "" });
+                },
+              },
               ...warmupAction(draft.exercises.find((e) => e.key === menu), lib, unit, workouts ?? [], draft.id, (fn) => updateExercise(menu, fn)),
               {
                 icon: Timer,
@@ -567,7 +597,59 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
       </Sheet>
 
       <Sheet open={plates !== null} onClose={() => setPlates(null)} title="Plate calculator">
-        {plates !== null && <PlateCalculator unit={unit} initial={plates || undefined} />}
+        {plates !== null && (() => {
+          const gym = gyms.data?.find((g) => g.id === draft.gym_id);
+          return (
+            <PlateCalculator
+              unit={unit}
+              initial={plates || undefined}
+              gymName={gym?.name}
+              plates={gym?.plates_kg.map((p) => Math.round(fromKg(p, unit) * 100) / 100)}
+              bar={gym ? Math.round(fromKg(gym.bar_kg, unit) * 100) / 100 : undefined}
+            />
+          );
+        })()}
+      </Sheet>
+
+      <Sheet
+        open={noteFor !== null}
+        onClose={() => setNoteFor(null)}
+        title={`Note for ${lib.byId.get(noteFor?.exerciseId ?? "")?.name ?? "this exercise"}`}
+        footer={
+          <button
+            type="button"
+            className="btn btn-primary w-full"
+            onClick={async () => {
+              if (!noteFor) return;
+              const text = noteFor.text.trim();
+              queryClient.setQueryData<Record<string, string>>(["exercise-notes"], (old) => {
+                const next = { ...(old ?? {}) };
+                if (text) next[noteFor.exerciseId] = text;
+                else delete next[noteFor.exerciseId];
+                return next;
+              });
+              setNoteFor(null);
+              try {
+                await sendOrQueue(`/exercise-notes/${encodeURIComponent(noteFor.exerciseId)}`, "PUT", { note: text });
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Couldn't save the note");
+              }
+            }}
+          >
+            Save note
+          </button>
+        }
+      >
+        <textarea
+          className="input"
+          rows={3}
+          maxLength={500}
+          placeholder="Seat height, grip, a cue that works. Shown every time you do this exercise."
+          value={noteFor?.text ?? ""}
+          onChange={(e) => setNoteFor((n) => (n ? { ...n, text: e.target.value } : n))}
+          aria-label="Pinned note"
+        />
+        <p className="field-hint">Private. Leave it empty to remove the note.</p>
       </Sheet>
 
       <Sheet
@@ -612,6 +694,18 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             ))}
           </div>
         </fieldset>
+        {(gyms.data?.length ?? 0) > 0 && (
+          <fieldset className="mt-5">
+            <legend className="field-label">Where</legend>
+            <div className="flex flex-wrap gap-2">
+              {gyms.data!.map((g) => (
+                <button key={g.id} type="button" aria-pressed={draft.gym_id === g.id} className={`chip h-8 ${draft.gym_id === g.id ? "chip-accent" : ""}`} onClick={() => update((d) => ({ ...d, gym_id: d.gym_id === g.id ? null : g.id }))}>
+                  {g.name}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        )}
         <textarea
           className="input mt-5"
           placeholder="Notes. Private: only you ever see these."
@@ -641,6 +735,7 @@ function ExerciseBlock({
   onSetDone,
   first,
   supersetLabel,
+  pinned,
 }: {
   ex: DraftExercise;
   lib: LibraryIndex;
@@ -653,6 +748,7 @@ function ExerciseBlock({
   onSetDone: (restSec: number) => void;
   first: boolean;
   supersetLabel?: string;
+  pinned: string | null;
 }) {
   const meta = lib.byId.get(ex.exercise_id);
   const loadType = meta?.load_type ?? "weight";
@@ -660,8 +756,12 @@ function ExerciseBlock({
   const best = useMemo(() => bestKnown(workouts, ex.exercise_id, workoutId), [workouts, ex.exercise_id, workoutId]);
   const [cue, setCue] = useState(first && !last);
   const [rpeFor, setRpeFor] = useState<string | null>(null);
+  const earlier = useMemo(() => sessionTops(workouts, ex.exercise_id, workoutId).slice(1, 3), [workouts, ex.exercise_id, workoutId]);
+  const [quick, setQuick] = useState("");
   const suggestion = last
     ? suggestNext(last.sets.map((s) => ({ weight_kg: s.weight_kg, reps: s.reps, rpe: s.rpe, kind: s.kind, duration_sec: s.duration_sec })), {
+        repsMin: ex.reps_min,
+        earlier,
         repsMax: ex.reps_max,
         targetRpe: ex.target_rpe,
         stepKg: ex.step_kg,
@@ -680,8 +780,13 @@ function ExerciseBlock({
     // An empty row + tick means "same as last time" - the fastest possible log.
     const ghost = lastWork[i] ?? lastWork[lastWork.length - 1];
     const patch: Partial<DraftSet> = { done: true };
-    if (!s.weight && ghost?.weight_kg != null && loadType !== "bodyweight" && loadType !== "time") patch.weight = fmtWeight(ghost.weight_kg, unit, false);
-    if (!s.reps && ghost?.reps != null) patch.reps = String(ghost.reps);
+    // Auto-fill: the suggestion stands in for last time on working sets.
+    if (prefs.autofill() && suggestion && s.kind !== "warmup") {
+      if (!s.weight && suggestion.weight_kg && loadType === "weight") patch.weight = fmtWeight(suggestion.weight_kg, unit, false);
+      if (!s.reps && suggestion.reps != null && loadType !== "time") patch.reps = String(suggestion.reps);
+    }
+    if (!s.weight && !patch.weight && ghost?.weight_kg != null && loadType !== "bodyweight" && loadType !== "time") patch.weight = fmtWeight(ghost.weight_kg, unit, false);
+    if (!s.reps && !patch.reps && ghost?.reps != null) patch.reps = String(ghost.reps);
     // No history: the routine's own targets stand in for last time.
     if (!ghost && s.kind !== "warmup") {
       if (!s.weight && ex.target_kg != null && loadType === "weight") patch.weight = fmtWeight(ex.target_kg, unit, false);
@@ -727,7 +832,7 @@ function ExerciseBlock({
             )}
           </p>
           {suggestion && (
-            <p className="mt-1 text-sm text-accent-text">
+            <p className={`mt-1 text-sm ${suggestion.reset ? "text-flame-text" : "text-accent-text"}`}>
               Try{" "}
               {suggestion.duration_sec
                 ? clock(suggestion.duration_sec)
@@ -745,6 +850,11 @@ function ExerciseBlock({
             </p>
           ) : null}
           {ex.note && <p className="mt-1 text-sm text-muted italic">{ex.note}</p>}
+          {pinned && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-muted">
+              <PushPin size={14} className="mt-0.5 shrink-0 text-dim" aria-label="Pinned note" /> {pinned}
+            </p>
+          )}
         </div>
         {meta?.cue && (
           <button type="button" className="btn btn-ghost btn-icon btn-sm text-dim" aria-expanded={cue} aria-label="How to do it" onClick={() => setCue(!cue)}>
@@ -866,6 +976,48 @@ function ExerciseBlock({
             </button>
           )}
         </div>
+        {loadType !== "time" && (
+          <form
+            className="mx-2 mt-1 flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const parsed = parseShorthand(quick);
+              if (!parsed) return toast.error("Try 100x5, 100x5x3 or 3x5@100");
+              const weight = loadType === "bodyweight" ? "" : parsed.weight != null ? String(parsed.weight) : "";
+              onChange((cur) => {
+                // Fill empty rows first, then add more.
+                const sets = [...cur.sets];
+                let left = parsed.sets;
+                for (let i = 0; i < sets.length && left > 0; i++) {
+                  if (!sets[i].done && !sets[i].weight && !sets[i].reps && sets[i].kind === "work") {
+                    sets[i] = { ...sets[i], weight, reps: String(parsed.reps), done: true };
+                    left--;
+                  }
+                }
+                for (; left > 0; left--) sets.push({ ...blankSet(), weight, reps: String(parsed.reps), done: true });
+                return { ...cur, sets };
+              });
+              setQuick("");
+              onSetDone(ex.rest_sec);
+            }}
+          >
+            <Keyboard size={16} className="shrink-0 text-dim" aria-hidden />
+            <input
+              className="input h-9 flex-1 py-1 text-sm"
+              value={quick}
+              onChange={(e) => setQuick(e.target.value)}
+              placeholder={loadType === "bodyweight" ? "Type reps, e.g. 12" : `Type it: 100x5x3 (${unit})`}
+              aria-label={`Log ${meta?.name ?? "sets"} by typing, for example 100x5x3`}
+              enterKeyHint="done"
+              autoComplete="off"
+            />
+            {quick && (
+              <button type="submit" className="btn btn-secondary btn-sm">
+                Log
+              </button>
+            )}
+          </form>
+        )}
       </div>
     </section>
   );

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { BarChart } from "../../components/BarChart";
 import { MonthlyGoalCard } from "../../components/MonthlyGoal";
+import { Recovery } from "../../components/Recovery";
 import { Heatmap, HeatLegend } from "../../components/Heatmap";
 import { ArrowCounterClockwise, Barbell, CalendarCheck, CalendarStar, CaretDown, CheckCircle, Circle, Fire, Medal, Scales, Snowflake, Sparkle, Trophy } from "../../components/phosphor";
 import { toast } from "../../components/toast";
@@ -168,10 +169,12 @@ export default function Progress() {
           )}
 
           {progress.data && progress.data.muscles.some((m) => m.weekly_avg_4w > 0) && <Muscles muscles={progress.data.muscles} />}
+          {s && <Recovery today={s.today} />}
 
           <Section title="More">
             <List>
               <RowLink to="/recap" icon={<CalendarCheck size={20} />} title="Weekly recap" detail="Last week, summed up" />
+              <RowLink to="/recap/month" icon={<Barbell size={20} />} title="Monthly strength recap" detail="Your lifts against your own history" />
               <RowLink to="/review" icon={<CalendarStar size={20} />} title="Year in review" detail="The weeks you kept this year" />
               <RowLink to="/records" icon={<Trophy size={20} />} title="Personal records" detail={`${s.totals.records} so far`} />
               <RowLink to="/achievements" icon={<Medal size={20} />} title="Achievements" />
@@ -311,7 +314,7 @@ function Muscles({ muscles }: { muscles: ProgressData["muscles"] }) {
       <div className="card p-4">
         <p className="mb-4 text-sm text-dim">Weekly average over four weeks. The shaded band is a common general guideline of about 10 to 20 hard sets a week, not a prescription.</p>
         <ul className="space-y-2.5">
-          {rows.map((m) => (
+          {rows.filter((m) => m.weekly_avg_4w > 0).map((m) => (
             <li key={m.id} className="grid grid-cols-[96px_1fr_40px] items-center gap-3 text-sm">
               <span className="truncate text-muted">{m.name}</span>
               <span className="muscle-track">
@@ -322,6 +325,11 @@ function Muscles({ muscles }: { muscles: ProgressData["muscles"] }) {
             </li>
           ))}
         </ul>
+        {rows.some((m) => m.weekly_avg_4w === 0) && (
+          <p className="mt-4 text-sm text-muted">
+            Nothing in four weeks for {rows.filter((m) => m.weekly_avg_4w === 0).map((m) => m.name.toLowerCase()).join(", ")}. Fine if that's the plan; worth a look if it isn't.
+          </p>
+        )}
       </div>
     </Section>
   );

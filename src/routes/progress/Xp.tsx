@@ -21,6 +21,7 @@ const SOURCES: Record<string, { label: string; why: string }> = {
   second_session: { label: "Second sessions", why: "A small bonus for a second session in a day. More pays nothing." },
   pr: { label: "Personal records", why: "Beating your own best, within a believable margin." },
   achievement: { label: "Achievements", why: "One-off badges." },
+  quest: { label: "Weekly quests", why: "Three small habits a week: an early start, a balanced week, an honest RPE. Never more volume." },
 };
 
 export default function Xp() {

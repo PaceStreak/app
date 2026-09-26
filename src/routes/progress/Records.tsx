@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { Trophy } from "../../components/phosphor";
+import { Fire, Trophy } from "../../components/phosphor";
+import { Standards } from "../../components/Standards";
 import { Empty, ErrorState, Loading, PageHeader, Section } from "../../components/ui";
 import { api } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
+import { useStats } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import type { RecordRow } from "../../lib/types";
 import { clock, distance, weight } from "../../lib/units";
@@ -26,6 +28,8 @@ const GROUPS: [string, (r: RecordRow) => boolean][] = [
 export default function Records() {
   const me = useMe();
   const q = useQuery({ queryKey: ["records"], queryFn: () => api<{ current: RecordRow[]; recent: RecordRow[] }>("/me/records") });
+  const stats = useStats();
+  const streak = stats.data?.pr_streak;
   const wu = me.profile.weight_unit;
   const du = me.profile.distance_unit;
   if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
@@ -38,6 +42,21 @@ export default function Records() {
         <Empty icon={<Trophy size={26} />} title="No records yet" body="Log a few sessions with weights, reps or distance and your bests show up here." />
       ) : (
         <>
+          {streak && (streak.current > 0 || streak.longest > 0) && (
+            <div className="card mt-4 flex items-center gap-3 p-4">
+              <Fire size={24} weight="fill" className="shrink-0 text-flame" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">
+                  {streak.current > 0 ? `${streak.current} four-week ${streak.current === 1 ? "block" : "blocks"} in a row with a record` : "PR streak"}
+                </p>
+                <p className="text-sm text-dim">
+                  {streak.this_block_has_pr
+                    ? `This block has one already. Best run: ${streak.longest}.`
+                    : `Any record by ${fmtMonthDay(streak.block_ends)} ${streak.current ? "keeps it going" : "starts one"}. Any lift, any size. Best run: ${streak.longest}.`}
+                </p>
+              </div>
+            </div>
+          )}
           {q.data.recent.length > 0 && (
             <Section title="Recently beaten">
               <ul className="card divide-y divide-line">
@@ -84,6 +103,9 @@ export default function Records() {
               </Section>
             );
           })}
+          <Section title="Strength standards">
+            <Standards records={q.data.current} unit={wu} />
+          </Section>
           <p className="mt-6 text-sm text-dim">Estimated 1RM uses the Epley formula on sets of 12 reps or fewer. Jumps of more than 15% are recorded but don't count as a scored PR, in case of a typo.</p>
         </>
       )}

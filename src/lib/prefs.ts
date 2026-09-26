@@ -42,6 +42,12 @@ export const prefs = {
     write("badge", m);
     window.dispatchEvent(new Event("ps:badge"));
   },
+  /** Fill an empty set with the suggestion rather than last time's numbers. */
+  autofill: () => read<boolean>("autofill", false),
+  setAutofill: (on: boolean) => write("autofill", on),
+  /** Which strength-standards table to compare with; null hides them. */
+  standards: () => read<"men" | "women" | null>("standards", null),
+  setStandards: (v: "men" | "women" | null) => write("standards", v),
   installDismissed: () => read<number>("installDismissed", 0),
   dismissInstall: () => write("installDismissed", Date.now()),
   dismissed: (key: string) => read<string[]>("dismissed", []).includes(key),

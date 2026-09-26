@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCards, type CoachContext } from "./coach";
+import { buildCards, consistencyGain, stalledLift, type CoachContext } from "./coach";
 import type { Chain, Me, Stats } from "./types";
 
 const week = (week_start: string, status: Chain["weeks"][number]["status"]) => ({ week_start, days: status === "kept" ? 3 : 0, target: 3, status, score: status === "kept" ? 100 : 0 });
@@ -86,5 +86,28 @@ describe("sameClock", () => {
   it("keeps the travel card quiet for an alias", () => {
     const cards = buildCards(ctx({}, { deviceTimezone: "Asia/Calcutta", me: { ...ctx({}).me, profile: { ...ctx({}).me.profile, timezone: "Asia/Kolkata" } } as Me }));
     expect(cards.some((c) => c.id.startsWith("tz:"))).toBe(false);
+  });
+});
+
+describe("stalledLift and consistencyGain", () => {
+  const lift = (date: string, kg: number, reps: number, rpe: number | null = null) =>
+    ({ id: date, local_date: date, deleted_at: null, sets: [{ exercise_id: "bench-press", completed: true, kind: "work", weight_kg: kg, reps, rpe }] }) as unknown as Workout;
+
+  it("flags a lift flat for four sessions over two weeks, and notices it feeling harder", () => {
+    const rows = [lift("2026-09-01", 80, 5, 7), lift("2026-09-05", 80, 5, 7), lift("2026-09-10", 80, 5, 8.5), lift("2026-09-16", 80, 4, 9)];
+    expect(stalledLift(rows, "2026-09-20")).toEqual({ exerciseId: "bench-press", sessions: 4, since: "2026-09-01", harder: true });
+  });
+
+  it("leaves a lift alone while it is moving", () => {
+    const rows = [lift("2026-09-01", 80, 5), lift("2026-09-05", 80, 6), lift("2026-09-10", 82.5, 5), lift("2026-09-16", 82.5, 6)];
+    expect(stalledLift(rows, "2026-09-20")).toBeNull();
+  });
+
+  it("measures what a streak did for the most-trained lift", () => {
+    const rows = [lift("2026-08-01", 80, 5), lift("2026-08-08", 82.5, 5), lift("2026-08-15", 85, 5), lift("2026-08-22", 87.5, 5)];
+    const gain = consistencyGain(rows, "2026-07-27", "2026-09-01")!;
+    expect(gain.exerciseId).toBe("bench-press");
+    expect(gain.pct).toBeCloseTo(9.4, 1);
+    expect(consistencyGain(rows.slice(0, 3), "2026-07-27", "2026-09-01")).toBeNull();
   });
 });

@@ -93,5 +93,64 @@ export function signed(n: number, digits = 1): string {
   return n > 0 ? `+${s}` : n < 0 ? `−${s}` : s;
 }
 
+/**
+ * Kilograms per week from a least-squares line through the last four weeks
+ * of daily readings. Needs at least eight days spread over two weeks; less
+ * than that is noise with a slope drawn on it.
+ */
+export function weeklyRate(series: DayPoint[]): number | null {
+  if (!series.length) return null;
+  const last = series[series.length - 1].date;
+  const pts = series.filter((p) => p.date > addDays(last, -28));
+  if (pts.length < 8) return null;
+  const t0 = Date.parse(`${pts[0].date}T00:00:00Z`);
+  const xs = pts.map((p) => (Date.parse(`${p.date}T00:00:00Z`) - t0) / 86_400_000);
+  if (xs[xs.length - 1] < 14) return null;
+  const mx = mean(xs);
+  const my = mean(pts.map((p) => p.kg));
+  let num = 0;
+  let den = 0;
+  pts.forEach((p, i) => {
+    num += (xs[i] - mx) * (p.kg - my);
+    den += (xs[i] - mx) ** 2;
+  });
+  return den ? round2((num / den) * 7) : null;
+}
+
+export interface GoalView {
+  current: number;
+  /** 0-1 from where the goal started to the target. */
+  progress: number;
+  reached: boolean;
+  /** Milestones passed, and the next one's weight. */
+  milestonesPassed: number;
+  milestonesTotal: number;
+  nextMilestone: number | null;
+  /** When the trend reaches the target at the current rate; null if it isn't heading there. */
+  eta: string | null;
+  rate: number | null;
+}
+
+export function goalView(series: DayPoint[], goal: { target_kg: number; start_kg: number; milestone_kg: number }, today: string): GoalView | null {
+  if (!series.length) return null;
+  const current = series[series.length - 1].avg;
+  const span = goal.target_kg - goal.start_kg;
+  const dir = Math.sign(span) || 1;
+  const moved = (current - goal.start_kg) * dir;
+  const total = Math.abs(span);
+  const reached = total === 0 || moved >= total - 0.05;
+  const step = goal.milestone_kg;
+  const milestonesTotal = Math.max(1, Math.ceil(total / step - 1e-9));
+  const milestonesPassed = Math.max(0, Math.min(milestonesTotal, Math.floor((moved + 1e-9) / step)));
+  const nextMilestone = reached ? null : round2(goal.start_kg + dir * Math.min(total, (milestonesPassed + 1) * step));
+  const rate = weeklyRate(series);
+  let eta: string | null = null;
+  if (!reached && rate && Math.sign(rate) === dir && Math.abs(rate) >= 0.05) {
+    const weeks = (total - moved) / Math.abs(rate);
+    if (weeks <= 104) eta = addDays(today, Math.round(weeks * 7));
+  }
+  return { current, progress: total ? Math.max(0, Math.min(1, moved / total)) : 1, reached, milestonesPassed, milestonesTotal, nextMilestone, eta, rate };
+}
+
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 const round2 = (n: number) => Math.round(n * 100) / 100;

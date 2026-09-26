@@ -47,6 +47,12 @@ export function Appearance() {
       <Section title="During workouts">
         <div className="card divide-y divide-line">
           <Switch checked={prefs.autoRest()} onChange={(v) => flip(prefs.setAutoRest, v)} label="Start the rest timer when a set is done" />
+          <Switch
+            checked={prefs.autofill()}
+            onChange={(v) => flip(prefs.setAutofill, v)}
+            label="Fill in the suggested weight"
+            description="Ticking an empty set logs the suggestion (including a step back after a stall) instead of last time's numbers."
+          />
           <Switch checked={prefs.keepAwake()} onChange={(v) => flip(prefs.setKeepAwake, v)} label="Keep the screen on" description="Only while a workout is open." />
           <Switch checked={prefs.haptics()} onChange={(v) => flip(prefs.setHaptics, v)} label="Vibration" />
           <Switch checked={prefs.sound()} onChange={(v) => flip(prefs.setSound, v)} label="Sound when rest is up" />

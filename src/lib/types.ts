@@ -134,6 +134,7 @@ export interface Workout {
   /** Private labels, lowercase slugs: "hills", "with-sam". */
   tags?: string[];
   gear_id?: string | null;
+  gym_id?: string | null;
   /** Per-kilometre times from an imported track. */
   splits?: { m: number; sec: number }[];
   source: string;
@@ -268,6 +269,80 @@ export interface Stats {
     exercises: number;
   };
   last_active: string | null;
+  /** Null when gamification is off. */
+  quests?: QuestWeek | null;
+  pr_streak?: PrStreak | null;
+  wager?: WagerState;
+}
+
+export interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  goal: number;
+  progress: number;
+  done: boolean;
+}
+
+export interface QuestWeek {
+  week_start: string;
+  xp_each: number;
+  paused: boolean;
+  items: Quest[];
+  completed_total: number;
+}
+
+export interface PrStreak {
+  current: number;
+  longest: number;
+  this_block_has_pr: boolean;
+  block_ends: string;
+}
+
+export interface Wager {
+  week_start: string;
+  days: number;
+  done: number | null;
+  status: "open" | "won" | "lost";
+}
+
+export interface WagerState {
+  current: Wager | null;
+  next: Wager | null;
+  last: Wager | null;
+  options: { week: "this" | "next"; week_start: string; days: number; blocked: string | null }[];
+  freezes_available: number;
+}
+
+export interface Gym {
+  id: string;
+  name: string;
+  equipment: string[];
+  plates_kg: number[];
+  bar_kg: number;
+  is_default: boolean;
+}
+
+export interface WeightGoal {
+  target_kg: number;
+  start_kg: number;
+  milestone_kg: number;
+  set_on: string;
+}
+
+export interface MonthRecap {
+  month: string;
+  starts_on: string;
+  ends_on: string;
+  complete: boolean;
+  sessions: number;
+  active_days: number;
+  weeks_kept: number;
+  weeks: number;
+  records: number;
+  lifts: { exercise_id: string; name: string; sessions: number; best_e1rm: number; previous_best: number | null; change_pct: number | null }[];
+  steadiest: string | null;
+  pr_streak: number;
 }
 
 export interface Badge {
@@ -428,6 +503,8 @@ export interface WeighIn {
   moment: WeighInMoment;
   weight_kg: number;
   note: string | null;
+  /** Client only: saved on the device, waiting for signal. */
+  pending?: boolean;
 }
 
 export interface BodyMetric {

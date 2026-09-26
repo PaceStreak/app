@@ -3,11 +3,13 @@ import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { BarChart } from "../../components/BarChart";
 import { CustomExerciseForm } from "../../components/CustomExerciseForm";
-import { PencilSimple, Trophy } from "../../components/phosphor";
+import { PencilSimple, PushPin, Trophy } from "../../components/phosphor";
+import { toast } from "../../components/toast";
 import { ErrorState, PageHeader, Section } from "../../components/ui";
 import { api } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
-import { useLibrary } from "../../lib/queries";
+import { queryClient, useExerciseNotes, useLibrary } from "../../lib/queries";
+import { sendOrQueue } from "../../lib/requests";
 import { useMe } from "../../lib/session";
 import { fromKg, weight } from "../../lib/units";
 import { pctChange, signed } from "../../lib/weight";
@@ -27,6 +29,24 @@ export default function ExerciseDetail() {
   const q = useQuery({ queryKey: ["exercise-history", id], queryFn: () => api<History>(`/exercises/${encodeURIComponent(id)}/history?limit=60`) });
   const trend = [...(q.data?.sessions ?? [])].reverse().filter((s) => s.best_e1rm > 0).slice(-20);
   const best = q.data?.records.find((r) => r.current && r.key.startsWith("e1rm"));
+  const notes = useExerciseNotes();
+  const pinned = notes.data?.[id] ?? "";
+  const [noteDraft, setNoteDraft] = useState<string | null>(null);
+  const saveNote = async () => {
+    const text = (noteDraft ?? "").trim();
+    queryClient.setQueryData<Record<string, string>>(["exercise-notes"], (old) => {
+      const next = { ...(old ?? {}) };
+      if (text) next[id] = text;
+      else delete next[id];
+      return next;
+    });
+    setNoteDraft(null);
+    try {
+      await sendOrQueue(`/exercise-notes/${encodeURIComponent(id)}`, "PUT", { note: text });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save the note");
+    }
+  };
 
   return (
     <div>
@@ -55,6 +75,24 @@ export default function ExerciseDetail() {
           </div>
           <p className="mt-3 text-sm text-dim">Default rest {Math.round(e.rest_sec / 60 * 10) / 10} min{e.unilateral ? " · one side at a time" : ""}</p>
         </div>
+      )}
+      {noteDraft !== null ? (
+        <div className="card mt-3 p-3">
+          <textarea className="input" rows={3} maxLength={500} autoFocus value={noteDraft} onChange={(ev) => setNoteDraft(ev.target.value)} aria-label="Pinned note" placeholder="Seat height, grip, a cue that works." />
+          <div className="mt-2 flex justify-end gap-2">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setNoteDraft(null)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => void saveNote()}>
+              Save
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="press mt-3 flex w-full items-start gap-2 rounded-2xl border border-dashed border-line px-4 py-3 text-left text-sm" onClick={() => setNoteDraft(pinned)}>
+          <PushPin size={16} className="mt-0.5 shrink-0 text-dim" aria-hidden />
+          <span className={pinned ? "text-muted" : "text-dim"}>{pinned || "Pin a note: seat height, grip, a cue. Shown whenever you do this exercise."}</span>
+        </button>
       )}
 
       {q.isError ? (

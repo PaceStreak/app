@@ -1,5 +1,6 @@
 import { WEEKDAYS_LONG, daysBetween, fmtMonthDay, weekday } from "./dates";
 import type { Challenge, Me, Plan, Stats, Workout } from "./types";
+import { e1rm } from "./units";
 
 export type CardTone = "flame" | "accent" | "neutral" | "danger";
 export type CardAction =
@@ -39,6 +40,8 @@ export interface CoachContext {
   dismissed: (id: string) => boolean;
   /** The device's IANA timezone, when the browser will say. */
   deviceTimezone?: string | null;
+  /** Exercise names, for cards that talk about a lift. */
+  exerciseName?: (id: string) => string | undefined;
 }
 
 /**
@@ -235,6 +238,21 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
         dismissible: true,
       });
     }
+    // One lift going nowhere: a lighter week on it, not on everything.
+    const stall = !pause ? stalledLift(ctx.workouts, today) : null;
+    const stallName = stall && ctx.exerciseName?.(stall.exerciseId);
+    if (stall && stallName) {
+      cards.push({
+        id: `stall:${stall.exerciseId}:${stall.since}`,
+        tone: "neutral",
+        icon: "chart",
+        title: `${stallName} has levelled off`,
+        body: `No progress across your last ${stall.sessions} sessions since ${fmtMonthDay(stall.since)}${stall.harder ? ", and it has felt harder" : ""}. Take about 10% off it for a week, then build back. It usually comes back stronger.`,
+        primary: { kind: "link", label: `See ${stallName}`, to: `/exercises/${encodeURIComponent(stall.exerciseId)}` },
+        dismissible: true,
+      });
+    }
+
     for (const chain of stats?.chains ?? []) {
       if (!chain.at_risk || (chain.current === 0 && chain.this_week_days === 0)) continue;
       const needed = Math.max(0, chain.this_week_target - (chain === main ? weekDays : chain.this_week_days));
@@ -364,6 +382,23 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
     });
   }
 
+  // What consistency did: the lift you've trained most during this streak,
+  // from where it started to where it is. Framed as the reward for showing
+  // up, because it is - no single session did it.
+  const showing = main && main.current >= 4 && main.run_started ? consistencyGain(ctx.workouts, main.run_started, today) : null;
+  const showingName = showing && ctx.exerciseName?.(showing.exerciseId);
+  if (main && showing && showingName) {
+    cards.push({
+      id: `showing:${main.run_started}:${today.slice(0, 7)}`,
+      tone: "accent",
+      icon: "trophy",
+      title: "What showing up did",
+      body: `In this ${main.current}-week streak your ${showingName} estimated 1RM is up ${showing.pct.toFixed(0)}%. No single session did that; turning up did.`,
+      primary: { kind: "link", label: "See the lift", to: `/exercises/${encodeURIComponent(showing.exerciseId)}` },
+      dismissible: true,
+    });
+  }
+
   if (stats?.gamification_enabled && stats.level.to_next <= 60 && stats.level.to_next > 0) {
     cards.push({
       id: `level:${stats.level.level}`,
@@ -425,4 +460,71 @@ function addDaysIso(day: string, n: number): string {
   const d = new Date(`${day}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
+}
+
+/**
+ * A lift that has stopped moving: at least four sessions of it in the last
+ * eight weeks, spanning two weeks or more, where none of the last three beat
+ * the first by more than 1%. "Harder" when the average RPE of the last two
+ * is above the first two. The most-trained stalled lift wins.
+ */
+export function stalledLift(workouts: Workout[], today: string): { exerciseId: string; sessions: number; since: string; harder: boolean } | null {
+  const since = addDaysIso(today, -56);
+  const byExercise = new Map<string, { date: string; e1rm: number; rpe: number | null }[]>();
+  for (const w of workouts) {
+    if (w.deleted_at || w.local_date < since || w.local_date > today) continue;
+    const per = new Map<string, { best: number; rpes: number[] }>();
+    for (const s of w.sets) {
+      if (!s.completed || s.kind === "warmup" || !s.weight_kg || !s.reps || s.reps > 12) continue;
+      const cur = per.get(s.exercise_id) ?? { best: 0, rpes: [] };
+      cur.best = Math.max(cur.best, e1rm(s.weight_kg, s.reps));
+      if (s.rpe != null) cur.rpes.push(s.rpe);
+      per.set(s.exercise_id, cur);
+    }
+    for (const [id, v] of per) {
+      const list = byExercise.get(id) ?? [];
+      list.push({ date: w.local_date, e1rm: v.best, rpe: v.rpes.length ? v.rpes.reduce((a, b) => a + b, 0) / v.rpes.length : null });
+      byExercise.set(id, list);
+    }
+  }
+  let found: { exerciseId: string; sessions: number; since: string; harder: boolean } | null = null;
+  let most = 0;
+  for (const [id, list] of byExercise) {
+    const last4 = list.sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-4);
+    if (last4.length < 4 || daysBetween(last4[0].date, last4[3].date) < 14) continue;
+    const base = last4[0].e1rm;
+    if (last4.slice(1).some((s) => s.e1rm > base * 1.01)) continue;
+    if (list.length <= most) continue;
+    const rpe = (xs: typeof last4) => {
+      const r = xs.map((x) => x.rpe).filter((x): x is number => x != null);
+      return r.length ? r.reduce((a, b) => a + b, 0) / r.length : null;
+    };
+    const early = rpe(last4.slice(0, 2));
+    const late = rpe(last4.slice(2));
+    most = list.length;
+    found = { exerciseId: id, sessions: 4, since: last4[0].date, harder: early != null && late != null && late > early };
+  }
+  return found;
+}
+
+/** The most-trained lift since a streak began, and how much its best rose. */
+export function consistencyGain(workouts: Workout[], from: string, today: string): { exerciseId: string; pct: number } | null {
+  const sessions = new Map<string, { date: string; e1rm: number }[]>();
+  for (const w of workouts) {
+    if (w.deleted_at || w.local_date < from || w.local_date > today) continue;
+    const best = new Map<string, number>();
+    for (const s of w.sets) {
+      if (!s.completed || s.kind === "warmup" || !s.weight_kg || !s.reps || s.reps > 12) continue;
+      best.set(s.exercise_id, Math.max(best.get(s.exercise_id) ?? 0, e1rm(s.weight_kg, s.reps)));
+    }
+    for (const [id, v] of best) sessions.set(id, [...(sessions.get(id) ?? []), { date: w.local_date, e1rm: v }]);
+  }
+  let pick: [string, { date: string; e1rm: number }[]] | null = null;
+  for (const entry of sessions) if (entry[1].length >= 4 && (!pick || entry[1].length > pick[1].length)) pick = entry;
+  if (!pick) return null;
+  const list = pick[1].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const start = list[0].e1rm;
+  const best = Math.max(...list.slice(1).map((x) => x.e1rm));
+  const pct = ((best - start) / start) * 100;
+  return pct >= 2 ? { exerciseId: pick[0], pct } : null;
 }

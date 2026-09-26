@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { MagnifyingGlass, Plus } from "./phosphor";
 import { Sheet } from "./Sheet";
 import { CustomExerciseForm } from "./CustomExerciseForm";
-import { useLibrary, useWorkouts } from "../lib/queries";
+import { useGyms, useLibrary, useWorkouts } from "../lib/queries";
+import { fuzzyMatch } from "../lib/training";
 import type { Exercise } from "../lib/types";
 
 export function ExercisePicker({
@@ -11,6 +12,7 @@ export function ExercisePicker({
   onPick,
   title = "Add exercise",
   similarTo,
+  gymId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -18,40 +20,50 @@ export function ExercisePicker({
   title?: string;
   /** When swapping: list stand-ins for this exercise first. */
   similarTo?: string;
+  /** The gym this session is at, if any: offers "only what's here". */
+  gymId?: string | null;
 }) {
   const lib = useLibrary();
   const workouts = useWorkouts();
   const [q, setQ] = useState("");
   const [pattern, setPattern] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const gyms = useGyms();
+  const gym = gyms.data?.find((g) => g.id === gymId) ?? gyms.data?.find((g) => g.is_default);
+  const [atGym, setAtGym] = useState(true);
+  const gymFilter = useMemo(() => (gym && gym.equipment.length && atGym ? new Set(gym.equipment) : null), [gym, atGym]);
 
   const recent = useMemo(() => {
     const seen: string[] = [];
     for (const w of workouts ?? []) for (const s of w.sets) if (!seen.includes(s.exercise_id)) seen.push(s.exercise_id);
-    return seen.slice(0, 8);
+    return seen.slice(0, 30);
   }, [workouts]);
 
   const results = useMemo(() => {
     if (!lib) return [];
     const term = q.trim().toLowerCase();
+    const text = (e: Exercise) =>
+      [e.name, ...e.aliases, ...e.primary.map((m) => lib.lib.muscles[m] ?? m), lib.lib.equipment[e.equipment] ?? ""].join(" ").toLowerCase();
+    // Exact substring matches rank above typo-forgiving ones, and within
+    // each, what you've done recently comes first.
+    const exact = (e: Exercise) => !term || text(e).includes(term);
+    const rank = (e: Exercise) => {
+      const r = recent.indexOf(e.id);
+      return (exact(e) ? 0 : 1000) + (r < 0 ? 100 : r);
+    };
     return lib.exercises
       .filter((e) => !e.archived)
       .filter((e) => !pattern || e.pattern === pattern)
-      .filter(
-        (e) =>
-          !term ||
-          e.name.toLowerCase().includes(term) ||
-          e.aliases.some((a) => a.toLowerCase().includes(term)) ||
-          e.primary.some((m) => (lib.lib.muscles[m] ?? m).toLowerCase().includes(term)) ||
-          (lib.lib.equipment[e.equipment] ?? "").toLowerCase().includes(term),
-      )
+      .filter((e) => !gymFilter || e.custom || gymFilter.has(e.equipment))
+      .filter((e) => !term || exact(e) || fuzzyMatch(term, text(e)))
       .sort((a, b) => {
-        const ra = recent.indexOf(a.id);
-        const rb = recent.indexOf(b.id);
-        if (!term && !pattern && (ra >= 0 || rb >= 0)) return (ra < 0 ? 99 : ra) - (rb < 0 ? 99 : rb);
+        if (term || (!pattern && (recent.includes(a.id) || recent.includes(b.id)))) {
+          const d = rank(a) - rank(b);
+          if (d) return d;
+        }
         return a.name.localeCompare(b.name);
       });
-  }, [lib, q, pattern, recent]);
+  }, [lib, q, pattern, recent, gymFilter]);
 
   // Stand-ins for a swap: the same movement pattern, most shared primary
   // muscles first, then the closest names.
@@ -102,6 +114,11 @@ export function ExercisePicker({
             <input className="input pl-11" placeholder="Search exercises or muscles" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search exercises" />
           </div>
           <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
+            {gym && gym.equipment.length > 0 && (
+              <button type="button" aria-pressed={atGym} className={`chip h-8 whitespace-nowrap ${atGym ? "chip-accent" : ""}`} onClick={() => setAtGym(!atGym)}>
+                At {gym.name}
+              </button>
+            )}
             <button type="button" className={`chip h-8 ${pattern === null ? "chip-accent" : ""}`} onClick={() => setPattern(null)}>
               All
             </button>
@@ -122,7 +139,17 @@ export function ExercisePicker({
           </>
         )}
         <ul className="divide-y divide-line">{results.map(row)}</ul>
-        {results.length === 0 && <p className="py-8 text-center text-muted">Nothing matches "{q}".</p>}
+        {results.length === 0 && (
+          <p className="py-8 text-center text-muted">
+            Nothing matches{q ? ` "${q}"` : ""}
+            {gymFilter ? ` at ${gym!.name}` : ""}.
+            {gymFilter && (
+              <button type="button" className="ml-1 underline" onClick={() => setAtGym(false)}>
+                Show everything
+              </button>
+            )}
+          </p>
+        )}
         <button type="button" className="btn btn-secondary mt-4 w-full" onClick={() => setCreating(true)}>
           <Plus size={18} /> Create your own{q ? `: "${q}"` : ""}
         </button>

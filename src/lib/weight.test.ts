@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
 import type { WeighIn, WeighInMoment } from "./types";
-import { changeOver, dailySeries, daySwing, guessMoment, pctChange, signed } from "./weight";
+import { changeOver, dailySeries, daySwing, goalView, guessMoment, pctChange, signed, weeklyRate } from "./weight";
 
 let n = 0;
 const w = (date: string, weight_kg: number, moment: WeighInMoment = "waking"): WeighIn => ({
@@ -68,5 +68,32 @@ describe("helpers", () => {
     expect(pctChange(undefined, 5)).toBeNull();
     expect(signed(1.26)).toBe("+1.3");
     expect(signed(-0.5)).toBe("−0.5");
+  });
+});
+
+describe("goal and projection", () => {
+  // Losing 0.1 kg a day for 40 days from 100 kg.
+  const series = dailySeries(Array.from({ length: 40 }, (_, i) => w(addDays("2026-08-01", i), 100 - i * 0.1)));
+  const today = "2026-09-09";
+
+  it("measures the weekly rate and refuses thin data", () => {
+    expect(weeklyRate(series)).toBeCloseTo(-0.7, 2);
+    expect(weeklyRate(series.slice(0, 5))).toBeNull();
+  });
+
+  it("tracks milestones and projects a date", () => {
+    const g = goalView(series, { target_kg: 90, start_kg: 100, milestone_kg: 2 }, today)!;
+    expect(g.milestonesTotal).toBe(5);
+    expect(g.milestonesPassed).toBe(1); // about 96.3 now: past 98, not 96
+    expect(g.nextMilestone).toBe(96);
+    expect(g.eta).not.toBeNull();
+    expect(g.eta! > today).toBe(true);
+  });
+
+  it("gives no date when the trend runs the other way, and works for gaining", () => {
+    const g = goalView(series, { target_kg: 105, start_kg: 100, milestone_kg: 1 }, today)!;
+    expect(g.eta).toBeNull();
+    expect(g.progress).toBe(0);
+    expect(g.reached).toBe(false);
   });
 });

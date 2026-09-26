@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { localWeek, platesFor, suggestNext } from "./training";
-import type { Workout } from "./types";
+import { fuzzyMatch, localWeek, muscleRecovery, parseShorthand, platesFor, suggestNext } from "./training";
+import type { Exercise, Workout } from "./types";
 
 const w = (date: string, discipline = "run") => ({ id: date + discipline, local_date: date, discipline, deleted_at: null }) as Workout;
 
@@ -136,5 +136,56 @@ describe("warmupSets", () => {
   it("rounds to 5 lb in pounds", () => {
     const lb = warmupSets(102.058, "lb").map((s) => Math.round(s.weight_kg / 0.45359237));
     expect(lb).toEqual([45, 90, 135, 180]);
+  });
+});
+
+describe("stall resets", () => {
+  it("steps back 10% after two sessions short of the range", () => {
+    const s = suggestNext([{ weight_kg: 100, reps: 5, rpe: null }], { repsMin: 6, repsMax: 8, unit: "kg", earlier: [{ weight_kg: 100, reps: 5 }] });
+    expect(s).toMatchObject({ weight_kg: 90, reps: 8, reset: true });
+  });
+  it("steps back after three flat sessions at one weight", () => {
+    const s = suggestNext([{ weight_kg: 100, reps: 6, rpe: null }], { unit: "kg", earlier: [{ weight_kg: 100, reps: 6 }, { weight_kg: 100, reps: 6 }] });
+    expect(s?.reset).toBe(true);
+  });
+  it("keeps progressing while reps still climb", () => {
+    const s = suggestNext([{ weight_kg: 100, reps: 7, rpe: null }], { repsMax: 8, unit: "kg", earlier: [{ weight_kg: 100, reps: 6 }, { weight_kg: 100, reps: 5 }] });
+    expect(s).toMatchObject({ weight_kg: 100, reps: 8 });
+    expect(s?.reset).toBeUndefined();
+  });
+});
+
+describe("parseShorthand", () => {
+  it("reads the common forms", () => {
+    expect(parseShorthand("100x5")).toEqual({ weight: 100, reps: 5, sets: 1 });
+    expect(parseShorthand("100 x 5 x 3")).toEqual({ weight: 100, reps: 5, sets: 3 });
+    expect(parseShorthand("3x5@102.5")).toEqual({ weight: 102.5, reps: 5, sets: 3 });
+    expect(parseShorthand("8@60")).toEqual({ weight: 60, reps: 8, sets: 1 });
+    expect(parseShorthand("62,5×8")).toEqual({ weight: 62.5, reps: 8, sets: 1 });
+    expect(parseShorthand("12")).toEqual({ weight: null, reps: 12, sets: 1 });
+  });
+  it("rejects nonsense", () => {
+    for (const t of ["", "abc", "100x", "x5", "100x0", "100x5x50", "5000x5"]) expect(parseShorthand(t)).toBeNull();
+  });
+});
+
+describe("fuzzyMatch", () => {
+  it("forgives one typo in longer words, not in short ones", () => {
+    expect(fuzzyMatch("benhc prss", "Bench press")).toBe(true);
+    expect(fuzzyMatch("dedlift", "Deadlift")).toBe(true);
+    expect(fuzzyMatch("squat", "Back squat")).toBe(true);
+    expect(fuzzyMatch("raw", "Barbell row")).toBe(false);
+    expect(fuzzyMatch("curl", "Bench press")).toBe(false);
+  });
+});
+
+describe("muscleRecovery", () => {
+  it("reports days since and sets this week per primary muscle", () => {
+    const ex = new Map([["back-squat", { primary: ["quads"] } as Exercise]]);
+    const rows = [
+      { id: "a", local_date: "2026-09-24", deleted_at: null, sets: [{ exercise_id: "back-squat", completed: true, kind: "work" }, { exercise_id: "back-squat", completed: true, kind: "warmup" }] },
+      { id: "b", local_date: "2026-09-10", deleted_at: null, sets: [{ exercise_id: "back-squat", completed: true, kind: "work" }] },
+    ] as unknown as Workout[];
+    expect(muscleRecovery(rows, ex, "2026-09-26").get("quads")).toEqual({ daysSince: 2, sets7: 1 });
   });
 });

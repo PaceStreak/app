@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router";
 import {
   Bell,
+  Buildings,
   DeviceMobile,
   Export,
   Info,
@@ -17,6 +18,7 @@ import { useSession } from "../../lib/session";
 import { About, AppSection, Appearance } from "./AppSettings";
 import { Data } from "./Data";
 import { GearSettings } from "./GearSettings";
+import { GymSettings } from "./GymSettings";
 import { NotificationSettings } from "./NotificationSettings";
 import { Privacy } from "./Privacy";
 import { ProfileSettings } from "./ProfileSettings";
@@ -27,6 +29,7 @@ const SECTIONS = {
   profile: { title: "Profile", icon: UserCircle, Component: ProfileSettings },
   training: { title: "Training", icon: Target, Component: Training },
   gear: { title: "Gear", icon: Sneaker, Component: GearSettings },
+  gyms: { title: "Gyms", icon: Buildings, Component: GymSettings },
   privacy: { title: "Privacy", icon: Lock, Component: Privacy },
   notifications: { title: "Notifications", icon: Bell, Component: NotificationSettings },
   security: { title: "Security", icon: ShieldCheck, Component: Security },

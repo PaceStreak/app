@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
+import { QuestsCard, WagerCard } from "../components/Engagement";
 import { GettingStarted } from "../components/GettingStarted";
 import { Heatmap } from "../components/Heatmap";
 import {
@@ -121,10 +122,11 @@ export default function Today() {
         pushOffer,
         dismissed: prefs.dismissed,
         deviceTimezone: deviceTimezone(),
+        exerciseName: (id) => lib?.byId.get(id)?.name,
       }),
     // bump re-renders after a dismissal
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [me, stats.data, workouts, today, week, challenges.data, plan.data, sync.failed.length, active, installable, pushOffer, bump],
+    [me, stats.data, workouts, today, week, challenges.data, plan.data, sync.failed.length, active, installable, pushOffer, bump, lib],
   );
 
   const run = async (action: CardAction) => {
@@ -215,6 +217,8 @@ export default function Today() {
           <>
             <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} />
             <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
+            {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
+            {gamified && stats.data?.quests && <QuestsCard quests={stats.data.quests} />}
           </>
         )}
       </div>

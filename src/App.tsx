@@ -94,6 +94,7 @@ const router = createBrowserRouter([
           { path: "/progress", element: page(() => import("./routes/progress/Progress")) },
           { path: "/progress/xp", element: page(() => import("./routes/progress/Xp")) },
           { path: "/recap", element: page(() => import("./routes/Recap")) },
+          { path: "/recap/month", element: page(() => import("./routes/MonthRecap")) },
           { path: "/records", element: page(() => import("./routes/progress/Records")) },
           { path: "/records/history", element: page(() => import("./routes/progress/RecordHistory")) },
           { path: "/review", element: page(() => import("./routes/Review")) },

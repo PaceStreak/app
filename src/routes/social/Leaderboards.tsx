@@ -58,14 +58,18 @@ export default function Leaderboards() {
               <select className="input h-10 min-h-0 flex-1 rounded-full py-0 text-sm" value={scope} onChange={(e) => setScope(e.target.value)} aria-label="Who">
                 <option value="following">People I follow</option>
                 <option value="global">Everyone who opted in</option>
+                <option value="similar">People who train about as often as me</option>
                 {(groups.data ?? []).map((g) => (
                   <option key={g.id} value={`group:${g.id}`}>{g.name}</option>
                 ))}
               </select>
             </div>
-            <p className="mt-3 text-sm text-dim">{meta.about}</p>
+            <p className="mt-3 text-sm text-dim">
+              {meta.about}
+              {scope === "similar" && " Narrowed to opted-in people within about a day a week of your own recent average, so the board is winnable from wherever you are."}
+            </p>
 
-            {scope === "global" && q.data && !q.data.opted_in && (
+            {(scope === "global" || scope === "similar") && q.data && !q.data.opted_in && (
               <div className="mt-4">
                 <Banner tone="accent" action={<button type="button" className="btn btn-primary btn-sm" onClick={optIn}>Join</button>}>
                   You're not on the global boards. Joining shows your handle and these numbers to other opted-in people.
@@ -79,7 +83,7 @@ export default function Leaderboards() {
               ) : !q.data ? (
                 <Loading />
               ) : q.data.rows.length === 0 ? (
-                <Empty icon={<Trophy size={26} />} title="Nobody here yet" body={scope === "global" ? "Be the first to opt in." : "Follow a few people and this fills up."} />
+                <Empty icon={<Trophy size={26} />} title="Nobody here yet" body={scope === "global" || scope === "similar" ? "Be the first to opt in." : "Follow a few people and this fills up."} />
               ) : (
                 <>
                   <ol className="card divide-y divide-line overflow-hidden">

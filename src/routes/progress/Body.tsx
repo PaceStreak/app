@@ -1,17 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart } from "../../components/BarChart";
 import { LineChart } from "../../components/LineChart";
+import { ProgressPhotos } from "../../components/ProgressPhotos";
 import { Lock, Trash } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { Banner, Empty, ErrorState, Loading, PageHeader, Section, Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
-import { addDays, fmtMonthDay, localToday, timeOfDay, toLocalInput, uuid } from "../../lib/dates";
+import { addDays, fmtFullDay, fmtMonthDay, localDateOf, localToday, timeOfDay, toLocalInput, uuid } from "../../lib/dates";
+import type { QueuedRequest } from "../../lib/db";
 import { queryClient } from "../../lib/queries";
 import { useMe } from "../../lib/session";
-import type { BodyMetric, WeighIn, WeighInMoment } from "../../lib/types";
+import { onQueueChange, sendOrQueue } from "../../lib/requests";
+import type { BodyMetric, WeighIn, WeighInMoment, WeightGoal } from "../../lib/types";
 import { fromKg, parseNumber, toKg } from "../../lib/units";
-import { MOMENTS, changeOver, dailySeries, daySwing, guessMoment, momentLabel, signed } from "../../lib/weight";
+import { MOMENTS, changeOver, dailySeries, daySwing, goalView, guessMoment, momentLabel, signed } from "../../lib/weight";
 
 type Field = "body_fat_pct" | "waist_cm" | "resting_hr" | "sleep_hours";
 const EMPTY: Record<Field, string> = { body_fat_pct: "", waist_cm: "", resting_hr: "", sleep_hours: "" };
@@ -23,6 +26,10 @@ export default function Body() {
   const weighs = useQuery({ queryKey: ["weigh-ins"], queryFn: () => api<WeighIn[]>("/weigh-ins?days=730") });
   const q = useQuery({ queryKey: ["body"], queryFn: () => api<BodyMetric[]>("/body-metrics?days=365") });
   const todays = q.data?.find((m) => m.date === today);
+  const goalQ = useQuery({ queryKey: ["weight-goal"], queryFn: () => api<WeightGoal | null>("/weight-goal") });
+  // Writes made with no signal, shown straight away and sent later.
+  const [queue, setQueue] = useState<QueuedRequest[]>([]);
+  useEffect(() => onQueueChange(setQueue), []);
 
   const [kg, setKg] = useState("");
   const [moment, setMoment] = useState<WeighInMoment>(() => guessMoment(new Date().getHours()));
@@ -40,14 +47,15 @@ export default function Body() {
     if (value == null || value <= 0) return;
     setBusy(true);
     try {
-      await api(`/weigh-ins/${uuid()}`, {
-        method: "PUT",
-        body: { weighed_at: when ? new Date(when).toISOString() : new Date().toISOString(), moment, weight_kg: toKg(value, wu) },
+      const result = await sendOrQueue(`/weigh-ins/${uuid()}`, "PUT", {
+        weighed_at: when ? new Date(when).toISOString() : new Date().toISOString(),
+        moment,
+        weight_kg: toKg(value, wu),
       });
       setKg("");
       setWhen(null);
       await queryClient.invalidateQueries({ queryKey: ["weigh-ins"] });
-      toast.success(`Saved · ${momentLabel(moment).toLowerCase()}`);
+      toast.success(result === "queued" ? "Saved on this phone. It syncs when you're back online." : `Saved · ${momentLabel(moment).toLowerCase()}`);
     } catch (err) {
       toast.error(errorText(err));
     } finally {
@@ -56,25 +64,22 @@ export default function Body() {
   };
 
   const removeWeighIn = async (id: string) => {
-    await api(`/weigh-ins/${id}`, { method: "DELETE" });
+    await sendOrQueue(`/weigh-ins/${id}`, "DELETE");
     await queryClient.invalidateQueries({ queryKey: ["weigh-ins"] });
   };
 
   const save = async () => {
     setBusy(true);
     try {
-      await api(`/body-metrics/${today}`, {
-        method: "PUT",
-        body: {
-          body_fat_pct: parseNumber(form.body_fat_pct) ?? todays?.body_fat_pct ?? null,
-          waist_cm: parseNumber(form.waist_cm) ?? todays?.waist_cm ?? null,
-          resting_hr: parseNumber(form.resting_hr) ?? todays?.resting_hr ?? null,
-          sleep_hours: parseNumber(form.sleep_hours) ?? todays?.sleep_hours ?? null,
-        },
+      const result = await sendOrQueue(`/body-metrics/${today}`, "PUT", {
+        body_fat_pct: parseNumber(form.body_fat_pct) ?? todays?.body_fat_pct ?? null,
+        waist_cm: parseNumber(form.waist_cm) ?? todays?.waist_cm ?? null,
+        resting_hr: parseNumber(form.resting_hr) ?? todays?.resting_hr ?? null,
+        sleep_hours: parseNumber(form.sleep_hours) ?? todays?.sleep_hours ?? null,
       });
       setForm(EMPTY);
       await queryClient.invalidateQueries({ queryKey: ["body"] });
-      toast.success("Saved for today");
+      toast.success(result === "queued" ? "Saved on this phone. It syncs when you're back online." : "Saved for today");
     } catch (err) {
       toast.error(errorText(err));
     } finally {
@@ -83,12 +88,25 @@ export default function Body() {
   };
 
   const remove = async (date: string) => {
-    await api(`/body-metrics/${date}`, { method: "DELETE" });
+    await sendOrQueue(`/body-metrics/${date}`, "DELETE");
     await queryClient.invalidateQueries({ queryKey: ["body"] });
   };
 
-  const all = weighs.data ?? [];
+  const tz = me.profile.timezone;
+  const all = useMemo(() => {
+    const deleted = new Set(queue.filter((r) => r.method === "DELETE" && r.path.startsWith("/weigh-ins/")).map((r) => r.path.slice(11)));
+    const pending: WeighIn[] = queue
+      .filter((r) => r.method === "PUT" && r.path.startsWith("/weigh-ins/"))
+      .map((r) => {
+        const b = r.body as { weighed_at: string; moment: WeighInMoment; weight_kg: number };
+        return { id: r.path.slice(11), weighed_at: b.weighed_at, date: localDateOf(new Date(b.weighed_at), tz), moment: b.moment, weight_kg: b.weight_kg, note: null, pending: true };
+      });
+    const known = new Set(pending.map((w) => w.id));
+    return [...(weighs.data ?? []).filter((w) => !deleted.has(w.id) && !known.has(w.id)), ...pending].sort((x, y) => (x.weighed_at < y.weighed_at ? -1 : 1));
+  }, [weighs.data, queue, tz]);
   const series = useMemo(() => dailySeries(all, filter), [all, filter]);
+  // Goals are measured on every reading, the same basis the server starts them from.
+  const allSeries = useMemo(() => dailySeries(all), [all]);
   const shown = series.filter((p) => p.date > addDays(today, -range));
   const todaysWeighs = all.filter((w) => w.date === today);
   const swing = daySwing(all, today);
@@ -156,6 +174,7 @@ export default function Body() {
                     <span className="w-16 shrink-0 text-dim">{timeOfDay(w.weighed_at)}</span>
                     <span className="flex-1 truncate text-muted">{momentLabel(w.moment)}</span>
                     <span className="num">{kgText(w.weight_kg)}</span>
+                    {w.pending && <span className="chip h-5 px-1.5 text-[0.7rem]" title="Saved on this phone, waiting for signal">Waiting</span>}
                     <button type="button" className="btn btn-ghost btn-icon btn-sm text-dim" aria-label={`Delete the ${timeOfDay(w.weighed_at)} weigh-in`} onClick={() => void removeWeighIn(w.id)}>
                       <Trash size={16} />
                     </button>
@@ -227,6 +246,16 @@ export default function Body() {
         </Section>
       ) : null}
 
+      {all.length > 0 && (
+        <Section title="Goal">
+          <GoalCard goal={goalQ.data ?? null} loading={!goalQ.isFetched} series={allSeries} today={today} unit={wu} />
+        </Section>
+      )}
+
+      <Section title="Progress photos">
+        <ProgressPhotos today={today} />
+      </Section>
+
       <Section title="Other measures">
         <div className="card space-y-4 p-4">
           <div className="grid grid-cols-2 gap-3">
@@ -294,4 +323,103 @@ export default function Body() {
 
 function historyDays(weighs: WeighIn[], metrics: BodyMetric[]): string[] {
   return [...new Set([...weighs.map((w) => w.date), ...metrics.map((m) => m.date)])].sort().reverse();
+}
+
+function GoalCard({ goal, loading, series, today, unit }: { goal: WeightGoal | null; loading: boolean; series: ReturnType<typeof dailySeries>; today: string; unit: "kg" | "lb" }) {
+  const [editing, setEditing] = useState(false);
+  const [target, setTarget] = useState("");
+  const [step, setStep] = useState(unit === "kg" ? 2 : 5);
+  const view = goal ? goalView(series, goal, today) : null;
+  const fmt = (kg: number) => `${fromKg(kg, unit).toFixed(1)} ${unit}`;
+
+  const save = async () => {
+    const t = parseNumber(target);
+    if (t == null) return;
+    try {
+      await api("/weight-goal", { method: "PUT", body: { target_kg: toKg(t, unit), milestone_kg: toKg(step, unit) } });
+      setEditing(false);
+      setTarget("");
+      await queryClient.invalidateQueries({ queryKey: ["weight-goal"] });
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const clear = async () => {
+    await api("/weight-goal", { method: "DELETE" });
+    await queryClient.invalidateQueries({ queryKey: ["weight-goal"] });
+  };
+
+  if (loading) return <Loading rows={1} />;
+  if (!goal || editing) {
+    return (
+      <div className="card space-y-4 p-4">
+        <p className="text-sm text-muted">
+          Optional, and only ever seen by you. Progress is measured on the 7-day average, broken into small milestones. There are no rewards for it, on purpose.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="field-label" htmlFor="goal-target">Target</label>
+            <div className="relative">
+              <input id="goal-target" className="input num pr-12" inputMode="decimal" value={target} placeholder={goal ? fromKg(goal.target_kg, unit).toFixed(1) : ""} onChange={(e) => setTarget(e.target.value)} />
+              <span className="absolute inset-y-0 right-4 flex items-center text-sm text-dim">{unit}</span>
+            </div>
+          </div>
+          <div>
+            <label className="field-label" htmlFor="goal-step">Milestones every</label>
+            <select id="goal-step" className="input" value={step} onChange={(e) => setStep(Number(e.target.value))}>
+              {(unit === "kg" ? [1, 2, 5] : [2, 5, 10]).map((v) => (
+                <option key={v} value={v}>{v} {unit}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {goal && (
+            <button type="button" className="btn btn-ghost flex-1" onClick={() => setEditing(false)}>
+              Cancel
+            </button>
+          )}
+          <button type="button" className="btn btn-secondary flex-1" disabled={parseNumber(target) == null} onClick={() => void save()}>
+            {goal ? "Update goal" : "Set a goal"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="card space-y-3 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-semibold">
+          {fmt(goal.target_kg)} <span className="text-sm font-normal text-dim">from {fmt(goal.start_kg)} on {fmtMonthDay(goal.set_on)}</span>
+        </p>
+        <button type="button" className="text-sm text-dim underline underline-offset-2" onClick={() => setEditing(true)}>
+          Change
+        </button>
+      </div>
+      {view && (
+        <>
+          <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.round(view.progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to goal">
+            <div className="h-full rounded-full bg-accent" style={{ width: `${view.progress * 100}%` }} />
+          </div>
+          <p className="text-sm text-muted">
+            {view.reached
+              ? `You're there: the 7-day average is ${fmt(view.current)}. Keep logging if it's useful, or clear the goal.`
+              : `Now ${fmt(view.current)} · milestone ${view.milestonesPassed} of ${view.milestonesTotal}, next at ${fmt(view.nextMilestone!)}.`}
+          </p>
+          {!view.reached && (
+            <p className="text-sm text-dim">
+              {view.eta
+                ? `At the last four weeks' pace (${signed(fromKg(view.rate!, unit))} ${unit} a week), around ${fmtFullDay(view.eta)}.`
+                : view.rate == null
+                  ? "A few more weeks of weigh-ins and this will show a pace."
+                  : "The trend isn't heading that way at the moment. That's information, not a verdict."}
+            </p>
+          )}
+        </>
+      )}
+      <button type="button" className="text-xs text-dim underline underline-offset-2" onClick={() => void clear()}>
+        Clear goal
+      </button>
+    </div>
+  );
 }

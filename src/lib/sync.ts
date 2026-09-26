@@ -13,6 +13,7 @@
 
 import { ApiError, NetworkError, api, isAuthenticated } from "./api";
 import { db, kvGet, kvSet, notifyWorkoutsChanged, type OutboxOp } from "./db";
+import { flushQueue } from "./requests";
 import type { Outcome, Workout } from "./types";
 
 const CURSOR_KEY = "sync.cursor";
@@ -201,6 +202,7 @@ export async function pull(): Promise<void> {
 export async function syncNow() {
   await push();
   await pull();
+  await flushQueue();
 }
 
 let started = false;

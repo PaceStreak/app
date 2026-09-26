@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ApiError, api } from "./api";
 import { allWorkouts, kvGet, kvSet, onWorkoutsChanged } from "./db";
 import { subscribeSync, type SyncState } from "./sync";
-import type { Exercise, Gear, Library, Routine, Stats, Workout } from "./types";
+import type { Exercise, Gear, Gym, Library, Routine, Stats, Workout } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +23,9 @@ if (typeof window !== "undefined") {
     for (const key of ["stats", "progress", "records", "achievements", "xp", "chains", "feed", "exercise-history", "plan-active", "plan", "gear", "review", "record-history", "monthly-goal"]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
+  });
+  window.addEventListener("ps:body-synced", () => {
+    for (const key of ["weigh-ins", "body", "stats"]) void queryClient.invalidateQueries({ queryKey: [key] });
   });
 }
 
@@ -88,6 +91,15 @@ export function useRestDays() {
 
 export function useGear() {
   return useCachedQuery<Gear[]>(["gear"], "/gear");
+}
+
+export function useGyms() {
+  return useCachedQuery<Gym[]>(["gyms"], "/gyms");
+}
+
+/** Pinned notes, keyed by exercise id. */
+export function useExerciseNotes() {
+  return useCachedQuery<Record<string, string>>(["exercise-notes"], "/exercise-notes");
 }
 
 export function useRoutines() {

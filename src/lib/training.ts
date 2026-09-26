@@ -97,11 +97,22 @@ export interface Suggestion {
   reps: number | null;
   duration_sec?: number | null;
   reason: string;
+  /** A deliberate step back after a stall, not progress. */
+  reset?: boolean;
 }
 
 export function suggestNext(
   last: { weight_kg: number | null; reps: number | null; rpe: number | null; kind?: string; duration_sec?: number | null }[],
-  opts: { repsMax?: number | null; targetRpe?: number | null; stepKg?: number | null; unit: WeightUnit; exercise?: Exercise },
+  opts: {
+    repsMin?: number | null;
+    repsMax?: number | null;
+    targetRpe?: number | null;
+    stepKg?: number | null;
+    unit: WeightUnit;
+    exercise?: Exercise;
+    /** Top working set of each earlier session, most recent first, not including `last`. */
+    earlier?: { weight_kg: number; reps: number }[];
+  },
 ): Suggestion | null {
   const work = last.filter((s) => s.kind !== "warmup" && s.weight_kg && s.reps);
   if (!work.length) return suggestUnloaded(last, opts.repsMax ?? null);
@@ -114,6 +125,22 @@ export function suggestNext(
     const inc = opts.unit === "kg" ? 1.25 : 2.5;
     return toKg(Math.round(inUnit / inc) * inc, opts.unit);
   };
+
+  // Stuck: the same top weight for three sessions without a rep gained, or
+  // twice short of the bottom of the range. Grinding on rarely breaks that;
+  // stepping back about 10% and building up again usually does.
+  const recent = [{ weight_kg: top.weight_kg ?? 0, reps: top.reps ?? 0 }, ...(opts.earlier ?? [])];
+  const same = (n: number) => recent.length >= n && recent.slice(0, n).every((r) => Math.abs(r.weight_kg - recent[0].weight_kg) < 0.01);
+  const shortTwice = opts.repsMin != null && same(2) && recent.slice(0, 2).every((r) => r.reps < opts.repsMin!);
+  const flat = same(3) && recent[0].reps <= recent[2].reps && recent[1].reps <= recent[2].reps;
+  if (shortTwice || flat) {
+    return {
+      weight_kg: round((top.weight_kg ?? 0) * 0.9),
+      reps: opts.repsMax ?? top.reps,
+      reason: shortTwice ? "Two sessions short of the range: step back 10% and build again" : "Stuck at this weight for three sessions: step back 10% and build again",
+      reset: true,
+    };
+  }
 
   if (lastSet.rpe != null && opts.targetRpe != null) {
     const gap = opts.targetRpe - lastSet.rpe;
@@ -223,4 +250,100 @@ export function warmupSets(workingKg: number, unit: WeightUnit): { weight_kg: nu
     out.push({ weight_kg: Math.round(kg * 1000) / 1000, reps });
   }
   return out;
+}
+
+/** Top working set per session for an exercise, newest first, from this device. */
+export function sessionTops(workouts: Workout[], exerciseId: string, excludeId?: string): { date: string; weight_kg: number; reps: number; e1rm: number; rpe: number | null }[] {
+  const out: { date: string; weight_kg: number; reps: number; e1rm: number; rpe: number | null }[] = [];
+  for (const w of workouts) {
+    if (w.id === excludeId || w.deleted_at) continue;
+    const sets = w.sets.filter((s) => s.exercise_id === exerciseId && s.completed && s.kind !== "warmup" && s.weight_kg && s.reps);
+    if (!sets.length) continue;
+    const top = sets.reduce((a, b) => ((b.weight_kg ?? 0) > (a.weight_kg ?? 0) || ((b.weight_kg ?? 0) === (a.weight_kg ?? 0) && (b.reps ?? 0) > (a.reps ?? 0)) ? b : a));
+    const rpes = sets.map((s) => s.rpe).filter((r): r is number => r != null);
+    out.push({
+      date: w.local_date,
+      weight_kg: top.weight_kg!,
+      reps: top.reps!,
+      e1rm: bestE1rm(sets),
+      rpe: rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null,
+    });
+  }
+  return out.sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+/**
+ * Typed shorthand for a set, so logging needs no taps between numbers:
+ * "100x5" (weight x reps), "100x5x3" (and sets), "3x5@100" (sets x reps at
+ * weight), "5@100", or a bare "12" (reps, for bodyweight work). Weight is in
+ * whatever unit the person uses; "x", "X", "*" and "×" all work.
+ */
+export function parseShorthand(text: string): { weight: number | null; reps: number; sets: number } | null {
+  const t = text.trim().toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, "").replace(/,/g, ".");
+  let m = t.match(/^(\d+)x(\d+)@(\d+(?:\.\d+)?)$/);
+  if (m) return ok(Number(m[3]), Number(m[2]), Number(m[1]));
+  m = t.match(/^(\d+)@(\d+(?:\.\d+)?)$/);
+  if (m) return ok(Number(m[2]), Number(m[1]), 1);
+  m = t.match(/^(\d+(?:\.\d+)?)x(\d+)(?:x(\d+))?$/);
+  if (m) return ok(Number(m[1]), Number(m[2]), m[3] ? Number(m[3]) : 1);
+  m = t.match(/^(\d+)$/);
+  if (m) return ok(null, Number(m[1]), 1);
+  return null;
+
+  function ok(weight: number | null, reps: number, sets: number) {
+    if (!(reps >= 1 && reps <= 100) || !(sets >= 1 && sets <= 20) || (weight != null && !(weight > 0 && weight <= 1000))) return null;
+    return { weight, reps, sets };
+  }
+}
+
+/**
+ * Days since each muscle last did primary work, and hard sets on it in the
+ * last seven days - a rough recovery map. Rough on purpose: soreness and
+ * sleep matter more than any count, so this only says what was trained when.
+ */
+export function muscleRecovery(workouts: Workout[], exercises: Map<string, Exercise>, today: string): Map<string, { daysSince: number; sets7: number }> {
+  const out = new Map<string, { daysSince: number; sets7: number }>();
+  const weekAgo = addDays(today, -6);
+  for (const w of workouts) {
+    if (w.deleted_at || w.local_date > today) continue;
+    const since = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${w.local_date}T00:00:00Z`)) / 86_400_000);
+    for (const s of w.sets) {
+      if (!s.completed || s.kind === "warmup") continue;
+      for (const m of exercises.get(s.exercise_id)?.primary ?? []) {
+        const cur = out.get(m) ?? { daysSince: Infinity, sets7: 0 };
+        cur.daysSince = Math.min(cur.daysSince, since);
+        if (w.local_date >= weekAgo) cur.sets7 += 1;
+        out.set(m, cur);
+      }
+    }
+  }
+  return out;
+}
+
+/** One edit apart (insert, delete, substitute or swap two neighbours). */
+export function nearly(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  const restA = a.slice(i);
+  const restB = b.slice(i);
+  if (restA.slice(1) === restB.slice(1)) return true; // substitute
+  if (restA.slice(1) === restB || restA === restB.slice(1)) return true; // delete / insert
+  return restA.length >= 2 && restA[0] === restB[1] && restA[1] === restB[0] && restA.slice(2) === restB.slice(2); // swap
+}
+
+/**
+ * Does a search term match some text, forgiving one typo per word of four or
+ * more letters? "benhc prss" finds "Bench press"; short words must match
+ * exactly, so "row" doesn't find "raw".
+ */
+export function fuzzyMatch(term: string, text: string): boolean {
+  const hay = text.toLowerCase();
+  const words = hay.split(/[^a-z0-9]+/).filter(Boolean);
+  return term
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((t) => hay.includes(t) || (t.length >= 4 && words.some((w) => nearly(t, w) || (w.length > t.length && nearly(t, w.slice(0, t.length))))));
 }
