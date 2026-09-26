@@ -61,6 +61,7 @@ export default function You() {
 
       <Section title="Training">
         <List>
+          <RowLink to="/habits" icon={<Sparkle size={20} />} title="Habits" detail={stats?.habits?.count ? `${stats.habits.count} tracked` : "Reading, water, a skill…"} />
           <RowLink to="/history" icon={<CalendarBlank size={20} />} title="Sessions" detail={stats ? `${stats.totals.sessions} logged` : undefined} />
           <RowLink to="/plans" icon={<CalendarCheck size={20} />} title="Training plans" />
           <RowLink to="/routines" icon={<ListBullets size={20} />} title="Routines" />

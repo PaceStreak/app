@@ -18,6 +18,8 @@ export interface Profile {
   /** For heart-rate zones; null means estimated from the birth year. */
   max_hr?: number | null;
   onboarded_at?: string | null;
+  /** Days a week for the whole-life streak; null means it's off. */
+  life_target?: number | null;
   birth_year: number | null;
   onboarded: boolean;
   visibility: Visibility;
@@ -283,6 +285,77 @@ export interface Stats {
   quests?: QuestWeek | null;
   pr_streak?: PrStreak | null;
   wager?: WagerState;
+  life?: LifeStreak | null;
+  habits?: { count: number; done_today: number; kept_this_week: number };
+}
+
+export interface LifeStreak {
+  target: number;
+  current: number;
+  longest: number;
+  this_week_days: number;
+  needed: number;
+  days_left: number;
+  freezes_available: number;
+  weeks: { week_start: string; days: number; target: number; status: string; score: number }[];
+}
+
+export type HabitKind = "check" | "duration" | "count" | "quit";
+export type TimeOfDay = "morning" | "afternoon" | "evening" | "anytime";
+
+export interface Habit {
+  id: string;
+  name: string;
+  emoji: string;
+  category: string;
+  kind: HabitKind;
+  unit: string | null;
+  daily_goal: number | null;
+  weekly_target: number;
+  time_of_day: TimeOfDay;
+  cue: string | null;
+  why: string | null;
+  total_goal: number | null;
+  remind_hour: number | null;
+  template_id: string | null;
+  started_on: string;
+  archived: boolean;
+  position: number;
+  today: { amount: number; done: boolean };
+  streak: {
+    current: number;
+    longest: number;
+    this_week_days: number;
+    this_week_target: number;
+    needed: number;
+    days_left: number;
+    at_risk: boolean;
+    freezes_available: number;
+    consistency: number;
+  };
+  strength: number;
+  total: number;
+  clean_run: number | null;
+  best_clean_run: number | null;
+  last_slip: string | null;
+  /** Detail only. */
+  days?: { date: string; amount: number }[];
+  weeks?: { week_start: string; days: number; target: number; status: string; score: number }[];
+}
+
+export interface HabitTemplate {
+  id: string;
+  name: string;
+  emoji: string;
+  category: string;
+  kind: HabitKind;
+  blurb: string;
+  unit: string | null;
+  daily_goal: number | null;
+  weekly_target: number;
+  time_of_day: TimeOfDay;
+  cue: string | null;
+  total_goal: number | null;
 }
 
 export interface Quest {

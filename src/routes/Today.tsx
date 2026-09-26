@@ -5,6 +5,7 @@ import { AdjustToday } from "../components/AdjustToday";
 import { QuestsCard, WagerCard } from "../components/Engagement";
 import { ReadinessCard } from "../components/Readiness";
 import { GettingStarted } from "../components/GettingStarted";
+import { HabitsToday } from "../components/HabitsToday";
 import { Heatmap } from "../components/Heatmap";
 import {
   ArrowCounterClockwise,
@@ -222,6 +223,11 @@ export default function Today() {
             {Math.max(week.count, main?.this_week_days ?? 0)}/{main?.this_week_target ?? 3}
           </span>
         </div>
+        {stats.data?.life && (
+          <Link to="/habits" className="chip" title="Whole-life streak: weeks with any training or habit">
+            Life {stats.data.life.current} wk
+          </Link>
+        )}
         {gamified && stats.data && (
           <Link to="/progress/xp" className="chip ml-auto">
             Lv {stats.data.level.level}
@@ -237,6 +243,7 @@ export default function Today() {
           <>
             <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
             <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
+            <HabitsToday today={today} />
             {(stats.data?.totals.sessions ?? 0) > 0 && !stats.data?.paused_today && <ReadinessCard today={today} onAdjust={() => setAdjusting(true)} />}
             {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
             {gamified && stats.data?.quests && <QuestsCard quests={stats.data.quests} />}

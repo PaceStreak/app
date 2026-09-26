@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ApiError, api } from "./api";
 import { allWorkouts, kvGet, kvSet, onWorkoutsChanged } from "./db";
 import { subscribeSync, type SyncState } from "./sync";
-import type { Exercise, Gear, Gym, Library, Routine, Stats, Workout } from "./types";
+import type { Exercise, Gear, Gym, Habit, HabitTemplate, Library, Routine, Stats, Workout } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,7 +25,7 @@ if (typeof window !== "undefined") {
     }
   });
   window.addEventListener("ps:body-synced", () => {
-    for (const key of ["weigh-ins", "body", "stats"]) void queryClient.invalidateQueries({ queryKey: [key] });
+    for (const key of ["weigh-ins", "body", "stats", "habits", "habit"]) void queryClient.invalidateQueries({ queryKey: [key] });
   });
 }
 
@@ -100,6 +100,14 @@ export function useGyms() {
 /** Pinned notes, keyed by exercise id. */
 export function useExerciseNotes() {
   return useCachedQuery<Record<string, string>>(["exercise-notes"], "/exercise-notes");
+}
+
+export function useHabits() {
+  return useCachedQuery<Habit[]>(["habits"], "/habits");
+}
+
+export function useHabitCatalog() {
+  return useCachedQuery<{ categories: Record<string, string>; templates: HabitTemplate[] }>(["habit-catalog"], "/habits/catalog");
 }
 
 export function useRoutines() {

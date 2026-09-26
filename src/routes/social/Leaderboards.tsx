@@ -10,13 +10,14 @@ import { useMe, useSession } from "../../lib/session";
 import type { Group, Person } from "../../lib/types";
 import { SocialGate, SocialHeader } from "./SocialNav";
 
-type Board = "consistency" | "streak" | "season_xp" | "season_prs";
+type Board = "consistency" | "streak" | "season_xp" | "season_prs" | "life_streak";
 type Row = Person & { value: number; rank: number; me: boolean };
 
 const BOARDS: Record<Board, { label: string; unit: (v: number) => string; about: string }> = {
   consistency: { label: "Consistency", unit: (v) => `${v}%`, about: "How closely people hit their own weekly target over the last four weeks. Capped at 100%: training more than your plan can't raise it." },
   streak: { label: "Streak", unit: (v) => `${v} wk`, about: "Current run of kept weeks." },
   season_xp: { label: "Season XP", unit: (v) => `${v}`, about: "XP this quarter. XP pays for showing up, never for weight or volume." },
+  life_streak: { label: "Life streak", unit: (v) => `${v} wk`, about: "Weeks in a row with any training or habit, for people who turned the whole-life streak on. Which habit, and how much, are never shown." },
   season_prs: { label: "Records", unit: (v) => `${v}`, about: "Personal records this quarter. Each one beats that person's own best, so size and strength don't matter." },
 };
 

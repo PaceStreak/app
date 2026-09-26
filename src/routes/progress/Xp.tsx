@@ -21,6 +21,8 @@ const SOURCES: Record<string, { label: string; why: string }> = {
   second_session: { label: "Second sessions", why: "A small bonus for a second session in a day. More pays nothing." },
   pr: { label: "Personal records", why: "Beating your own best, within a believable margin." },
   achievement: { label: "Achievements", why: "One-off badges." },
+  habit_day: { label: "Habits", why: "A small amount for each habit done, up to its weekly target, and at most 20 a day in all." },
+  habit_week: { label: "Kept habit weeks", why: "A habit that hit its weekly target." },
   quest: { label: "Weekly quests", why: "Three small habits a week: an early start, a balanced week, an honest RPE. Never more volume." },
 };
 

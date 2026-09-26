@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { api } from "../lib/api";
 import { prefs } from "../lib/prefs";
 import { currentPushSubscription, isStandalone } from "../lib/pwa";
+import { useHabits } from "../lib/queries";
 import { useMe } from "../lib/session";
 import { CheckCircle, Circle, X } from "./phosphor";
 
@@ -20,6 +21,7 @@ export function GettingStarted({ sessions, onLog, firstFortnight }: { sessions: 
   useEffect(() => {
     void currentPushSubscription().then((s) => setPush(Boolean(s)));
   }, []);
+  const habits = useHabits();
   const passkeys = useQuery({ queryKey: ["passkeys"], queryFn: () => api<unknown[]>("/auth/passkeys"), enabled: !dismissed, staleTime: 300_000 });
 
   const steps = [
@@ -39,6 +41,7 @@ export function GettingStarted({ sessions, onLog, firstFortnight }: { sessions: 
           },
         ]
       : []),
+    { id: "add-habit", done: (habits.data?.length ?? 0) > 0, label: "Add a habit", detail: "Reading, water, a skill, or something you're giving up.", to: "/habits" },
     { id: "nudge", done: push || isStandalone(), label: "Get reminders", detail: "Install the app or turn on notifications.", to: "/settings/notifications" },
     { id: "secure", done: me.user.totp_enabled || (passkeys.data?.length ?? 0) > 0, label: "Secure your account", detail: "Add a passkey: sign in with your fingerprint or face.", to: "/settings/security" },
   ];

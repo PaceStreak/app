@@ -46,6 +46,25 @@ export function Training() {
         </button>
       </Section>
 
+      <Section title="Whole-life streak">
+        <div id="life">
+          <p className="text-sm text-muted">
+            An extra streak across everything: a day counts with any training or any habit done. Your training streak and each habit's own streak stay as they are.
+          </p>
+          <p className="field-label mt-4">Days a week to keep it</p>
+          <div className="grid grid-cols-8 gap-1.5">
+            <button type="button" aria-pressed={!me.profile.life_target} className={`chip h-10 justify-center px-0 text-xs ${!me.profile.life_target ? "chip-accent" : ""}`} onClick={() => void save({ life_target: null }, "Whole-life streak off")}>
+              Off
+            </button>
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <button key={n} type="button" aria-pressed={me.profile.life_target === n} className={`chip num h-10 justify-center px-0 ${me.profile.life_target === n ? "chip-accent" : ""}`} onClick={() => void save({ life_target: n }, "Saved")}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Section>
+
       <PauseSection />
 
       <Section title="Week">

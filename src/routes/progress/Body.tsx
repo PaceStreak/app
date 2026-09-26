@@ -7,7 +7,7 @@ import { Lock, Trash } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { Banner, Empty, ErrorState, Loading, PageHeader, Section, Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
-import { addDays, fmtFullDay, fmtMonthDay, localDateOf, localToday, timeOfDay, toLocalInput, uuid } from "../../lib/dates";
+import { addDays, fmtMonthDay, fmtProjected, localDateOf, localToday, timeOfDay, toLocalInput, uuid } from "../../lib/dates";
 import type { QueuedRequest } from "../../lib/db";
 import { queryClient } from "../../lib/queries";
 import { useMe } from "../../lib/session";
@@ -409,7 +409,7 @@ function GoalCard({ goal, loading, series, today, unit }: { goal: WeightGoal | n
           {!view.reached && (
             <p className="text-sm text-dim">
               {view.eta
-                ? `At the last four weeks' pace (${signed(fromKg(view.rate!, unit))} ${unit} a week), around ${fmtFullDay(view.eta)}.`
+                ? `At the last four weeks' pace (${signed(fromKg(view.rate!, unit))} ${unit} a week), around ${fmtProjected(view.eta, today)}.`
                 : view.rate == null
                   ? "A few more weeks of weigh-ins and this will show a pace."
                   : "The trend isn't heading that way at the moment. That's information, not a verdict."}
