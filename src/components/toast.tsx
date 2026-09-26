@@ -107,6 +107,8 @@ function ToastItem({ toast: t, paused, depth }: { toast: Toast; paused: boolean;
       data-mounted={mounted}
       data-depth={Math.min(depth, 3)}
       onPointerDown={(e) => {
+        // Capturing the pointer would retarget the click away from a button.
+        if ((e.target as HTMLElement).closest("button")) return;
         drag.current = { x: e.clientX, t: performance.now() };
         ref.current?.setPointerCapture(e.pointerId);
       }}

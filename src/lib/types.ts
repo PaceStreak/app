@@ -339,9 +339,9 @@ export interface Habit {
   best_clean_run: number | null;
   last_slip: string | null;
   /** Detail only. */
-  days?: { date: string; amount: number }[];
+  days?: { date: string; amount: number; note?: string | null }[];
   /** The last seven days, oldest first; list responses only. */
-  recent?: { date: string; amount: number }[];
+  recent?: { date: string; amount: number; note?: string | null }[];
   weeks?: { week_start: string; days: number; target: number; status: string; score: number }[];
 }
 

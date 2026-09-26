@@ -11,15 +11,18 @@ import { toast } from "./toast";
  * Setting one day of a habit: big − and + around the amount, a few one-tap
  * amounts, and a field for anything else. The same sheet opens from a row,
  * the week strip and the calendar, so logging works the same everywhere.
- * A check habit never needs it: a tap is enough.
+ * A tick habit opens it only to add a note or fix a day.
  */
 export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; day: string | null; today: string; onClose: () => void }) {
   const current = day ? amountOn(habit, day, today) : 0;
   const [value, setValue] = useState(current);
   const [typed, setTyped] = useState("");
+  const currentNote = day ? noteOn(habit, day) : "";
+  const [note, setNote] = useState(currentNote);
   useEffect(() => {
     setValue(current);
     setTyped("");
+    setNote(currentNote);
   }, [day]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const step = stepFor(habit);
@@ -34,7 +37,7 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
     if (!day) return;
     onClose();
     try {
-      const result = await setHabitDay(habit, day, Math.max(0, Math.round(amount * 100) / 100), today);
+      const result = await setHabitDay(habit, day, Math.max(0, Math.round(amount * 100) / 100), today, note.trim() === currentNote ? undefined : note.trim());
       if (result === "queued") toast("Saved on this phone. It syncs when you're back online.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "That didn't save");
@@ -54,7 +57,7 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
       title={day ? `${habit.emoji} ${habit.name}` : ""}
       footer={
         <div className="flex w-full gap-2">
-          {current > 0 && (
+          {current > 0 && habit.kind !== "check" && (
             <button type="button" className="btn btn-ghost text-dim" onClick={() => void commit(0)}>
               Clear
             </button>
@@ -68,6 +71,15 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
       {day && (
         <div className="space-y-5">
           <p className="text-sm text-dim">{day === today ? "Today" : `${relativeDay(day, today)} · ${fmtFullDay(day)}`}</p>
+          {habit.kind === "check" ? (
+            <div className="grid grid-cols-2 gap-2">
+              {[1, 0].map((v) => (
+                <button key={v} type="button" aria-pressed={(final > 0 ? 1 : 0) === v} className={`press h-12 rounded-2xl font-semibold ${(final > 0 ? 1 : 0) === v ? "bg-accent text-accent-ink" : "bg-surface-2 text-muted"}`} onClick={() => { setTyped(""); setValue(v); }}>
+                  {v ? "Done" : "Not done"}
+                </button>
+              ))}
+            </div>
+          ) : (
           <div className="flex items-center justify-between gap-3">
             <button type="button" className="press grid size-14 shrink-0 place-items-center rounded-2xl bg-surface-2" aria-label={`Take ${step} off`} disabled={final <= 0} onClick={() => bump(-(habit.kind === "quit" ? 1 : step))}>
               <Minus size={22} weight="bold" />
@@ -82,12 +94,13 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
               <Plus size={22} weight="bold" />
             </button>
           </div>
-          {habit.kind !== "quit" && (
+          )}
+          {(habit.kind === "count" || habit.kind === "duration") && (
             <div className="h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden>
               <div className={`h-full rounded-full transition-[width] ${isDone(habit, final) ? "bg-accent" : "bg-accent/60"}`} style={{ width: `${pct}%` }} />
             </div>
           )}
-          {presets.length > 0 && (
+          {presets.length > 0 && habit.kind !== "check" && (
             <div className="flex flex-wrap gap-2">
               {presets.map((n) => (
                 <button key={n} type="button" className="chip press h-9 px-3" onClick={() => bump(n)}>
@@ -101,9 +114,16 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
               )}
             </div>
           )}
+          {habit.kind !== "check" && (
           <div>
             <label className="field-label" htmlFor="habit-day-amount">Or type an amount</label>
             <input id="habit-day-amount" className="input num" inputMode="decimal" placeholder={fmtAmount(value)} value={typed} onChange={(e) => setTyped(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void commit(final)} />
+          </div>
+          )}
+          <div>
+            <label className="field-label" htmlFor="habit-day-note">Note</label>
+            <textarea id="habit-day-note" className="input min-h-20" maxLength={280} placeholder={habit.kind === "quit" ? "What was going on? Spotting triggers helps." : "How did it go? Anything worth remembering."} value={note} onChange={(e) => setNote(e.target.value)} />
+            <p className="field-hint">Private, like the habit itself.</p>
           </div>
           {habit.kind === "quit" && <p className="field-hint">Zero is a clean day. A slip is logged, not punished.</p>}
         </div>
@@ -115,6 +135,10 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
 export function amountOn(habit: Habit, day: string, today: string): number {
   if (day === today) return habit.today.amount;
   return habit.days?.find((d) => d.date === day)?.amount ?? habit.recent?.find((d) => d.date === day)?.amount ?? 0;
+}
+
+export function noteOn(habit: Habit, day: string): string {
+  return habit.days?.find((d) => d.date === day)?.note ?? habit.recent?.find((d) => d.date === day)?.note ?? "";
 }
 
 const fmtAmount = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));

@@ -59,7 +59,8 @@ export function stepFor(h: Pick<Habit, "kind" | "daily_goal">): number {
  * after a dropped connection can never double-count; with no signal it's
  * queued and sent later.
  */
-export async function setHabitDay(habit: Habit, day: string, amount: number, today: string): Promise<"sent" | "queued"> {
+/** `note` left undefined keeps whatever note the day already has. */
+export async function setHabitDay(habit: Habit, day: string, amount: number, today: string, note?: string | null): Promise<"sent" | "queued"> {
   const before = queryClient.getQueryData<Habit[]>(["habits"]);
   queryClient.setQueryData<Habit[]>(["habits"], (old) =>
     old?.map((h) =>
@@ -68,7 +69,7 @@ export async function setHabitDay(habit: Habit, day: string, amount: number, tod
         : {
             ...h,
             today: day === today ? { amount, done: isDone(h, amount) } : h.today,
-            recent: h.recent?.map((d) => (d.date === day ? { ...d, amount } : d)),
+            recent: h.recent?.map((d) => (d.date === day ? { ...d, amount, note: note === undefined ? d.note : note } : d)),
           },
     ),
   );
@@ -77,12 +78,14 @@ export async function setHabitDay(habit: Habit, day: string, amount: number, tod
   }
   queryClient.setQueryData<Habit>(["habit", habit.id], (old) => {
     if (!old) return old;
+    const prev = (old.days ?? []).find((d) => d.date === day);
+    const kept = note === undefined ? prev?.note : note;
     const days = (old.days ?? []).filter((d) => d.date !== day);
-    if (amount > 0) days.push({ date: day, amount });
+    if (amount > 0 || kept) days.push({ date: day, amount, note: kept ?? null });
     days.sort((a, b) => (a.date < b.date ? -1 : 1));
     return { ...old, days, today: day === today ? { amount, done: isDone(old, amount) } : old.today };
   });
-  const result = await sendOrQueue(`/habits/${habit.id}/days/${day}`, "PUT", { amount });
+  const result = await sendOrQueue(`/habits/${habit.id}/days/${day}`, "PUT", note === undefined ? { amount } : { amount, note: note ?? "" });
   if (result === "sent") {
     for (const key of ["habits", "habit", "stats"]) void queryClient.invalidateQueries({ queryKey: [key] });
   }

@@ -30,8 +30,12 @@ export function HabitRow({ habit, today, strip = true }: { habit: Habit; today: 
     setBusy(true);
     try {
       const result = await setHabitDay(habit, day, Math.max(0, Math.round(next * 100) / 100), today);
-      if (!isDone(habit, was) && isDone(habit, next) && habit.kind !== "quit") haptic([10, 30, 14]);
+      const finished = !isDone(habit, was) && isDone(habit, next) && habit.kind !== "quit";
+      if (finished) haptic([10, 30, 14]);
       if (result === "queued") toast("Saved on this phone. It syncs when you're back online.");
+      else if (finished || (habit.kind === "quit" && next > was)) {
+        toast.success(habit.kind === "quit" ? "Slip logged" : `${habit.name}: done`, { action: { label: "Add a note", onClick: () => setSheetDay(day) }, duration: 5000 });
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "That didn't save");
     } finally {
@@ -124,18 +128,19 @@ export function HabitRow({ habit, today, strip = true }: { habit: Habit; today: 
                 type="button"
                 disabled={busy}
                 onClick={() => tapDay(d.date, d.amount)}
-                aria-label={`${fmtFullDay(d.date)}: ${slipped ? "slipped" : ok ? "done" : partial ? "partly done" : "not done"}`}
-                className={`press flex h-7 flex-1 max-w-9 items-center justify-center rounded-lg text-[0.7rem] font-semibold ${
+                aria-label={`${fmtFullDay(d.date)}: ${slipped ? "slipped" : ok ? "done" : partial ? "partly done" : "not done"}${d.note ? ", has a note" : ""}`}
+                className={`press relative flex h-7 flex-1 max-w-9 items-center justify-center rounded-lg text-[0.7rem] font-semibold ${
                   slipped ? "bg-flame-soft text-flame" : ok ? "bg-accent text-accent-ink" : partial ? "bg-accent-soft text-accent-text" : "bg-surface-2 text-dim"
                 } ${isToday ? "ring-1 ring-ink/50" : ""}`}
               >
                 {initial.format(parseDay(d.date))}
+                {d.note && <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-current opacity-70" aria-hidden />}
               </button>
             );
           })}
         </div>
       )}
-      {measured || habit.kind === "quit" ? <HabitDaySheet habit={habit} day={sheetDay} today={today} onClose={() => setSheetDay(null)} /> : null}
+      <HabitDaySheet habit={habit} day={sheetDay} today={today} onClose={() => setSheetDay(null)} />
       {confirmSheet}
     </div>
   );

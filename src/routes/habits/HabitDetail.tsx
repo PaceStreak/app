@@ -41,6 +41,8 @@ export default function HabitDetail() {
   if (!h) return <Loading />;
 
   const amounts = new Map((h.days ?? []).map((d) => [d.date, d.amount]));
+  const notes = (h.days ?? []).filter((d) => d.note).reverse();
+  const noted = new Set(notes.map((d) => d.date));
   const skill = skillProjection(h.total, h.total_goal, h.days ?? [], today);
   const refresh = () => Promise.all(["habit", "habits", "stats"].map((k) => queryClient.invalidateQueries({ queryKey: [k] })));
 
@@ -71,7 +73,11 @@ export default function HabitDetail() {
   const tapDay = (date: string) => {
     if (date > today || date < addDays(today, -BACKFILL_DAYS)) return;
     const current = amounts.get(date) ?? 0;
-    if (h.kind === "check") return void setHabitDay(h, date, current > 0 ? 0 : 1, today);
+    if (h.kind === "check") {
+      void setHabitDay(h, date, current > 0 ? 0 : 1, today);
+      if (!current) toast.success(`${fmtMonthDay(date)}: done`, { action: { label: "Add a note", onClick: () => setSheetDay(date) }, duration: 5000 });
+      return;
+    }
     setSheetDay(date);
   };
 
@@ -92,7 +98,9 @@ export default function HabitDetail() {
       ? null
       : s.this_week_days >= s.this_week_target
         ? `This week is kept (${s.this_week_days}/${s.this_week_target}). Anything more is a bonus.`
-        : `${s.needed} more ${s.needed === 1 ? "day" : "days"} this week keeps the streak${s.days_left != null ? `, with ${s.days_left} ${s.days_left === 1 ? "day" : "days"} left` : ""}.`;
+        : s.days_left != null && s.needed > s.days_left + (h.today.done ? 0 : 1)
+          ? `This week can't reach ${s.this_week_target} any more. A freeze covers it if you have one; otherwise a new streak starts next week.`
+          : `${s.needed} more ${s.needed === 1 ? "day" : "days"} this week keeps the streak${s.days_left != null ? `, with ${s.days_left} ${s.days_left === 1 ? "day" : "days"} left after today` : ""}.`;
 
   return (
     <div>
@@ -202,21 +210,42 @@ export default function HabitDetail() {
                     type="button"
                     disabled={!editable}
                     onClick={() => tapDay(date)}
-                    aria-label={`${fmtFullDay(date)}: ${slipped ? "slipped" : done ? "done" : partial ? `${amount}, partly done` : "not done"}`}
+                    aria-label={`${fmtFullDay(date)}: ${slipped ? "slipped" : done ? "done" : partial ? `${amount}, partly done` : "not done"}${noted.has(date) ? ", has a note" : ""}`}
                     className={`press num relative grid aspect-square place-items-center rounded-lg text-sm transition-colors ${
                       slipped ? "bg-flame-soft font-semibold text-flame" : done ? "bg-accent font-semibold text-accent-ink" : partial ? "bg-accent-soft text-accent-text" : future || before ? "text-dim/50" : "bg-surface-2 text-muted"
                     } ${date === today ? "ring-2 ring-ink/60 ring-offset-2 ring-offset-surface" : ""} disabled:cursor-default`}
                   >
                     {Number(date.slice(8))}
+                    {noted.has(date) && <span className="absolute bottom-1 size-1 rounded-full bg-current" aria-hidden />}
                   </button>
                 );
               })}
             </div>
           </div>
           <p className="mt-4 text-center text-xs text-dim">
-            Tap a day to {h.kind === "check" ? "tick or untick it" : h.kind === "quit" ? "log or clear a slip" : "set how much"}. Up to {BACKFILL_DAYS} days back.
+            Tap a day to {h.kind === "check" ? "tick or untick it" : h.kind === "quit" ? "log a slip or a note" : "set how much and add a note"}. A dot means a note. Up to {BACKFILL_DAYS} days back.
           </p>
         </div>
+      </Section>
+      <Section title="Notes" action={
+        <button type="button" className="text-sm font-semibold text-accent-text" onClick={() => setSheetDay(today)}>
+          Note for today
+        </button>
+      }>
+        {notes.length === 0 ? (
+          <p className="card p-4 text-sm text-dim">No notes yet. Open any day, or tap "Add a note" after ticking one, to write how it went.</p>
+        ) : (
+          <ul className="card divide-y divide-line">
+            {notes.slice(0, 30).map((d) => (
+              <li key={d.date}>
+                <button type="button" className="press w-full px-4 py-3 text-left" disabled={d.date < addDays(today, -BACKFILL_DAYS)} onClick={() => setSheetDay(d.date)}>
+                  <span className="block text-xs text-dim">{fmtFullDay(d.date)}</span>
+                  <span className="mt-0.5 block text-sm whitespace-pre-line">{d.note}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Section>
       <p className="mt-3 text-xs text-dim">
         Strength ({h.strength}%) is a slow average of how much of each week's target you met: a missed week dents it; it doesn't erase months.

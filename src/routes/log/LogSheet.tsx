@@ -191,7 +191,7 @@ function Details({ discipline, when, prefill, onBack, onDone }: { discipline: st
   // The discipline's default gear, until the person picks otherwise.
   const [gearId, setGearId] = useState<string | null | undefined>(undefined);
   const chosenGear = gearId === undefined ? defaultGear(gear.data, discipline) : gearId;
-  const [more, setMore] = useState(Boolean(prefill?.tags?.length || prefill?.notes));
+  const [more, setMore] = useState(Boolean(prefill?.tags?.length));
   const [saving, setSaving] = useState(false);
 
   const durationSec = durationText ? parseDuration(durationText) : minutes ? minutes * 60 : null;
@@ -370,8 +370,12 @@ function Details({ discipline, when, prefill, onBack, onDone }: { discipline: st
         </div>
       </fieldset>
 
+      <div className="mt-5">
+        <label className="field-label" htmlFor="log-notes">Note</label>
+        <textarea id="log-notes" className="input min-h-20" placeholder="How did it go? Private: nobody else ever sees this." maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} />
+      </div>
       <button type="button" className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-muted" aria-expanded={more} onClick={() => setMore(!more)}>
-        <CaretDown size={14} className={`transition-transform duration-200 ${more ? "rotate-180" : ""}`} /> Title, notes, tags, heart rate{metrics.has("elevation") ? ", elevation" : ""}
+        <CaretDown size={14} className={`transition-transform duration-200 ${more ? "rotate-180" : ""}`} /> Title, tags, heart rate{metrics.has("elevation") ? ", elevation" : ""}
       </button>
       {more && (
         <div className="mt-3 space-y-4">
@@ -380,7 +384,6 @@ function Details({ discipline, when, prefill, onBack, onDone }: { discipline: st
             <input className="input" inputMode="decimal" placeholder="Elevation gain (m)" value={elevationText} onChange={(e) => setElevationText(e.target.value)} aria-label="Elevation gain in metres" />
           )}
           <input className="input num" inputMode="numeric" placeholder="Average heart rate (bpm, optional)" value={avgHr} onChange={(e) => setAvgHr(e.target.value.replace(/[^\d]/g, ""))} aria-label="Average heart rate in beats per minute" />
-          <textarea className="input" placeholder="Notes. Private: nobody else ever sees these." maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Private notes" />
           <TagInput value={tags} onChange={setTags} />
         </div>
       )}
