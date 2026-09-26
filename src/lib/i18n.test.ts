@@ -32,7 +32,12 @@ describe("rich", () => {
 
 import { CATALOGS } from "./i18n";
 
+// Guards any future translation: once a second catalog is added, these check
+// it keeps every placeholder and link tag and covers every English key.
 describe("catalogs", () => {
+  it("has English as the source catalog", () => {
+    expect(Object.keys(CATALOGS)).toContain("en");
+  });
   const shape = (m: unknown) => {
     const text = typeof m === "string" ? m : Object.values(m as Record<string, string>).join(" ");
     return {
