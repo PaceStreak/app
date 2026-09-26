@@ -10,6 +10,7 @@ import { fmtMonthDay } from "../../lib/dates";
 import { useLibrary } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import { fromKg, weight } from "../../lib/units";
+import { pctChange, signed } from "../../lib/weight";
 
 interface History {
   sessions: { workout_id: string; date: string; sets: { kind: string; weight_kg: number | null; reps: number | null; rpe: number | null; duration_sec: number | null }[]; best_e1rm: number; volume_kg: number; top_weight_kg: number }[];
@@ -76,6 +77,26 @@ export default function ExerciseDetail() {
           {trend.length > 1 && (
             <Section title="Estimated 1RM over time">
               <div className="card p-4">
+                <div className="mb-4 grid grid-cols-3 gap-3">
+                  {(
+                    [
+                      ["Est. 1RM", (x: (typeof trend)[number]) => x.best_e1rm],
+                      ["Top set", (x: (typeof trend)[number]) => x.top_weight_kg],
+                      ["Volume", (x: (typeof trend)[number]) => x.volume_kg],
+                    ] as const
+                  ).map(([label, pick]) => {
+                    const pct = pctChange(pick(trend[0]), pick(trend[trend.length - 1]));
+                    return (
+                      <div key={label}>
+                        <p className="text-sm text-dim">{label}</p>
+                        <p className="num mt-0.5 text-lg font-semibold">{pct == null ? "–" : `${signed(pct)}%`}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="-mt-2 mb-4 text-xs text-dim">
+                  Change across these {trend.length} sessions, since {fmtMonthDay(trend[0].date)}.
+                </p>
                 <BarChart title="Estimated one-rep max by session" bars={trend.map((s) => ({ key: s.workout_id, label: fmtMonthDay(s.date), value: fromKg(s.best_e1rm, wu), display: weight(s.best_e1rm, wu) }))} />
               </div>
             </Section>

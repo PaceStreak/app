@@ -419,9 +419,19 @@ export interface RecordRow {
   rewarded: boolean;
 }
 
+export type WeighInMoment = "waking" | "pre_workout" | "post_workout" | "bedtime" | "other";
+
+export interface WeighIn {
+  id: string;
+  weighed_at: string;
+  date: string;
+  moment: WeighInMoment;
+  weight_kg: number;
+  note: string | null;
+}
+
 export interface BodyMetric {
   date: string;
-  weight_kg: number | null;
   body_fat_pct: number | null;
   waist_cm: number | null;
   resting_hr: number | null;
