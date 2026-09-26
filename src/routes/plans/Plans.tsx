@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { DisciplineIcon } from "../../components/icons";
+import { BlockCard, RacePlanButton } from "../../components/RaceAndBlocks";
 import { CalendarCheck, Plus, UploadSimple } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { Empty, ErrorState, Loading, PageHeader, Section } from "../../components/ui";
@@ -91,6 +92,9 @@ export default function Plans() {
           </ul>
         </Section>
       )}
+
+      <RacePlanButton />
+      <BlockCard />
 
       <Section title="Start from a template">
         <ul className="space-y-2">

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
@@ -27,14 +28,15 @@ import { RestBar, useRestTimer } from "../../components/RestTimer";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { localDateOf, uuid } from "../../lib/dates";
+import { api } from "../../lib/api";
 import { getWorkout, kvGet, kvSet } from "../../lib/db";
 import { haptic, prefs } from "../../lib/prefs";
 import { queryClient, useExerciseNotes, useGyms, useLibrary, useRoutines, useWorkouts, type LibraryIndex } from "../../lib/queries";
 import { sendOrQueue } from "../../lib/requests";
 import { useMe } from "../../lib/session";
 import { saveWorkout } from "../../lib/sync";
-import { EFFORT, FEEL, blankWorkout, parseShorthand, sessionTops, suggestNext, warmupSets } from "../../lib/training";
-import type { Exercise, SetKind, Workout, WorkoutSet } from "../../lib/types";
+import { EFFORT, FEEL, adjustRoutineItems, blankWorkout, parseShorthand, sessionTops, suggestNext, volumeNudge, warmupSets } from "../../lib/training";
+import type { BlockWeek, Exercise, SetKind, TrainingBlock, Workout, WorkoutSet } from "../../lib/types";
 import { clock, e1rm, fromKg, parseDuration, parseNumber, toKg, weight as fmtWeight, plural, type WeightUnit } from "../../lib/units";
 import { FeelIcon } from "./FeelIcon";
 
@@ -78,6 +80,8 @@ interface Draft {
   gym_id?: string | null;
   effort: number | null;
   feel: number | null;
+  soreness?: number | null;
+  pump?: number | null;
   duration_sec: number | null;
   exercises: DraftExercise[];
 }
@@ -122,6 +126,8 @@ function fromWorkout(w: Workout, unit: WeightUnit): Draft {
     gym_id: w.gym_id ?? null,
     effort: w.effort,
     feel: w.feel,
+    soreness: w.soreness ?? null,
+    pump: w.pump ?? null,
     duration_sec: w.duration_sec,
     exercises: [...byExercise.values()],
   };
@@ -229,6 +235,8 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
   const gyms = useGyms();
   const notes = useExerciseNotes();
   const [noteFor, setNoteFor] = useState<{ exerciseId: string; text: string } | null>(null);
+  const block = useQuery({ queryKey: ["block-active"], queryFn: () => api<TrainingBlock | null>("/blocks/active"), staleTime: 300_000 });
+  const blockWeek = block.data?.now ?? null;
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -283,9 +291,13 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
         const routine = routines.data?.find((r) => r.id === routineId);
         if (!routine && !routines.data) return; // wait for routines to load
         if (routine) {
-          fresh.title = routine.name;
+          const easy = params.get("easy") === "1" || Boolean(blockWeek?.deload);
+          const short = params.get("short") === "1";
+          const tag = params.get("tag");
+          fresh.title = easy || short ? `${routine.name} (${short ? "short" : "lighter"})`.slice(0, 80) : routine.name;
           fresh.routine_id = routine.id;
-          fresh.exercises = routine.items.map((it) => ({
+          if (tag && /^[a-z-]{1,24}$/.test(tag)) fresh.tags = [tag];
+          fresh.exercises = adjustRoutineItems(routine.items, { easy, short }).map((it) => ({
             key: uuid(),
             exercise_id: it.exercise_id,
             rest_sec: it.rest_sec ?? lib?.byId.get(it.exercise_id)?.rest_sec ?? 90,
@@ -402,6 +414,8 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
       routine_id: d.routine_id,
       effort: d.effort,
       feel: d.feel,
+      soreness: d.soreness ?? null,
+      pump: d.pump ?? null,
       duration_sec: d.editing ? d.duration_sec : Math.round((Date.now() - start.getTime()) / 1000),
       sets,
     };
@@ -489,6 +503,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             onMenu={() => setMenu(ex.key)}
             onPlates={(w) => setPlates(w)}
             pinned={notes.data?.[ex.exercise_id] ?? null}
+            blockWeek={blockWeek}
             onSetDone={(restSec) => {
               haptic(14);
               // In a superset, go straight to the next exercise; rest comes
@@ -694,6 +709,27 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             ))}
           </div>
         </fieldset>
+        <fieldset className="mt-5">
+          <legend className="field-label">Soreness coming into today (optional)</legend>
+          <div className="seg" role="group" aria-label="Soreness coming into today">
+            {["None", "A little", "Sore", "Very"].map((label, v) => (
+              <button key={label} type="button" aria-pressed={draft.soreness === v} onClick={() => update((d) => ({ ...d, soreness: d.soreness === v ? null : v }))}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="mt-4">
+          <legend className="field-label">Pump (optional)</legend>
+          <div className="seg" role="group" aria-label="Pump">
+            {["Low", "Decent", "Great"].map((label, v) => (
+              <button key={label} type="button" aria-pressed={draft.pump === v} onClick={() => update((d) => ({ ...d, pump: d.pump === v ? null : v }))}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="field-hint">Two check-ins in a row suggest a set more or fewer next time. Skip them if you're not sure.</p>
+        </fieldset>
         {(gyms.data?.length ?? 0) > 0 && (
           <fieldset className="mt-5">
             <legend className="field-label">Where</legend>
@@ -736,6 +772,7 @@ function ExerciseBlock({
   first,
   supersetLabel,
   pinned,
+  blockWeek,
 }: {
   ex: DraftExercise;
   lib: LibraryIndex;
@@ -749,6 +786,7 @@ function ExerciseBlock({
   first: boolean;
   supersetLabel?: string;
   pinned: string | null;
+  blockWeek: BlockWeek | null;
 }) {
   const meta = lib.byId.get(ex.exercise_id);
   const loadType = meta?.load_type ?? "weight";
@@ -757,13 +795,15 @@ function ExerciseBlock({
   const [cue, setCue] = useState(first && !last);
   const [rpeFor, setRpeFor] = useState<string | null>(null);
   const earlier = useMemo(() => sessionTops(workouts, ex.exercise_id, workoutId).slice(1, 3), [workouts, ex.exercise_id, workoutId]);
+  const nudge = useMemo(() => volumeNudge(workouts, ex.exercise_id, workoutId), [workouts, ex.exercise_id, workoutId]);
   const [quick, setQuick] = useState("");
   const suggestion = last
     ? suggestNext(last.sets.map((s) => ({ weight_kg: s.weight_kg, reps: s.reps, rpe: s.rpe, kind: s.kind, duration_sec: s.duration_sec })), {
         repsMin: ex.reps_min,
         earlier,
         repsMax: ex.reps_max,
-        targetRpe: ex.target_rpe,
+        // A block's reps in reserve stand in when the routine sets no RPE.
+        targetRpe: ex.target_rpe ?? (blockWeek ? 10 - blockWeek.rir : null),
         stepKg: ex.step_kg,
         unit,
         exercise: meta,
@@ -850,6 +890,18 @@ function ExerciseBlock({
             </p>
           ) : null}
           {ex.note && <p className="mt-1 text-sm text-muted italic">{ex.note}</p>}
+          {blockWeek && (
+            <p className="mt-1 text-sm text-muted">
+              {blockWeek.deload
+                ? `Lighter week (${blockWeek.week} of ${blockWeek.weeks}): fewer sets, about ${blockWeek.rir} reps in reserve.`
+                : `Block week ${blockWeek.week} of ${blockWeek.weeks}: stop with about ${blockWeek.rir} ${blockWeek.rir === 1 ? "rep" : "reps"} in reserve.`}
+            </p>
+          )}
+          {nudge && (
+            <p className="mt-1 text-sm text-muted">
+              {nudge === "fewer" ? "Still very sore after the last two sessions: try one set fewer today." : "Recovered easily with a good pump twice: there's room for one more set."}
+            </p>
+          )}
           {pinned && (
             <p className="mt-1 flex items-start gap-1.5 text-sm text-muted">
               <PushPin size={14} className="mt-0.5 shrink-0 text-dim" aria-label="Pinned note" /> {pinned}

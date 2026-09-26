@@ -13,7 +13,7 @@ import { CheckCircle, Circle, X } from "./phosphor";
  * it", so it can't claim something is set up when it isn't. It disappears
  * once everything is done, or when dismissed.
  */
-export function GettingStarted({ sessions, onLog }: { sessions: number; onLog: () => void }) {
+export function GettingStarted({ sessions, onLog, firstFortnight }: { sessions: number; onLog: () => void; firstFortnight?: { days: number; open: boolean } }) {
   const me = useMe();
   const [dismissed, setDismissed] = useState(prefs.dismissed("getting-started"));
   const [push, setPush] = useState(false);
@@ -25,6 +25,20 @@ export function GettingStarted({ sessions, onLog }: { sessions: number; onLog: (
   const steps = [
     { id: "plan", done: me.profile.training_days != null, label: "Pick your training days", detail: "The other days show as planned rest, not gaps.", to: "/settings/training" },
     { id: "log", done: sessions > 0, label: "Log your first session", detail: "Ten seconds. Anything counts.", action: onLog },
+    // The first two weeks predict everything after them: three days in the
+    // first fortnight is the habit starting. Shown only while it can still
+    // be done, so it never turns into a failure to look at.
+    ...(firstFortnight && (firstFortnight.open || firstFortnight.days >= 3)
+      ? [
+          {
+            id: "habit",
+            done: firstFortnight.days >= 3,
+            label: "Three days in your first two weeks",
+            detail: `${Math.min(3, firstFortnight.days)} of 3 so far. Short sessions count; that's the point.`,
+            action: onLog,
+          },
+        ]
+      : []),
     { id: "nudge", done: push || isStandalone(), label: "Get reminders", detail: "Install the app or turn on notifications.", to: "/settings/notifications" },
     { id: "secure", done: me.user.totp_enabled || (passkeys.data?.length ?? 0) > 0, label: "Secure your account", detail: "Add a passkey: sign in with your fingerprint or face.", to: "/settings/security" },
   ];

@@ -41,9 +41,11 @@ export default function Login() {
       setConditional(ctrl);
       signInWithPasskey({ conditional: true, signal: ctrl.signal })
         .then(done)
-        .catch((err) => {
-          if (!wasCancelled(err)) setError(errorText(err));
-        });
+        // The autofill request runs in the background, unasked. If it fails
+        // (no passkeys on this device, an unsupported browser), say nothing:
+        // the person hasn't done anything yet. The passkey button reports
+        // its own errors.
+        .catch(() => undefined);
     });
     return () => ctrl?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps

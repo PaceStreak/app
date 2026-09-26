@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
+import { AdjustToday } from "../components/AdjustToday";
 import { QuestsCard, WagerCard } from "../components/Engagement";
+import { ReadinessCard } from "../components/Readiness";
 import { GettingStarted } from "../components/GettingStarted";
 import { Heatmap } from "../components/Heatmap";
 import {
@@ -29,11 +31,11 @@ import { WorkoutRow } from "../components/WorkoutRow";
 import { Skeleton } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import { buildCards, placeName, type CardAction, type CoachCard } from "../lib/coach";
-import { fmtFullDay, localToday } from "../lib/dates";
+import { addDays, fmtFullDay, localToday } from "../lib/dates";
 import { kvGet } from "../lib/db";
 import { haptic, prefs } from "../lib/prefs";
 import { canInstall, currentPushSubscription, enablePush, install, onInstallChange, pushSupported } from "../lib/pwa";
-import { queryClient, useLibrary, useRestDays, useStats, useSyncState, useWorkouts } from "../lib/queries";
+import { queryClient, useLibrary, useRestDays, useRoutines, useStats, useSyncState, useWorkouts } from "../lib/queries";
 import { useMe, useSession } from "../lib/session";
 import { localWeek } from "../lib/training";
 import type { Challenge, Plan } from "../lib/types";
@@ -90,6 +92,16 @@ export default function Today() {
     enabled: me.social_allowed,
   });
   const plan = useQuery({ queryKey: ["plan-active"], queryFn: () => api<Plan | null>("/plans/active") });
+  const routines = useRoutines();
+  const [adjusting, setAdjusting] = useState(false);
+  const firstFortnight = useMemo(() => {
+    const from = me.profile.onboarded_at?.slice(0, 10);
+    if (!from) return undefined;
+    const until = addDays(from, 13);
+    const days = new Set((workouts ?? []).filter((w) => !w.deleted_at && w.local_date >= from && w.local_date <= until).map((w) => w.local_date));
+    return { days: days.size, open: today <= until };
+  }, [me.profile.onboarded_at, workouts, today]);
+  const plannedToday = plan.data?.today.find((p) => p.status === "today") ?? null;
   const [active, setActive] = useState<{ startedAt: string; title: string } | null>(null);
   const [installable, setInstallable] = useState(canInstall());
   const [pushOffer, setPushOffer] = useState(false);
@@ -123,10 +135,15 @@ export default function Today() {
         dismissed: prefs.dismissed,
         deviceTimezone: deviceTimezone(),
         exerciseName: (id) => lib?.byId.get(id)?.name,
+        exercises: lib?.byId,
+        routineLegs: (id) =>
+          (routines.data?.find((r) => r.id === id)?.items ?? []).some((it) =>
+            (lib?.byId.get(it.exercise_id)?.primary ?? []).some((m) => ["quads", "hamstrings", "glutes"].includes(m)),
+          ),
       }),
     // bump re-renders after a dismissal
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [me, stats.data, workouts, today, week, challenges.data, plan.data, sync.failed.length, active, installable, pushOffer, bump, lib],
+    [me, stats.data, workouts, today, week, challenges.data, plan.data, sync.failed.length, active, installable, pushOffer, bump, lib, routines.data],
   );
 
   const run = async (action: CardAction) => {
@@ -135,6 +152,9 @@ export default function Today() {
       switch (action.kind) {
         case "log":
           openLog({ discipline: action.discipline });
+          break;
+        case "adjust":
+          setAdjusting(true);
           break;
         case "link":
           navigate(action.to);
@@ -215,13 +235,16 @@ export default function Today() {
           <Skeleton className="h-64 rounded-[20px]" />
         ) : (
           <>
-            <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} />
+            <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
             <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
+            {(stats.data?.totals.sessions ?? 0) > 0 && !stats.data?.paused_today && <ReadinessCard today={today} onAdjust={() => setAdjusting(true)} />}
             {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
             {gamified && stats.data?.quests && <QuestsCard quests={stats.data.quests} />}
           </>
         )}
       </div>
+
+      <AdjustToday open={adjusting} onClose={() => setAdjusting(false)} planned={plannedToday} />
 
       {recent.length > 0 && (
         <section className="mt-9">

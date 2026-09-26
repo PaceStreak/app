@@ -347,3 +347,32 @@ export function fuzzyMatch(term: string, text: string): boolean {
     .filter(Boolean)
     .every((t) => hay.includes(t) || (t.length >= 4 && words.some((w) => nearly(t, w) || (w.length > t.length && nearly(t, w.slice(0, t.length))))));
 }
+
+/**
+ * A set more or a set fewer, from the after-session check-ins of the last two
+ * sessions with this exercise. Still very sore both times: one fewer. No
+ * soreness and a great pump both times: room for one more. Otherwise nothing
+ * - two data points is the least that isn't noise, and silence is the default.
+ */
+export function volumeNudge(workouts: Workout[], exerciseId: string, excludeId?: string): "fewer" | "more" | null {
+  const recent = workouts.filter((w) => w.id !== excludeId && !w.deleted_at && w.sets.some((s) => s.exercise_id === exerciseId && s.completed)).slice(0, 2);
+  if (recent.length < 2 || recent.some((w) => w.soreness == null)) return null;
+  if (recent.every((w) => (w.soreness ?? 0) >= 3)) return "fewer";
+  if (recent.every((w) => w.soreness === 0 && w.pump === 2)) return "more";
+  return null;
+}
+
+/** A routine made lighter for a rough day: half the sets, about 10% less
+ * load, nothing near failure. `short` keeps the first half of the exercises. */
+export function adjustRoutineItems<T extends { sets: number; weight_kg?: number | null; target_rpe?: number | null }>(items: T[], opts: { easy?: boolean; short?: boolean }): T[] {
+  let out = opts.short ? items.slice(0, Math.max(1, Math.ceil(items.length / 2))) : items;
+  if (opts.easy) {
+    out = out.map((it) => ({
+      ...it,
+      sets: Math.max(1, Math.ceil(it.sets / 2)),
+      weight_kg: it.weight_kg != null ? Math.round(it.weight_kg * 0.9 * 4) / 4 : it.weight_kg,
+      target_rpe: Math.min(it.target_rpe ?? 7, 7),
+    }));
+  }
+  return out;
+}

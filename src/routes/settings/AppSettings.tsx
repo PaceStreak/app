@@ -4,6 +4,7 @@ import { DownloadSimple, Moon, Sun, CircleHalf } from "../../components/phosphor
 import { toast } from "../../components/toast";
 import { Section, Segmented, Switch } from "../../components/ui";
 import { wipe } from "../../lib/db";
+import { LANGUAGE_NAMES, SUPPORTED, chooseLanguage, chosenLanguage } from "../../lib/i18n";
 import { prefs, type BadgeMode, type Theme } from "../../lib/prefs";
 import { canInstall, install, isStandalone, onInstallChange } from "../../lib/pwa";
 import { syncNow } from "../../lib/sync";
@@ -43,6 +44,7 @@ export function Appearance() {
         </div>
         <p className="field-hint">Light is easier to read in bright sun at a trailhead.</p>
       </Section>
+      <LanguageSetting />
       <BadgeSetting />
       <Section title="During workouts">
         <div className="card divide-y divide-line">
@@ -59,6 +61,24 @@ export function Appearance() {
         </div>
       </Section>
     </div>
+  );
+}
+
+function LanguageSetting() {
+  const current = chosenLanguage() ?? "auto";
+  return (
+    <Section title="Language">
+      <Segmented
+        label="Language"
+        value={current}
+        onChange={(v) => {
+          chooseLanguage(v === "auto" ? null : v);
+          location.reload();
+        }}
+        options={[{ value: "auto", label: "Automatic" }, ...SUPPORTED.map((l) => ({ value: l, label: LANGUAGE_NAMES[l] ?? l }))]}
+      />
+      <p className="field-hint">Signing in, signing up and the navigation are translated. The rest of the app is still in English while translation continues.</p>
+    </Section>
   );
 }
 

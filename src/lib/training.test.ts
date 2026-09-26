@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fuzzyMatch, localWeek, muscleRecovery, parseShorthand, platesFor, suggestNext } from "./training";
+import { adjustRoutineItems, fuzzyMatch, localWeek, muscleRecovery, parseShorthand, platesFor, suggestNext, volumeNudge } from "./training";
 import type { Exercise, Workout } from "./types";
 
 const w = (date: string, discipline = "run") => ({ id: date + discipline, local_date: date, discipline, deleted_at: null }) as Workout;
@@ -187,5 +187,30 @@ describe("muscleRecovery", () => {
       { id: "b", local_date: "2026-09-10", deleted_at: null, sets: [{ exercise_id: "back-squat", completed: true, kind: "work" }] },
     ] as unknown as Workout[];
     expect(muscleRecovery(rows, ex, "2026-09-26").get("quads")).toEqual({ daysSince: 2, sets7: 1 });
+  });
+});
+
+describe("volumeNudge and adjustRoutineItems", () => {
+  const session = (id: string, soreness: number | null, pump: number | null) =>
+    ({ id, deleted_at: null, soreness, pump, sets: [{ exercise_id: "back-squat", completed: true }] }) as unknown as Workout;
+  it("needs two check-ins that agree", () => {
+    expect(volumeNudge([session("a", 3, 0), session("b", 3, 1)], "back-squat")).toBe("fewer");
+    expect(volumeNudge([session("a", 0, 2), session("b", 0, 2)], "back-squat")).toBe("more");
+    expect(volumeNudge([session("a", 3, 0), session("b", 1, 1)], "back-squat")).toBeNull();
+    expect(volumeNudge([session("a", 3, 0), session("b", null, null)], "back-squat")).toBeNull();
+    expect(volumeNudge([session("a", 3, 0)], "back-squat")).toBeNull();
+  });
+  it("halves sets, lightens load and caps effort; short keeps the first half", () => {
+    const items = [
+      { sets: 4, weight_kg: 100, target_rpe: 9 },
+      { sets: 3, weight_kg: null, target_rpe: null },
+      { sets: 2, weight_kg: 20, target_rpe: 6 },
+    ];
+    expect(adjustRoutineItems(items, { easy: true })).toEqual([
+      { sets: 2, weight_kg: 90, target_rpe: 7 },
+      { sets: 2, weight_kg: null, target_rpe: 7 },
+      { sets: 1, weight_kg: 18, target_rpe: 6 },
+    ]);
+    expect(adjustRoutineItems(items, { short: true })).toHaveLength(2);
   });
 });

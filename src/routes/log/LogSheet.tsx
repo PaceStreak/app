@@ -34,7 +34,7 @@ export function LogSheet({ request, onClose }: { request: LogRequest | null; onC
     >
       {request &&
         (discipline ? (
-          <Details key={discipline} discipline={discipline} when={request.when} onBack={() => setDiscipline(null)} onDone={onClose} />
+          <Details key={discipline} discipline={discipline} when={request.when} prefill={request} onBack={() => setDiscipline(null)} onDone={onClose} />
         ) : (
           <Chooser onPick={setDiscipline} onClose={onClose} />
         ))}
@@ -164,7 +164,7 @@ const WHEN = [
   { id: "custom", label: "Pick a time" },
 ] as const;
 
-function Details({ discipline, when, onBack, onDone }: { discipline: string; when?: string; onBack: () => void; onDone: () => void }) {
+function Details({ discipline, when, prefill, onBack, onDone }: { discipline: string; when?: string; prefill?: LogRequest; onBack: () => void; onDone: () => void }) {
   const me = useMe();
   const lib = useLibrary();
   const workouts = useWorkouts();
@@ -177,19 +177,21 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
   const [whenId, setWhenId] = useState<string>(when ?? "now");
   const [custom, setCustom] = useState(toLocalInput(new Date(Date.now() - 3600_000).toISOString()));
   const [minutes, setMinutes] = useState<number | null>(null);
-  const [durationText, setDurationText] = useState("");
+  // An adjusted plan day arrives with its shorter duration already typed.
+  const [durationText, setDurationText] = useState(prefill?.minutes ? `${Math.floor(prefill.minutes / 60)}:${String(prefill.minutes % 60).padStart(2, "0")}` : "");
   const [distanceText, setDistanceText] = useState("");
   const [elevationText, setElevationText] = useState("");
   const [effort, setEffort] = useState<number | null>(null);
   const [feel, setFeel] = useState<number | null>(null);
-  const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [title, setTitle] = useState(prefill?.title ?? "");
+  const [notes, setNotes] = useState(prefill?.notes ?? "");
+  const [tags, setTags] = useState<string[]>(prefill?.tags ?? []);
+  const [avgHr, setAvgHr] = useState("");
   const gear = useGear();
   // The discipline's default gear, until the person picks otherwise.
   const [gearId, setGearId] = useState<string | null | undefined>(undefined);
   const chosenGear = gearId === undefined ? defaultGear(gear.data, discipline) : gearId;
-  const [more, setMore] = useState(false);
+  const [more, setMore] = useState(Boolean(prefill?.tags?.length || prefill?.notes));
   const [saving, setSaving] = useState(false);
 
   const durationSec = durationText ? parseDuration(durationText) : minutes ? minutes * 60 : null;
@@ -226,6 +228,10 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
       notes: notes.trim() || null,
       tags,
       gear_id: chosenGear,
+      avg_hr: (() => {
+        const v = parseNumber(avgHr);
+        return v != null && v >= 30 && v <= 240 ? Math.round(v) : null;
+      })(),
     };
     const saved = await saveWorkout(workout);
     haptic([12, 30, 18]);
@@ -365,7 +371,7 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
       </fieldset>
 
       <button type="button" className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-muted" aria-expanded={more} onClick={() => setMore(!more)}>
-        <CaretDown size={14} className={`transition-transform duration-200 ${more ? "rotate-180" : ""}`} /> Title, notes, tags{metrics.has("elevation") ? ", elevation" : ""}
+        <CaretDown size={14} className={`transition-transform duration-200 ${more ? "rotate-180" : ""}`} /> Title, notes, tags, heart rate{metrics.has("elevation") ? ", elevation" : ""}
       </button>
       {more && (
         <div className="mt-3 space-y-4">
@@ -373,6 +379,7 @@ function Details({ discipline, when, onBack, onDone }: { discipline: string; whe
           {metrics.has("elevation") && (
             <input className="input" inputMode="decimal" placeholder="Elevation gain (m)" value={elevationText} onChange={(e) => setElevationText(e.target.value)} aria-label="Elevation gain in metres" />
           )}
+          <input className="input num" inputMode="numeric" placeholder="Average heart rate (bpm, optional)" value={avgHr} onChange={(e) => setAvgHr(e.target.value.replace(/[^\d]/g, ""))} aria-label="Average heart rate in beats per minute" />
           <textarea className="input" placeholder="Notes. Private: nobody else ever sees these." maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Private notes" />
           <TagInput value={tags} onChange={setTags} />
         </div>

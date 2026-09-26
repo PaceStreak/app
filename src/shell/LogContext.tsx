@@ -5,6 +5,11 @@ export interface LogRequest {
   discipline?: string;
   /** "yesterday" etc. pre-selects when it happened. */
   when?: string;
+  /** Pre-filled from an adjusted plan day: a shorter or easier version. */
+  minutes?: number;
+  tags?: string[];
+  title?: string;
+  notes?: string;
 }
 
 const Ctx = createContext<{ openLog: (req?: LogRequest) => void } | null>(null);

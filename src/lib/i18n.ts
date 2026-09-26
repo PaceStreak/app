@@ -1,8 +1,8 @@
 /**
  * Translation scaffolding.
  *
- * English is the only language today; this exists so adding a second one is
- * a data change, not a refactor. The rules:
+ * English, Spanish and German so far. Adding a language is a data change,
+ * not a refactor: a catalog in locales/ and a line below. The rules:
  *
  * - Every message has a stable dotted key and lives in a catalog below. The
  *   English catalog is the source of truth and defines the key type, so a
@@ -23,6 +23,9 @@
  * ("agree to the <terms>terms</terms>") and `rich()` from i18n-rich.tsx,
  * so a translation can move the link to wherever its grammar needs it.
  */
+
+import de from "./locales/de";
+import es from "./locales/es";
 
 type Plural = { one?: string; other: string; zero?: string; two?: string; few?: string; many?: string };
 type Message = string | Plural;
@@ -135,15 +138,31 @@ const en = {
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof en;
-type Catalog = Partial<Record<MessageKey, Message>>;
+export type Catalog = Partial<Record<MessageKey, Message>>;
 
-// Additional languages register here: `de: () => import("./locales/de")`.
-// Loaded lazily so a language nobody uses costs nothing to download.
-const catalogs: Record<string, Catalog> = { en };
+// Languages register here. They're small (the catalog covers navigation and
+// the signed-out screens), so they're bundled rather than loaded lazily.
+// Every key missing from a catalog falls back to English, per key.
+const catalogs: Record<string, Catalog> = { en, es, de };
+
+/** Names shown in the language picker, in their own language. */
+export const LANGUAGE_NAMES: Record<string, string> = { en: "English", es: "Español", de: "Deutsch" };
+
+const STORAGE_KEY = "ps.language";
 
 export const SUPPORTED = Object.keys(catalogs);
 
+/** For tests: every catalog, by language. */
+export const CATALOGS = catalogs;
+
 function detect(): string {
+  // A choice made in Settings wins over the browser's languages.
+  try {
+    const chosen = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+    if (chosen && catalogs[chosen]) return chosen;
+  } catch {
+    /* storage unavailable: fall through to the browser */
+  }
   const wanted = typeof navigator !== "undefined" ? navigator.languages ?? [navigator.language] : [];
   for (const tag of wanted) {
     const base = tag?.toLowerCase().split("-")[0];
@@ -153,10 +172,29 @@ function detect(): string {
 }
 
 let locale = detect();
+if (typeof document !== "undefined") document.documentElement.lang = locale;
 let plurals = new Intl.PluralRules(locale);
 
 export function getLocale() {
   return locale;
+}
+
+/** Remember a language choice (null = follow the browser). Takes effect on reload. */
+export function chooseLanguage(next: string | null) {
+  try {
+    if (next) localStorage.setItem(STORAGE_KEY, next);
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* not persisted; fine */
+  }
+}
+
+export function chosenLanguage(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function setLocale(next: string) {

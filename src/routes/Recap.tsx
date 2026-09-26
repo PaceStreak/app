@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { CalendarBlank, CaretLeft, CaretRight, Medal, Trophy } from "../components/phosphor";
+import { ReflectionBox } from "../components/Reflection";
+import { ShareWeekButton } from "../components/Share";
 import { WeekDots } from "../components/WeekDots";
 import { Empty, ErrorState, Loading, PageHeader, Section, Stat } from "../components/ui";
 import { ApiError, api } from "../lib/api";
@@ -129,6 +131,9 @@ function RecapBody({ recap, today }: { recap: RecapData; today: string }) {
           </ul>
         </Section>
       )}
+
+      <ReflectionBox week={recap.week_start} />
+      <ShareWeekButton recap={recap} />
 
       <p className="mt-8 text-center text-sm text-dim">
         This week's target is {recap.this_week_target}.{" "}

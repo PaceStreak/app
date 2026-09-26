@@ -65,6 +65,10 @@ export function Training() {
         <p className="field-hint">Used to time reminders and to mark the other days as planned rest on your grid. The streak always counts against your weekly target, whichever days you train.</p>
       </Section>
 
+      <Section title="Heart rate">
+        <MaxHrField value={me.profile.max_hr ?? null} birthYear={me.profile.birth_year} onSave={(v) => void save({ max_hr: v }, "Saved")} />
+      </Section>
+
       <Section title="Units">
         <div className="grid grid-cols-2 gap-3">
           <Segmented label="Weight" value={me.profile.weight_unit} onChange={(v) => void save({ weight_unit: v })} options={[{ value: "kg", label: "kg" }, { value: "lb", label: "lb" }]} />
@@ -225,5 +229,26 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
         </fieldset>
       </div>
     </Sheet>
+  );
+}
+
+/** Max heart rate for zones. Blank uses the common 220 - age estimate, which
+ * can be ten beats out either way, so a known number is better. */
+function MaxHrField({ value, birthYear, onSave }: { value: number | null; birthYear: number | null; onSave: (v: number | null) => void }) {
+  const [text, setText] = useState(value ? String(value) : "");
+  const estimate = birthYear ? 220 - (new Date().getFullYear() - birthYear) : null;
+  const n = Number(text);
+  const valid = text === "" || (Number.isInteger(n) && n >= 100 && n <= 230);
+  return (
+    <div>
+      <label className="field-label" htmlFor="max-hr">Max heart rate (bpm)</label>
+      <div className="flex gap-2">
+        <input id="max-hr" className="input num flex-1" inputMode="numeric" placeholder={estimate ? `About ${estimate}, estimated from age` : "e.g. 185"} value={text} onChange={(e) => setText(e.target.value.replace(/[^\d]/g, ""))} />
+        <button type="button" className="btn btn-secondary" disabled={!valid || text === (value ? String(value) : "")} onClick={() => onSave(text ? n : null)}>
+          Save
+        </button>
+      </div>
+      <p className="field-hint">Used for time in heart-rate zones on imported sessions. Leave it blank to use an estimate from your age.</p>
+    </div>
   );
 }

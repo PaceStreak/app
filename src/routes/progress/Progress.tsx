@@ -3,7 +3,9 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { BarChart } from "../../components/BarChart";
 import { MonthlyGoalCard } from "../../components/MonthlyGoal";
+import { LoadCard } from "../../components/LoadCard";
 import { Recovery } from "../../components/Recovery";
+import { ShareGridButton } from "../../components/Share";
 import { Heatmap, HeatLegend } from "../../components/Heatmap";
 import { ArrowCounterClockwise, Barbell, CalendarCheck, CalendarStar, CaretDown, CheckCircle, Circle, Fire, Medal, Scales, Snowflake, Sparkle, Trophy } from "../../components/phosphor";
 import { toast } from "../../components/toast";
@@ -103,7 +105,7 @@ export default function Progress() {
             </div>
           </Section>
 
-          <Section title="The grid">
+          <Section title="The grid" action={<ShareGridButton days={s.heatmap} today={s.today} weekStartsOn={s.week_starts_on} activeDays={s.totals.active_days} longest={s.chains[0]?.longest ?? 0} />}>
             <div className="card p-4">
               <div className="-mx-4 overflow-x-auto px-4">
                 <div className="min-w-[640px]">
@@ -170,6 +172,7 @@ export default function Progress() {
 
           {progress.data && progress.data.muscles.some((m) => m.weekly_avg_4w > 0) && <Muscles muscles={progress.data.muscles} />}
           {s && <Recovery today={s.today} />}
+          {s && <LoadCard today={s.today} />}
 
           <Section title="More">
             <List>

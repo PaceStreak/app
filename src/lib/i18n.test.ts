@@ -29,3 +29,28 @@ describe("rich", () => {
     expect(out.join("")).toBe("New here? <signup>Create an account</signup>");
   });
 });
+
+import { CATALOGS } from "./i18n";
+
+describe("catalogs", () => {
+  const shape = (m: unknown) => {
+    const text = typeof m === "string" ? m : Object.values(m as Record<string, string>).join(" ");
+    return {
+      vars: [...new Set(text.match(/\{\w+\}/g) ?? [])].sort(),
+      tags: [...new Set(text.match(/<\/?\w+>/g) ?? [])].sort(),
+    };
+  };
+  for (const [lang, catalog] of Object.entries(CATALOGS)) {
+    if (lang === "en") continue;
+    it(`${lang} keeps every placeholder and link tag, and invents no keys`, () => {
+      for (const [key, message] of Object.entries(catalog)) {
+        const english = CATALOGS.en[key as keyof typeof CATALOGS.en];
+        expect(english, `${lang}: unknown key ${key}`).toBeDefined();
+        expect(shape(message), `${lang}: ${key}`).toEqual(shape(english));
+      }
+    });
+    it(`${lang} translates everything the English catalog has`, () => {
+      expect(Object.keys(catalog).sort()).toEqual(Object.keys(CATALOGS.en).sort());
+    });
+  }
+});

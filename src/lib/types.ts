@@ -15,6 +15,9 @@ export interface Profile {
   weight_unit: "kg" | "lb";
   distance_unit: "km" | "mi";
   training_days: number | null;
+  /** For heart-rate zones; null means estimated from the birth year. */
+  max_hr?: number | null;
+  onboarded_at?: string | null;
   birth_year: number | null;
   onboarded: boolean;
   visibility: Visibility;
@@ -135,6 +138,13 @@ export interface Workout {
   tags?: string[];
   gear_id?: string | null;
   gym_id?: string | null;
+  /** After-session check-in: soreness carried in (0-3), pump (0-2). */
+  soreness?: number | null;
+  pump?: number | null;
+  avg_hr?: number | null;
+  max_hr?: number | null;
+  /** Seconds in heart-rate zones 1-5. */
+  hr_zones?: number[];
   /** Per-kilometre times from an imported track. */
   splits?: { m: number; sec: number }[];
   source: string;
@@ -588,4 +598,35 @@ export interface PlanTemplate {
   weeks_count: number;
   per_week: number;
   disciplines: string[];
+}
+
+export interface BlockWeek {
+  week: number;
+  weeks: number;
+  deload: boolean;
+  rir: number;
+}
+
+export interface TrainingBlock {
+  id: string;
+  name: string;
+  starts_on: string;
+  weeks: number;
+  rir_start: number;
+  rir_end: number;
+  ended: boolean;
+  now: BlockWeek | null;
+}
+
+export interface ReadinessEntry {
+  date: string;
+  sleep: number;
+  energy: number;
+  soreness: number;
+}
+
+export interface Reflection {
+  week_start: string;
+  went_well: string | null;
+  change: string | null;
 }

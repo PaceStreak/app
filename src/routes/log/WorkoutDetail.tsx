@@ -163,6 +163,10 @@ export default function WorkoutDetail() {
           {metric("Effort", w.effort ? (EFFORT.find((e) => e.value >= (w.effort ?? 0))?.label ?? `${w.effort}/10`) : null)}
           {metric("Working sets", w.sets.filter((s) => s.completed && s.kind !== "warmup").length ? String(w.sets.filter((s) => s.completed && s.kind !== "warmup").length) : null)}
           {metric("Volume", volume ? `${compact(unit === "kg" ? volume : volume / 0.45359237)} ${unit}` : null)}
+          {metric("Avg heart rate", w.avg_hr ? `${w.avg_hr} bpm` : null)}
+          {metric("Max heart rate", w.max_hr ? `${w.max_hr} bpm` : null)}
+          {metric("Soreness coming in", w.soreness != null ? ["None", "A little", "Sore", "Very sore"][w.soreness] : null)}
+          {metric("Pump", w.pump != null ? ["Low", "Decent", "Great"][w.pump] : null)}
         </dl>
       </div>
 
@@ -218,6 +222,7 @@ export default function WorkoutDetail() {
       )}
 
       {(w.splits?.length ?? 0) > 0 && <Splits splits={w.splits!} />}
+      {(w.hr_zones ?? []).some((z) => z > 0) && <Zones zones={w.hr_zones!} />}
 
       {((w.tags?.length ?? 0) > 0 || gear) && (
         <section className="mt-5 flex flex-wrap items-center gap-1.5" aria-label="Tags and gear">
@@ -292,6 +297,33 @@ function Splits({ splits }: { splits: { m: number; sec: number }[] }) {
           })}
         </tbody>
       </table>
+    </section>
+  );
+}
+
+const ZONE_NAMES = ["Very easy", "Easy", "Moderate", "Hard", "Maximum"];
+
+/** Time in each heart-rate zone, as bars and as text. Zones are shares of
+ * max heart rate (50/60/70/80/90%), set in Settings or estimated from age. */
+function Zones({ zones }: { zones: number[] }) {
+  const total = zones.reduce((a, b) => a + b, 0) || 1;
+  return (
+    <section className="card mt-5 p-4" aria-labelledby="zones-title">
+      <h2 id="zones-title" className="font-semibold">Heart-rate zones</h2>
+      <ul className="mt-3 space-y-2">
+        {zones.map((sec, i) => (
+          <li key={i} className="grid grid-cols-[92px_1fr_52px] items-center gap-3 text-sm">
+            <span className="text-muted">
+              {i + 1} · {ZONE_NAMES[i]}
+            </span>
+            <span className="h-2 overflow-hidden rounded-full bg-surface-2">
+              <span className="block h-full rounded-full bg-accent" style={{ width: `${(sec / total) * 100}%` }} />
+            </span>
+            <span className="num text-right text-dim">{Math.round(sec / 60)} min</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-dim">Zones use your max heart rate from Settings, or an estimate from your age if it isn't set.</p>
     </section>
   );
 }

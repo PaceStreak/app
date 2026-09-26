@@ -1,5 +1,6 @@
 import { WEEKDAYS_LONG, daysBetween, fmtMonthDay, weekday } from "./dates";
-import type { Challenge, Me, Plan, Stats, Workout } from "./types";
+import { conflictFor, trainingLoad } from "./load";
+import type { Challenge, Exercise, Me, Plan, Stats, Workout } from "./types";
 import { e1rm } from "./units";
 
 export type CardTone = "flame" | "accent" | "neutral" | "danger";
@@ -11,7 +12,8 @@ export type CardAction =
   | { kind: "push"; label: string }
   | { kind: "resend"; label: string }
   | { kind: "cancel-deletion"; label: string }
-  | { kind: "timezone"; label: string; timezone: string };
+  | { kind: "timezone"; label: string; timezone: string }
+  | { kind: "adjust"; label: string };
 
 export interface CoachCard {
   id: string;
@@ -42,6 +44,10 @@ export interface CoachContext {
   deviceTimezone?: string | null;
   /** Exercise names, for cards that talk about a lift. */
   exerciseName?: (id: string) => string | undefined;
+  /** The exercise library, for cards about which muscles did what. */
+  exercises?: Map<string, Exercise>;
+  /** Whether a routine works the legs, for hybrid-training conflicts. */
+  routineLegs?: (routineId: string) => boolean;
 }
 
 /**
@@ -149,9 +155,46 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
       primary: planned.routine_id
         ? { kind: "link", label: "Start workout", to: `/workouts/live?routine=${planned.routine_id}` }
         : { kind: "log", label: "Log it", discipline: planned.discipline },
-      // Not feeling it? Any strength session still completes a strength plan
-      // day, so another routine is a swap, not a skip.
-      secondary: planned.routine_id ? { kind: "link", label: "Another routine", to: "/routines" } : { kind: "link", label: "See the plan", to: `/plans/${ctx.plan.id}` },
+      // Not feeling it, too hot, short on time: a lighter version still
+      // completes the plan day and keeps the week. The sheet also offers
+      // another routine, or rest.
+      secondary: { kind: "adjust", label: "Not feeling 100%?" },
+      dismissible: true,
+    });
+  }
+
+  // Lifting and running in the same week: what yesterday did to today.
+  if (planned && !stats?.paused_today && ctx.exercises) {
+    const conflict = conflictFor(ctx.workouts, ctx.exercises, today, {
+      discipline: planned.discipline,
+      legs: planned.routine_id ? ctx.routineLegs?.(planned.routine_id) ?? false : /\b(leg|legs|lower|squat|deadlift)\b/i.test(planned.title),
+    });
+    if (conflict) {
+      cards.push({
+        id: `conflict:${today}`,
+        tone: "neutral",
+        icon: "sun",
+        title: conflict.kind === "legs-then-hard-cardio" ? "Legs worked hard yesterday" : "Hard run yesterday",
+        body:
+          conflict.kind === "legs-then-hard-cardio"
+            ? "Keep today's run easy and conversational. Speed work on tired legs is when form slips."
+            : "Go lighter on the leg work today, or swap it for upper body. Your legs are still recovering.",
+        primary: { kind: "adjust", label: "Adjust today" },
+        dismissible: true,
+      });
+    }
+  }
+
+  // A sudden jump in load: this week well above the last four.
+  const load = ctx.workouts.length >= 8 ? trainingLoad(ctx.workouts, today, 1) : null;
+  if (load?.state === "spike" && !stats?.paused_today) {
+    cards.push({
+      id: `load:${today.slice(0, 7)}:${Math.floor(Number(today.slice(8)) / 7)}`,
+      tone: "neutral",
+      icon: "chart",
+      title: "A big jump in training this week",
+      body: `About ${Math.round((load.ratio! - 1) * 100)}% more than your weekly average over the last four weeks. Jumps like that are when niggles start; an easier day or two lets the body catch up.`,
+      primary: { kind: "link", label: "See your load", to: "/progress#load" },
       dismissible: true,
     });
   }
