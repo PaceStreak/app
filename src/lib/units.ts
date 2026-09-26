@@ -10,6 +10,9 @@ const MI = 1609.344;
 
 export const toKg = (value: number, unit: WeightUnit) => (unit === "kg" ? value : value * LB);
 export const fromKg = (kg: number, unit: WeightUnit) => (unit === "kg" ? kg : kg / LB);
+export type LengthUnit = "cm" | "in";
+export const toCm = (value: number, unit: LengthUnit) => (unit === "cm" ? value : value * 2.54);
+export const fromCm = (cm: number, unit: LengthUnit) => (unit === "cm" ? cm : cm / 2.54);
 export const toMetres = (value: number, unit: DistanceUnit) => value * (unit === "km" ? 1000 : MI);
 export const fromMetres = (m: number, unit: DistanceUnit) => m / (unit === "km" ? 1000 : MI);
 

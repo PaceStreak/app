@@ -3,13 +3,14 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { HabitFields, draftFrom, payloadFrom, type HabitDraft } from "../../components/HabitForm";
+import { HabitDaySheet } from "../../components/HabitDaySheet";
 import { HabitRow } from "../../components/HabitRow";
-import { Archive, PencilSimple, Trash } from "../../components/phosphor";
+import { Archive, CaretLeft, CaretRight, PencilSimple, Trash } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { ErrorState, Loading, PageHeader, Section, Stat } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
-import { addDays, fmtFullDay, fmtProjected, fmtMonthDay, localToday, weekStart } from "../../lib/dates";
+import { WEEKDAYS, addDays, fmtFullDay, fmtMonthDay, fmtMonthYear, fmtProjected, localToday, weekStart } from "../../lib/dates";
 import { isDone, setHabitDay, skillProjection } from "../../lib/habits";
 import { queryClient, useHabitCatalog } from "../../lib/queries";
 import { useMe } from "../../lib/session";
@@ -30,7 +31,9 @@ export default function HabitDetail() {
   const q = useQuery({ queryKey: ["habit", id], queryFn: () => api<Habit>(`/habits/${id}?days=365`) });
   const catalog = useHabitCatalog();
   const [editing, setEditing] = useState<HabitDraft | null>(null);
-  const [dayEdit, setDayEdit] = useState<{ date: string; value: string } | null>(null);
+  const [sheetDay, setSheetDay] = useState<string | null>(null);
+  // The month on show, as its first day.
+  const [month, setMonth] = useState(() => `${today.slice(0, 8)}01`);
   const [confirmSheet, ask] = useConfirm();
 
   if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
@@ -65,20 +68,31 @@ export default function HabitDetail() {
     navigate("/habits", { replace: true });
   };
 
-  const setDay = async (date: string, amount: number) => {
-    await setHabitDay(h, date, amount, today);
-    setDayEdit(null);
-  };
   const tapDay = (date: string) => {
     if (date > today || date < addDays(today, -BACKFILL_DAYS)) return;
     const current = amounts.get(date) ?? 0;
-    if (h.kind === "check") return void setDay(date, current > 0 ? 0 : 1);
-    setDayEdit({ date, value: current ? String(current) : "" });
+    if (h.kind === "check") return void setHabitDay(h, date, current > 0 ? 0 : 1, today);
+    setSheetDay(date);
   };
 
-  // Twelve weeks, a row per week, ending with this one.
-  const start = addDays(weekStart(today, me.profile.week_starts_on), -7 * 11);
-  const grid = Array.from({ length: 12 }, (_, w) => Array.from({ length: 7 }, (_, d) => addDays(start, w * 7 + d)));
+  // The month as whole weeks, starting on the person's first day of the week.
+  const startsOn = me.profile.week_starts_on;
+  const monthEnd = addDays(`${addDays(month, 32).slice(0, 8)}01`, -1);
+  const gridStart = weekStart(month, startsOn);
+  const cells = Array.from({ length: Math.ceil((dayIndex(gridStart, monthEnd) + 1) / 7) * 7 }, (_, i) => addDays(gridStart, i));
+  const heads = Array.from({ length: 7 }, (_, i) => WEEKDAYS[(startsOn + i) % 7]);
+  const earliest = `${addDays(today, -365).slice(0, 8)}01`;
+  const prevMonth = `${addDays(month, -1).slice(0, 8)}01`;
+  const nextMonth = `${addDays(monthEnd, 1).slice(0, 8)}01`;
+  const monthDone = cells.filter((d) => d.slice(0, 7) === month.slice(0, 7) && d <= today && d >= h.started_on && (h.kind === "quit" ? (amounts.get(d) ?? 0) <= 0 : isDone(h, amounts.get(d) ?? 0))).length;
+  const weeks = (h.weeks ?? []).slice(-12);
+  const s = h.streak;
+  const nudge =
+    h.kind === "quit"
+      ? null
+      : s.this_week_days >= s.this_week_target
+        ? `This week is kept (${s.this_week_days}/${s.this_week_target}). Anything more is a bonus.`
+        : `${s.needed} more ${s.needed === 1 ? "day" : "days"} this week keeps the streak${s.days_left != null ? `, with ${s.days_left} ${s.days_left === 1 ? "day" : "days"} left` : ""}.`;
 
   return (
     <div>
@@ -94,7 +108,7 @@ export default function HabitDetail() {
       />
       {!h.archived && (
         <div className="card mt-4">
-          <HabitRow habit={h} today={today} />
+          <HabitRow habit={h} today={today} strip={false} />
         </div>
       )}
       {h.why && <p className="mt-3 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">Why: {h.why}</p>}
@@ -108,15 +122,29 @@ export default function HabitDetail() {
           </>
         ) : (
           <>
-            <Stat label="Streak" value={`${h.streak.current} wk`} sub={`best ${h.streak.longest}`} />
+            <Stat label="Streak" value={`${h.streak.current} wk`} sub={`best ${h.streak.longest} wk`} />
             <Stat label="This week" value={`${h.streak.this_week_days}/${h.streak.this_week_target}`} />
             <Stat label="Strength" value={`${h.strength}%`} />
           </>
         )}
       </div>
-      <p className="mt-2 text-xs text-dim">
-        Strength is a slow average of how much of each week's target you met: a missed week dents it; it doesn't erase months.
-      </p>
+      {nudge && <p className="mt-3 rounded-2xl bg-accent-soft px-4 py-3 text-sm font-medium text-accent-text">{nudge}</p>}
+      {weeks.length > 1 && (
+        <div className="mt-3">
+          <div className="flex gap-1" aria-label="The last weeks: kept, missed or in progress">
+            {weeks.map((w) => (
+              <span
+                key={w.week_start}
+                title={`Week of ${fmtMonthDay(w.week_start)}: ${w.days}/${w.target} · ${w.status}`}
+                className={`h-2 flex-1 rounded-full ${w.status === "kept" || w.status === "repaired" ? "bg-accent" : w.status === "open" ? "bg-accent/35" : w.status === "missed" ? "bg-flame/60" : "bg-surface-2"}`}
+              />
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-dim">
+            Each bar is a week. A week is kept when you reach {h.weekly_target === 7 ? "every day" : `${h.weekly_target} days`}; the first week only asks for the days left after you started.
+          </p>
+        </div>
+      )}
 
       {skill && (
         <Section title="Long goal">
@@ -138,32 +166,61 @@ export default function HabitDetail() {
         </Section>
       )}
 
-      <Section title="Last twelve weeks">
+      <Section title="Calendar">
         <div className="card p-4">
-          <div className="grid grid-cols-7 gap-1.5" role="grid" aria-label="Days, tap to fill in or correct">
-            {grid.flat().map((date) => {
-              const amount = amounts.get(date) ?? 0;
-              const future = date > today;
-              const done = !future && date >= h.started_on && (h.kind === "quit" ? amount <= 0 : isDone(h, amount));
-              const slipped = h.kind === "quit" && amount > 0;
-              const editable = !future && date >= addDays(today, -BACKFILL_DAYS);
-              return (
-                <button
-                  key={date}
-                  type="button"
-                  disabled={!editable}
-                  onClick={() => tapDay(date)}
-                  aria-label={`${fmtFullDay(date)}: ${slipped ? "slipped" : done ? "done" : "not done"}`}
-                  className={`aspect-square rounded-md text-[0.6rem] ${future ? "bg-transparent" : slipped ? "bg-flame-soft" : done ? "bg-accent" : "bg-surface-2"} ${date === today ? "ring-2 ring-ink/40" : ""}`}
-                />
-              );
-            })}
+          <div className="mx-auto max-w-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label="Previous month" disabled={prevMonth < earliest} onClick={() => setMonth(prevMonth)}>
+                <CaretLeft size={18} />
+              </button>
+              <p className="text-center">
+                <span className="block font-semibold">{fmtMonthYear(month)}</span>
+                <span className="num block text-xs text-dim">{monthDone} {h.kind === "quit" ? "clean" : "done"}</span>
+              </p>
+              <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label="Next month" disabled={nextMonth > today} onClick={() => setMonth(nextMonth)}>
+                <CaretRight size={18} />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center text-[0.7rem] font-medium text-dim" aria-hidden>
+              {heads.map((d) => (
+                <span key={d}>{d.slice(0, 2)}</span>
+              ))}
+            </div>
+            <div className="mt-1 grid grid-cols-7 gap-1" role="grid" aria-label={`${fmtMonthYear(month)}, tap a day to fill in or correct`}>
+              {cells.map((date) => {
+                if (date.slice(0, 7) !== month.slice(0, 7)) return <span key={date} />;
+                const amount = amounts.get(date) ?? 0;
+                const future = date > today;
+                const before = date < h.started_on;
+                const done = !future && !before && (h.kind === "quit" ? amount <= 0 : isDone(h, amount));
+                const slipped = h.kind === "quit" && amount > 0;
+                const partial = !done && !slipped && amount > 0;
+                const editable = !future && date >= addDays(today, -BACKFILL_DAYS);
+                return (
+                  <button
+                    key={date}
+                    type="button"
+                    disabled={!editable}
+                    onClick={() => tapDay(date)}
+                    aria-label={`${fmtFullDay(date)}: ${slipped ? "slipped" : done ? "done" : partial ? `${amount}, partly done` : "not done"}`}
+                    className={`press num relative grid aspect-square place-items-center rounded-lg text-sm transition-colors ${
+                      slipped ? "bg-flame-soft font-semibold text-flame" : done ? "bg-accent font-semibold text-accent-ink" : partial ? "bg-accent-soft text-accent-text" : future || before ? "text-dim/50" : "bg-surface-2 text-muted"
+                    } ${date === today ? "ring-2 ring-ink/60 ring-offset-2 ring-offset-surface" : ""} disabled:cursor-default`}
+                  >
+                    {Number(date.slice(8))}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <p className="mt-3 text-xs text-dim">
+          <p className="mt-4 text-center text-xs text-dim">
             Tap a day to {h.kind === "check" ? "tick or untick it" : h.kind === "quit" ? "log or clear a slip" : "set how much"}. Up to {BACKFILL_DAYS} days back.
           </p>
         </div>
       </Section>
+      <p className="mt-3 text-xs text-dim">
+        Strength ({h.strength}%) is a slow average of how much of each week's target you met: a missed week dents it; it doesn't erase months.
+      </p>
 
       <div className="mt-8 flex gap-2">
         <button type="button" className="btn btn-secondary flex-1" onClick={() => void archive()}>
@@ -175,26 +232,7 @@ export default function HabitDetail() {
       </div>
       <p className="mt-3 text-center text-xs text-dim">Started {fmtMonthDay(h.started_on)}. Private: only you ever see it.</p>
 
-      <Sheet
-        open={dayEdit !== null}
-        onClose={() => setDayEdit(null)}
-        title={dayEdit ? fmtFullDay(dayEdit.date) : ""}
-        footer={
-          <button type="button" className="btn btn-primary w-full" onClick={() => dayEdit && void setDay(dayEdit.date, Number(dayEdit.value.replace(",", ".")) || 0)}>
-            Save
-          </button>
-        }
-      >
-        {dayEdit && (
-          <div>
-            <label className="field-label" htmlFor="day-amount">
-              {h.kind === "quit" ? "Slips that day" : h.kind === "duration" ? "Minutes" : (h.unit ?? "Amount")}
-            </label>
-            <input id="day-amount" className="input num" inputMode="decimal" autoFocus value={dayEdit.value} onChange={(e) => setDayEdit({ ...dayEdit, value: e.target.value })} />
-            <p className="field-hint">{h.kind === "quit" ? "Zero clears it: a clean day." : "Zero clears the day."}</p>
-          </div>
-        )}
-      </Sheet>
+      <HabitDaySheet habit={h} day={sheetDay} today={today} onClose={() => setSheetDay(null)} />
 
       <Sheet
         open={editing !== null}
@@ -213,3 +251,5 @@ export default function HabitDetail() {
     </div>
   );
 }
+
+const dayIndex = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);

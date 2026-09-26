@@ -1,6 +1,7 @@
 import { addDays } from "./dates";
 import { queryClient } from "./queries";
 import { sendOrQueue } from "./requests";
+import { toast } from "../components/toast";
 import type { Habit, TimeOfDay } from "./types";
 
 export const TIMES: { value: TimeOfDay; label: string }[] = [
@@ -23,6 +24,12 @@ export function partOfDay(hour: number): TimeOfDay {
 export function orderForToday(habits: Habit[], now: TimeOfDay): Habit[] {
   const rank = (h: Habit) => (h.time_of_day === now ? 0 : h.time_of_day === "anytime" ? 1 : 2);
   return [...habits].sort((a, b) => rank(a) - rank(b) || Number(a.today.done) - Number(b.today.done) || a.position - b.position);
+}
+
+/** Every habit being built is done today; habits being broken don't count. */
+export function allDoneToday(habits: Habit[]): boolean {
+  const doing = habits.filter((h) => h.kind !== "quit" && !h.archived);
+  return doing.length > 1 && doing.every((h) => h.today.done);
 }
 
 export function isDone(h: Pick<Habit, "kind" | "daily_goal">, amount: number): boolean {
@@ -53,10 +60,20 @@ export function stepFor(h: Pick<Habit, "kind" | "daily_goal">): number {
  * queued and sent later.
  */
 export async function setHabitDay(habit: Habit, day: string, amount: number, today: string): Promise<"sent" | "queued"> {
-  if (day === today) {
-    queryClient.setQueryData<Habit[]>(["habits"], (old) =>
-      old?.map((h) => (h.id === habit.id ? { ...h, today: { amount, done: isDone(h, amount) } } : h)),
-    );
+  const before = queryClient.getQueryData<Habit[]>(["habits"]);
+  queryClient.setQueryData<Habit[]>(["habits"], (old) =>
+    old?.map((h) =>
+      h.id !== habit.id
+        ? h
+        : {
+            ...h,
+            today: day === today ? { amount, done: isDone(h, amount) } : h.today,
+            recent: h.recent?.map((d) => (d.date === day ? { ...d, amount } : d)),
+          },
+    ),
+  );
+  if (day === today && before && allDoneToday(queryClient.getQueryData<Habit[]>(["habits"]) ?? []) && !allDoneToday(before)) {
+    toast.celebrate("Every habit done today", { body: "That's the whole list. See you tomorrow." });
   }
   queryClient.setQueryData<Habit>(["habit", habit.id], (old) => {
     if (!old) return old;

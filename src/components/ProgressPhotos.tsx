@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { errorText } from "../lib/api";
 import { fmtMonthDay } from "../lib/dates";
 import type { Photo } from "../lib/db";
-import { addPhoto, deletePhoto, listPhotos } from "../lib/photos";
-import { Camera, DeviceMobile, Trash } from "./phosphor";
+import { addPhoto, deletePhoto, listPhotos, stopPhotoBackup, syncPhotos } from "../lib/photos";
+import { prefs } from "../lib/prefs";
+import { useConfirm } from "./Confirm";
+import { Camera, CloudCheck, Trash } from "./phosphor";
 import { Sheet } from "./Sheet";
 import { toast } from "./toast";
-import { Segmented } from "./ui";
+import { Segmented, Switch } from "./ui";
 
 const POSES: { value: Photo["pose"]; label: string }[] = [
   { value: "front", label: "Front" },
@@ -21,10 +24,10 @@ function useUrls(photos: Photo[]) {
 }
 
 /**
- * Progress photos that never leave the phone. Taken or picked here, stored in
- * this browser's own storage, compared side by side with a slider. There is
- * no upload path at all - which also means they don't follow you to another
- * device, and clearing the browser's data removes them. Both are said plainly.
+ * Progress photos. Taken or picked here, stored in this browser's own storage
+ * and compared side by side with a slider. Backup to the account is opt-in:
+ * with it on they follow you to another phone and survive clearing the
+ * browser; with it off they never leave this one. Both are said plainly.
  */
 export function ProgressPhotos({ today }: { today: string }) {
   const [photos, setPhotos] = useState<Photo[] | null>(null);
@@ -34,9 +37,44 @@ export function ProgressPhotos({ today }: { today: string }) {
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const urls = useUrls(photos ?? []);
+  const [backup, setBackup] = useState(prefs.photoBackup);
+  const [syncing, setSyncing] = useState(false);
+  const [confirmSheet, ask] = useConfirm();
 
   const reload = () => void listPhotos().then(setPhotos);
-  useEffect(reload, []);
+  const sync = async (quiet = true) => {
+    setSyncing(true);
+    try {
+      await syncPhotos();
+    } catch (err) {
+      if (!quiet) toast.error(errorText(err));
+    } finally {
+      setSyncing(false);
+      reload();
+    }
+  };
+  useEffect(() => {
+    reload();
+    void sync();
+  }, []);
+
+  const toggleBackup = async (on: boolean) => {
+    if (on) {
+      prefs.setPhotoBackup(true);
+      setBackup(true);
+      await sync(false);
+      toast.success("Photos backed up to your account");
+      return;
+    }
+    if (!(await ask({ title: "Turn off photo backup?", body: "Every copy on our server is deleted. The photos on this phone stay here.", confirm: "Turn off", danger: true }))) return;
+    try {
+      await stopPhotoBackup();
+      setBackup(false);
+      reload();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
 
   const forPose = (photos ?? []).filter((p) => p.pose === pose);
 
@@ -64,12 +102,24 @@ export function ProgressPhotos({ today }: { today: string }) {
 
   return (
     <div className="card space-y-4 p-4">
-      <p className="flex items-start gap-2 text-sm text-muted">
-        <DeviceMobile size={18} className="mt-0.5 shrink-0 text-dim" aria-hidden />
-        <span>
-          Photos stay on this phone. They're never uploaded, so they won't appear on your other devices, and clearing this browser's data deletes them. Location data from the camera is removed.
-        </span>
-      </p>
+      <div className="-mx-4 -mt-1 border-b border-line pb-1">
+        <Switch
+          checked={backup}
+          disabled={syncing}
+          onChange={(on) => void toggleBackup(on)}
+          label={
+            <span className="flex items-center gap-2">
+              Back up to your account {backup && <CloudCheck size={16} className="text-accent-text" aria-hidden />}
+            </span>
+          }
+          description={
+            backup
+              ? `${syncing ? "Syncing… " : ""}They follow you to other devices. Only you can ever open them.`
+              : "Off: photos stay on this phone only, and clearing the browser's data deletes them."
+          }
+        />
+      </div>
+      <p className="text-xs text-dim">Location data from the camera is removed before a photo is saved anywhere.</p>
       <Segmented label="Pose" value={pose} onChange={setPose} options={POSES} />
       <input ref={input} type="file" accept="image/*" capture="environment" className="sr-only" id="photo-input" onChange={(e) => void onFile(e.target.files?.[0])} />
       <label htmlFor="photo-input" className={`btn btn-secondary w-full ${busy ? "pointer-events-none opacity-60" : ""}`}>
@@ -142,6 +192,7 @@ export function ProgressPhotos({ today }: { today: string }) {
           </div>
         )}
       </Sheet>
+      {confirmSheet}
     </div>
   );
 }

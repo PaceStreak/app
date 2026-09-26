@@ -13,11 +13,30 @@ import { queryClient } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import { onQueueChange, sendOrQueue } from "../../lib/requests";
 import type { BodyMetric, WeighIn, WeighInMoment, WeightGoal } from "../../lib/types";
-import { fromKg, parseNumber, toKg } from "../../lib/units";
+import { fromCm, fromKg, parseNumber, toCm, toKg, type LengthUnit } from "../../lib/units";
 import { MOMENTS, changeOver, dailySeries, daySwing, goalView, guessMoment, momentLabel, signed } from "../../lib/weight";
 
-type Field = "body_fat_pct" | "waist_cm" | "resting_hr" | "sleep_hours";
-const EMPTY: Record<Field, string> = { body_fat_pct: "", waist_cm: "", resting_hr: "", sleep_hours: "" };
+type Tape = "neck_cm" | "shoulders_cm" | "chest_cm" | "waist_cm" | "arm_cm" | "forearm_cm" | "hips_cm" | "thigh_cm" | "calf_cm";
+type Field = "body_fat_pct" | "resting_hr" | "sleep_hours" | Tape;
+const TAPE: { key: Tape; label: string; hint?: string }[] = [
+  { key: "waist_cm", label: "Waist", hint: "at the navel" },
+  { key: "chest_cm", label: "Chest" },
+  { key: "hips_cm", label: "Hips" },
+  { key: "shoulders_cm", label: "Shoulders" },
+  { key: "neck_cm", label: "Neck" },
+  { key: "arm_cm", label: "Upper arm", hint: "relaxed" },
+  { key: "forearm_cm", label: "Forearm" },
+  { key: "thigh_cm", label: "Thigh" },
+  { key: "calf_cm", label: "Calf" },
+];
+const DAILY: { key: Field; label: string; suffix: string }[] = [
+  { key: "sleep_hours", label: "Sleep", suffix: "h" },
+  { key: "resting_hr", label: "Resting HR", suffix: "bpm" },
+  { key: "body_fat_pct", label: "Body fat", suffix: "%" },
+];
+const FIELDS: Field[] = [...DAILY.map((d) => d.key), ...TAPE.map((t) => t.key)];
+const isTape = (f: Field): f is Tape => f.endsWith("_cm");
+const labelOf = (f: Field) => DAILY.find((d) => d.key === f)?.label ?? TAPE.find((t) => t.key === f)!.label;
 
 export default function Body() {
   const me = useMe();
@@ -25,7 +44,9 @@ export default function Body() {
   const today = localToday(me.profile.timezone);
   const weighs = useQuery({ queryKey: ["weigh-ins"], queryFn: () => api<WeighIn[]>("/weigh-ins?days=730") });
   const q = useQuery({ queryKey: ["body"], queryFn: () => api<BodyMetric[]>("/body-metrics?days=365") });
-  const todays = q.data?.find((m) => m.date === today);
+  const [measureDay, setMeasureDay] = useState(today);
+  const onDay = q.data?.find((m) => m.date === measureDay);
+  const lu: LengthUnit = me.profile.distance_unit === "mi" ? "in" : "cm";
   const goalQ = useQuery({ queryKey: ["weight-goal"], queryFn: () => api<WeightGoal | null>("/weight-goal") });
   // Writes made with no signal, shown straight away and sent later.
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
@@ -36,7 +57,7 @@ export default function Body() {
   const [when, setWhen] = useState<string | null>(null);
   const [filter, setFilter] = useState<WeighInMoment | "all">("all");
   const [range, setRange] = useState<30 | 90 | 365>(90);
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState<Partial<Record<Field, string>>>({});
   const [chart, setChart] = useState<Field>("sleep_hours");
   const [busy, setBusy] = useState(false);
 
@@ -71,15 +92,18 @@ export default function Body() {
   const save = async () => {
     setBusy(true);
     try {
-      const result = await sendOrQueue(`/body-metrics/${today}`, "PUT", {
-        body_fat_pct: parseNumber(form.body_fat_pct) ?? todays?.body_fat_pct ?? null,
-        waist_cm: parseNumber(form.waist_cm) ?? todays?.waist_cm ?? null,
-        resting_hr: parseNumber(form.resting_hr) ?? todays?.resting_hr ?? null,
-        sleep_hours: parseNumber(form.sleep_hours) ?? todays?.sleep_hours ?? null,
-      });
-      setForm(EMPTY);
+      // The server replaces the whole day, so carry over what isn't being changed.
+      const body = Object.fromEntries(
+        FIELDS.map((f) => {
+          const typed = parseNumber(form[f] ?? "");
+          const value = typed == null ? (onDay?.[f] ?? null) : isTape(f) ? Math.round(toCm(typed, lu) * 10) / 10 : typed;
+          return [f, value];
+        }),
+      );
+      const result = await sendOrQueue(`/body-metrics/${measureDay}`, "PUT", { ...body, note: onDay?.note ?? null });
+      setForm({});
       await queryClient.invalidateQueries({ queryKey: ["body"] });
-      toast.success(result === "queued" ? "Saved on this phone. It syncs when you're back online." : "Saved for today");
+      toast.success(result === "queued" ? "Saved on this phone. It syncs when you're back online." : measureDay === today ? "Saved for today" : `Saved for ${fmtMonthDay(measureDay)}`);
     } catch (err) {
       toast.error(errorText(err));
     } finally {
@@ -114,24 +138,35 @@ export default function Body() {
   const usedMoments = new Set(all.map((w) => w.moment));
 
   const metricSeries = (q.data ?? []).filter((m) => m[chart] != null).slice(-30);
-  const fmt = (m: BodyMetric, f: Field) => {
+  const len = (cm: number) => Math.round(fromCm(cm, lu) * 10) / 10;
+  const show = (f: Field, v: number) => (isTape(f) ? len(v) : v);
+  const fmt = (m: BodyMetric, f: Field, named = false) => {
     const v = m[f];
     if (v == null) return "";
     if (f === "body_fat_pct") return `${v}% fat`;
-    if (f === "waist_cm") return `${v} cm`;
     if (f === "resting_hr") return `${v} bpm`;
-    return `${v} h`;
+    if (f === "sleep_hours") return `${v} h sleep`;
+    return `${named ? `${labelOf(f).toLowerCase()} ` : ""}${len(v)} ${lu}`;
   };
+  // Latest value of each field, for placeholders and the progress table.
+  const latest = (f: Field) => [...(q.data ?? [])].reverse().find((m) => m[f] != null);
+  const first = (f: Field) => (q.data ?? []).find((m) => m[f] != null);
 
-  const input = (f: Field, label: string, suffix: string) => (
-    <div>
-      <label className="field-label" htmlFor={`b-${f}`}>{label}</label>
-      <div className="relative">
-        <input id={`b-${f}`} className="input num pr-12" inputMode="decimal" placeholder={todays?.[f] != null ? String(todays[f]) : ""} value={form[f]} onChange={(e) => setForm({ ...form, [f]: e.target.value })} />
-        <span className="absolute inset-y-0 right-4 flex items-center text-sm text-dim">{suffix}</span>
+  const input = (f: Field, label: string, suffix: string, hint?: string) => {
+    const known = onDay?.[f] ?? latest(f)?.[f];
+    return (
+      <div>
+        <label className="field-label" htmlFor={`b-${f}`}>
+          {label} {hint && <span className="font-normal text-dim">· {hint}</span>}
+        </label>
+        <div className="relative">
+          <input id={`b-${f}`} className="input num pr-12" inputMode="decimal" placeholder={known != null ? String(show(f, known)) : ""} value={form[f] ?? ""} onChange={(e) => setForm({ ...form, [f]: e.target.value })} />
+          <span className="absolute inset-y-0 right-4 flex items-center text-sm text-dim">{suffix}</span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+  const tapeProgress = TAPE.map((t) => ({ ...t, last: latest(t.key), first: first(t.key) })).filter((t) => t.last);
 
   return (
     <div>
@@ -256,19 +291,47 @@ export default function Body() {
         <ProgressPhotos today={today} />
       </Section>
 
-      <Section title="Other measures">
-        <div className="card space-y-4 p-4">
-          <div className="grid grid-cols-2 gap-3">
-            {input("sleep_hours", "Sleep", "h")}
-            {input("resting_hr", "Resting HR", "bpm")}
-            {input("waist_cm", "Waist", "cm")}
-            {input("body_fat_pct", "Body fat", "%")}
+      <Section title="Measurements">
+        <div className="card space-y-5 p-4">
+          <div>
+            <label className="field-label" htmlFor="m-day">Day</label>
+            <input id="m-day" type="date" className="input" value={measureDay} max={today} min={addDays(today, -365)} onChange={(e) => { setMeasureDay(e.target.value || today); setForm({}); }} />
           </div>
-          <button type="button" className="btn btn-secondary w-full" disabled={busy || Object.values(form).every((v) => !v)} onClick={() => void save()}>
-            Save for today
+          <div className="grid grid-cols-3 gap-3">{DAILY.map((d) => <div key={d.key}>{input(d.key, d.label, d.suffix)}</div>)}</div>
+          <div>
+            <p className="font-semibold">Tape measure</p>
+            <p className="field-hint mt-0.5">Same side, same time of day, tape snug but not pressing. Grey numbers are your last reading.</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">{TAPE.map((t) => <div key={t.key}>{input(t.key, t.label, lu, t.hint)}</div>)}</div>
+          </div>
+          <button type="button" className="btn btn-primary w-full" disabled={busy || Object.values(form).every((v) => !v)} onClick={() => void save()}>
+            {measureDay === today ? "Save for today" : `Save for ${fmtMonthDay(measureDay)}`}
           </button>
+          <p className="text-xs text-dim">Saved to your account, so it's on every device you sign in on. Only you can see it.</p>
         </div>
       </Section>
+
+      {tapeProgress.length > 0 && (
+        <Section title="Tape progress">
+          <ul className="card divide-y divide-line">
+            {tapeProgress.map((t) => {
+              const now = t.last![t.key]!;
+              const was = t.first![t.key]!;
+              const delta = len(now) - len(was);
+              return (
+                <li key={t.key}>
+                  <button type="button" className="press flex w-full items-center gap-3 px-4 py-3 text-left" onClick={() => setChart(t.key)}>
+                    <span className="flex-1 font-medium">{t.label}</span>
+                    <span className="num font-semibold">{len(now)} {lu}</span>
+                    <span className={`num w-24 text-right text-sm ${delta === 0 ? "text-dim" : "text-muted"}`}>
+                      {t.first!.date === t.last!.date ? "first reading" : `${signed(delta)} since ${fmtMonthDay(t.first!.date)}`}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
+      )}
 
       {q.isError ? (
         <ErrorState error={q.error} onRetry={() => void q.refetch()} />
@@ -281,10 +344,15 @@ export default function Body() {
           {q.data.length > 0 && (
             <Section title="Measures trend">
               <div className="card p-4">
-                <Segmented label="Measure" value={chart} onChange={setChart} options={[{ value: "sleep_hours", label: "Sleep" }, { value: "resting_hr", label: "HR" }, { value: "waist_cm", label: "Waist" }, { value: "body_fat_pct", label: "Fat" }]} />
+                <label className="sr-only" htmlFor="m-chart">Measure</label>
+                <select id="m-chart" className="input" value={chart} onChange={(e) => setChart(e.target.value as Field)}>
+                  {FIELDS.filter((f) => (q.data ?? []).some((m) => m[f] != null)).map((f) => (
+                    <option key={f} value={f}>{labelOf(f)}</option>
+                  ))}
+                </select>
                 <div className="mt-5">
                   {metricSeries.length ? (
-                    <BarChart title="Body trend" bars={metricSeries.map((m) => ({ key: m.date, label: fmtMonthDay(m.date), value: m[chart]!, display: fmt(m, chart) }))} />
+                    <BarChart title="Body trend" bars={metricSeries.map((m) => ({ key: m.date, label: fmtMonthDay(m.date), value: show(chart, m[chart]!), display: fmt(m, chart) }))} />
                   ) : (
                     <p className="py-8 text-center text-sm text-dim">Nothing recorded for this yet.</p>
                   )}
@@ -299,14 +367,14 @@ export default function Body() {
                 const m = q.data.find((x) => x.date === day);
                 const parts = [
                   ...dayWeighs.map((w) => `${kgText(w.weight_kg)} ${MOMENTS.find((x) => x.value === w.moment)!.short.toLowerCase()}`),
-                  ...(m ? (["sleep_hours", "resting_hr", "waist_cm", "body_fat_pct"] as Field[]).map((f) => fmt(m, f)) : []),
+                  ...(m ? FIELDS.map((f) => fmt(m, f, true)) : []),
                 ].filter(Boolean);
                 return (
                   <li key={day} className="flex items-center gap-3 px-4 py-3 text-sm">
                     <span className="w-16 shrink-0 text-dim">{fmtMonthDay(day)}</span>
                     <span className="num flex-1 truncate">{parts.join(" · ")}</span>
                     {m && (
-                      <button type="button" className="btn btn-ghost btn-icon btn-sm text-dim" aria-label={`Delete other measures for ${fmtMonthDay(day)}`} onClick={() => void remove(day)}>
+                      <button type="button" className="btn btn-ghost btn-icon btn-sm text-dim" aria-label={`Delete measurements for ${fmtMonthDay(day)}`} onClick={() => void remove(day)}>
                         <Trash size={16} />
                       </button>
                     )}

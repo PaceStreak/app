@@ -48,6 +48,9 @@ export const prefs = {
   /** Which strength-standards table to compare with; null hides them. */
   standards: () => read<"men" | "women" | null>("standards", null),
   setStandards: (v: "men" | "women" | null) => write("standards", v),
+  /** Back progress photos up to the account from this device. */
+  photoBackup: () => read<boolean>("photoBackup", false),
+  setPhotoBackup: (on: boolean) => write("photoBackup", on),
   installDismissed: () => read<number>("installDismissed", 0),
   dismissInstall: () => write("installDismissed", Date.now()),
   dismissed: (key: string) => read<string[]>("dismissed", []).includes(key),

@@ -340,6 +340,8 @@ export interface Habit {
   last_slip: string | null;
   /** Detail only. */
   days?: { date: string; amount: number }[];
+  /** The last seven days, oldest first; list responses only. */
+  recent?: { date: string; amount: number }[];
   weeks?: { week_start: string; days: number; target: number; status: string; score: number }[];
 }
 
@@ -596,6 +598,14 @@ export interface BodyMetric {
   waist_cm: number | null;
   resting_hr: number | null;
   sleep_hours: number | null;
+  neck_cm?: number | null;
+  shoulders_cm?: number | null;
+  chest_cm?: number | null;
+  arm_cm?: number | null;
+  forearm_cm?: number | null;
+  hips_cm?: number | null;
+  thigh_cm?: number | null;
+  calf_cm?: number | null;
   note?: string | null;
 }
 

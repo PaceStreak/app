@@ -124,6 +124,8 @@ export interface RequestOptions {
   method?: string;
   body?: unknown;
   form?: FormData;
+  /** Raw bytes, sent with the blob's own type (a photo upload). */
+  blob?: Blob;
   auth?: boolean;
   csrf?: boolean;
   raw?: boolean;
@@ -131,10 +133,11 @@ export interface RequestOptions {
 }
 
 export async function api<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const { method = opts.body || opts.form ? "POST" : "GET", auth = true } = opts;
+  const { method = opts.body || opts.form || opts.blob ? "POST" : "GET", auth = true } = opts;
   const send = async () => {
     const headers: Record<string, string> = {};
     if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+    if (opts.blob) headers["Content-Type"] = opts.blob.type;
     if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
     if (opts.csrf) {
       const csrf = storage()?.getItem(CSRF_KEY);
@@ -145,7 +148,7 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
         method,
         headers,
         credentials: "include",
-        body: opts.form ?? (opts.body !== undefined ? JSON.stringify(opts.body) : undefined),
+        body: opts.blob ?? opts.form ?? (opts.body !== undefined ? JSON.stringify(opts.body) : undefined),
         signal: opts.signal,
       });
     } catch (err) {

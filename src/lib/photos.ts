@@ -1,12 +1,15 @@
 /**
- * Progress photos, kept on this device only. Each is re-encoded through a
+ * Progress photos, kept on this device and, when the person turns backup on,
+ * copied to their account so they follow them to another phone. Each is re-encoded through a
  * canvas before it is stored: that caps its size (the longest side at 1600
  * px) and, as importantly, drops the EXIF data a camera writes - including
  * where the photo was taken.
  */
 
+import { api } from "./api";
 import { uuid } from "./dates";
 import { db, type Photo } from "./db";
+import { prefs } from "./prefs";
 
 const MAX_SIDE = 1600;
 
@@ -24,7 +27,59 @@ async function reencode(file: Blob): Promise<Blob> {
 export async function addPhoto(file: Blob, date: string, pose: Photo["pose"]): Promise<Photo> {
   const photo: Photo = { id: uuid(), date, pose, blob: await reencode(file), created_at: new Date().toISOString() };
   await (await db()).put("photos", photo);
+  if (prefs.photoBackup()) await upload(photo).catch(() => undefined);
   return photo;
+}
+
+async function upload(photo: Photo) {
+  await api(`/body-photos/${photo.id}?date=${photo.date}&pose=${photo.pose}`, { method: "PUT", blob: photo.blob });
+  await (await db()).put("photos", { ...photo, synced: true });
+}
+
+interface RemotePhoto {
+  id: string;
+  date: string;
+  pose: Photo["pose"];
+}
+
+/**
+ * Bring this device and the account level: upload what's only here, fetch
+ * what's only there, and drop local copies of photos deleted elsewhere. Only
+ * runs with backup on. Returns how many photos moved either way.
+ */
+export async function syncPhotos(): Promise<number> {
+  if (!prefs.photoBackup()) return 0;
+  const store = await db();
+  const local = await store.getAll("photos");
+  const remote = await api<RemotePhoto[]>("/body-photos");
+  const remoteIds = new Set(remote.map((r) => r.id));
+  const localIds = new Set(local.map((p) => p.id));
+  let moved = 0;
+  for (const p of local) {
+    if (remoteIds.has(p.id)) {
+      if (!p.synced) await store.put("photos", { ...p, synced: true });
+    } else if (p.synced) {
+      await store.delete("photos", p.id); // deleted on another device
+    } else {
+      await upload(p);
+      moved++;
+    }
+  }
+  for (const r of remote) {
+    if (localIds.has(r.id)) continue;
+    const res = await api<Response>(`/body-photos/${r.id}`, { raw: true });
+    await store.put("photos", { id: r.id, date: r.date, pose: r.pose, blob: await res.blob(), created_at: new Date().toISOString(), synced: true });
+    moved++;
+  }
+  return moved;
+}
+
+/** Turn backup off: every copy on the server goes; this device keeps its own. */
+export async function stopPhotoBackup() {
+  await api("/body-photos", { method: "DELETE" });
+  prefs.setPhotoBackup(false);
+  const store = await db();
+  for (const p of await store.getAll("photos")) if (p.synced) await store.put("photos", { ...p, synced: false });
 }
 
 export async function listPhotos(): Promise<Photo[]> {
@@ -37,5 +92,8 @@ export async function listPhotos(): Promise<Photo[]> {
 }
 
 export async function deletePhoto(id: string) {
-  await (await db()).delete("photos", id);
+  const store = await db();
+  const photo = await store.get("photos", id);
+  if (photo?.synced) await api(`/body-photos/${id}`, { method: "DELETE" });
+  await store.delete("photos", id);
 }

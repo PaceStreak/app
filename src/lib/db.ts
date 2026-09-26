@@ -40,6 +40,8 @@ export interface Photo {
   pose: "front" | "side" | "back";
   blob: Blob;
   created_at: string;
+  /** Backed up to the account. */
+  synced?: boolean;
 }
 
 interface Schema extends DBSchema {

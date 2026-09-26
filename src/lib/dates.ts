@@ -69,6 +69,7 @@ export const fmtFullDay = (iso: string) => fullDay.format(parseDay(iso));
 export const fmtWeekday = (iso: string) => shortWeekday.format(parseDay(iso));
 
 const monthYear = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
+export const fmtMonthYear = (iso: string) => monthYear.format(parseDay(iso));
 /** A projected date: the day when it's within a few months, the month and
  * year when it's further off - a weekday a year away is false precision, and
  * a date without its year is simply misleading. */
