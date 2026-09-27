@@ -347,6 +347,14 @@ export interface Habit {
   weeks?: { week_start: string; days: number; target: number; status: string; score: number }[];
 }
 
+/** The small per-habit trend view: GET /habits/{id}/stats. */
+export interface HabitStats {
+  weeks: { week_start: string; days: number; target: number; status: string; score: number }[];
+  weeks_counted: number;
+  weeks_kept: number;
+  keep_rate: number;
+}
+
 export interface HabitTemplate {
   id: string;
   name: string;

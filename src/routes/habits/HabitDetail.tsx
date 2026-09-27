@@ -5,6 +5,7 @@ import { useConfirm } from "../../components/Confirm";
 import { HabitFields, draftFrom, payloadFrom, type HabitDraft } from "../../components/HabitForm";
 import { HabitDaySheet } from "../../components/HabitDaySheet";
 import { HabitRow } from "../../components/HabitRow";
+import { HabitTrend } from "../../components/HabitTrend";
 import { Archive, CaretLeft, CaretRight, PencilSimple, Trash } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
@@ -15,7 +16,7 @@ import { isDone, markerFor, setHabitDay, skillProjection } from "../../lib/habit
 import { MarkerRing, MarkerSlash, MarkerX } from "../../components/Marker";
 import { queryClient, useHabitCatalog } from "../../lib/queries";
 import { useMe } from "../../lib/session";
-import type { Habit } from "../../lib/types";
+import type { Habit, HabitStats } from "../../lib/types";
 
 const BACKFILL_DAYS = 60;
 
@@ -30,6 +31,7 @@ export default function HabitDetail() {
   const navigate = useNavigate();
   const today = localToday(me.profile.timezone);
   const q = useQuery({ queryKey: ["habit", id], queryFn: () => api<Habit>(`/habits/${id}?days=365`) });
+  const trend = useQuery({ queryKey: ["habit", id, "stats"], queryFn: () => api<HabitStats>(`/habits/${id}/stats?weeks=26`) });
   const catalog = useHabitCatalog();
   const [editing, setEditing] = useState<HabitDraft | null>(null);
   const [sheetDay, setSheetDay] = useState<string | null>(null);
@@ -171,6 +173,14 @@ export default function HabitDetail() {
                   ? `About ${h.kind === "duration" ? `${Math.round(skill.perWeek / 6) / 10} hours` : `${skill.perWeek} ${h.unit ?? ""}`} a week lately. At that pace, ${fmtProjected(skill.eta, today)}.`
                   : "A few weeks of practice and this shows when you'll get there."}
             </p>
+          </div>
+        </Section>
+      )}
+
+      {trend.data && (
+        <Section title="Trend">
+          <div className="card p-4">
+            <HabitTrend stats={trend.data} />
           </div>
         </Section>
       )}
