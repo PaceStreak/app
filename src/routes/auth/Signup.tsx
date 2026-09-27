@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
-import { api, ApiError, errorText } from "../../lib/api";
+import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
 import { t } from "../../lib/i18n";
@@ -38,13 +38,15 @@ export default function Signup() {
         });
         await signIn(tokens);
         navigate("/welcome", { replace: true });
-      } catch (err) {
-        // Production requires a verified address before the first sign-in,
-        // so the account exists (signup above succeeded) but this second
-        // call is expected to fail here - not an error, just a fork in the
-        // flow. Anything else re-throws to the outer catch.
-        if (err instanceof ApiError && err.status === 403) navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
-        else throw err;
+      } catch {
+        // The account from the signup call above already exists at this point
+        // no matter why this second call failed (unverified 403, a stale
+        // captcha token, a rate limit) - the only safe move is to send the
+        // person on to enter the code, never show them a signup-page error
+        // for an account that was in fact just created. The password rides
+        // along in router state (never persisted) so verify-email can log
+        // them straight in once the code is accepted, with no second form.
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true, state: { password } });
       }
     } catch (err) {
       setError(errorText(err));

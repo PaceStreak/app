@@ -17,14 +17,12 @@ export default function Login() {
   const { signIn } = useSession();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(params.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [mfa, setMfa] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [needsVerify, setNeedsVerify] = useState(false);
-  const [resent, setResent] = useState(false);
   const [captcha, setCaptcha] = useState<string | null>(null);
   const captchaRef = useRef<TurnstileHandle>(null);
 
@@ -73,7 +71,6 @@ export default function Login() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    setNeedsVerify(false);
     try {
       if (mfa) {
         await done(await api<Tokens>("/auth/2fa/verify", { body: { mfa_token: mfa, code: code.replace(/\s/g, "") }, auth: false }));
@@ -83,22 +80,14 @@ export default function Login() {
         else await done(res);
       }
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) setNeedsVerify(true);
+      if (err instanceof ApiError && err.status === 403) {
+        // Unverified accounts have no way to reach the OTP entry field from
+        // here - send them straight to it instead of a dead-end resend loop.
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
       setError(errorText(err));
       captchaRef.current?.getFreshToken().then(setCaptcha).catch(() => setCaptcha(null));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const resend = async () => {
-    setBusy(true);
-    try {
-      const token = await captchaRef.current?.getFreshToken().catch(() => null);
-      await api("/auth/resend-verification", { body: { email, turnstile_token: token }, auth: false });
-      setResent(true);
-    } catch (err) {
-      setError(errorText(err));
     } finally {
       setBusy(false);
     }
@@ -150,11 +139,6 @@ export default function Login() {
           <p className="field-error" role="alert">
             {error}
           </p>
-        )}
-        {needsVerify && (
-          <button type="button" className="btn btn-secondary w-full" onClick={() => void resend()} disabled={busy || resent}>
-            {resent ? t("auth.verify.resent") : t("auth.verify.resend")}
-          </button>
         )}
         <button className="btn btn-primary w-full" disabled={busy}>
           {busy ? t("auth.login.busy") : t("auth.login.submit")}

@@ -1,6 +1,7 @@
 import { Logo } from "../../components/Logo";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
+import { Eye, EyeSlash } from "../../components/phosphor";
 import { t } from "../../lib/i18n";
 
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle?: ReactNode; children?: ReactNode; footer?: ReactNode }) {
@@ -35,21 +36,35 @@ export function PasswordField({
   error?: string | null;
   hint?: ReactNode;
 }) {
+  const [visible, setVisible] = useState(false);
+  const id = `pw-${autoComplete}`;
   return (
     <div>
-      <label className="field-label" htmlFor={`pw-${autoComplete}`}>
+      <label className="field-label" htmlFor={id}>
         {label}
       </label>
-      <input
-        id={`pw-${autoComplete}`}
-        className="input"
-        type="password"
-        autoComplete={autoComplete}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={error ? true : undefined}
-        required
-      />
+      <div className="relative">
+        <input
+          id={id}
+          className="input pr-12"
+          type={visible ? "text" : "password"}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          required
+        />
+        <button
+          type="button"
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-dim"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? t("common.hidePassword") : t("common.showPassword")}
+          aria-pressed={visible}
+          tabIndex={-1}
+        >
+          {visible ? <EyeSlash size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+        </button>
+      </div>
       {error ? <p className="field-error" role="alert">{error}</p> : hint ? <p className="field-hint">{hint}</p> : null}
     </div>
   );

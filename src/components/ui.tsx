@@ -1,6 +1,6 @@
-import { forwardRef, useId, type ReactNode } from "react";
+import { forwardRef, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { ArrowLeft, CaretRight, CloudSlash } from "./phosphor";
+import { ArrowLeft, CaretRight, CloudSlash, Eye, EyeSlash } from "./phosphor";
 import { t } from "../lib/i18n";
 
 export function Avatar({
@@ -247,12 +247,14 @@ type FieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
 };
 
 export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
-  { label, error, hint, trailing, id, className = "", ...props },
+  { label, error, hint, trailing, id, className = "", type, ...props },
   ref,
 ) {
   const auto = useId();
   const fid = id ?? auto;
   const describedBy = error ? `${fid}-err` : hint ? `${fid}-hint` : undefined;
+  const isPassword = type === "password";
+  const [visible, setVisible] = useState(false);
   return (
     <div className={className}>
       <label className="field-label" htmlFor={fid}>
@@ -262,12 +264,26 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
         <input
           ref={ref}
           id={fid}
-          className={`input ${trailing ? "pr-14" : ""}`}
+          className={`input ${trailing || isPassword ? "pr-14" : ""}`}
+          type={isPassword ? (visible ? "text" : "password") : type}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           {...props}
         />
-        {trailing && <span className="absolute inset-y-0 right-3 flex items-center text-sm text-dim">{trailing}</span>}
+        {isPassword ? (
+          <button
+            type="button"
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-dim"
+            onClick={() => setVisible((v) => !v)}
+            aria-label={visible ? t("common.hidePassword") : t("common.showPassword")}
+            aria-pressed={visible}
+            tabIndex={-1}
+          >
+            {visible ? <EyeSlash size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+          </button>
+        ) : (
+          trailing && <span className="absolute inset-y-0 right-3 flex items-center text-sm text-dim">{trailing}</span>
+        )}
       </div>
       {error ? (
         <p id={`${fid}-err`} className="field-error" role="alert">

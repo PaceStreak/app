@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { t } from "../../lib/i18n";
@@ -9,10 +9,11 @@ import { AuthLayout } from "./AuthLayout";
 /** Confirms a pending email change with the code sent to the new address. */
 export default function ConfirmEmail() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const { status, reloadMe } = useSession();
   const [email, setEmail] = useState(params.get("email") ?? "");
   const [code, setCode] = useState("");
-  const [state, setState] = useState<"working" | "done" | "error">("working");
+  const [state, setState] = useState<"working" | "error">("working");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -22,8 +23,10 @@ export default function ConfirmEmail() {
     setError(null);
     try {
       await api("/auth/confirm-email-change", { body: { email, code }, auth: false });
-      setState("done");
-      if (status === "ready") void reloadMe();
+      // Only reachable from settings while already signed in, so there's
+      // always a session to refresh and an app to land back in.
+      if (status === "ready") await reloadMe();
+      navigate("/settings", { replace: true });
     } catch (err) {
       setState("error");
       setError(errorText(err));
@@ -31,16 +34,6 @@ export default function ConfirmEmail() {
       setBusy(false);
     }
   };
-
-  if (state === "done") {
-    return (
-      <AuthLayout
-        title={t("auth.confirmEmail.doneTitle")}
-        subtitle={t("auth.confirmEmail.doneBody")}
-        footer={<Link to="/" className="font-semibold text-accent-text">{t("auth.verify.open")}</Link>}
-      />
-    );
-  }
 
   return (
     <AuthLayout

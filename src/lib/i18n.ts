@@ -46,6 +46,8 @@ const en = {
   "common.loading": "Loading",
   "common.email": "Email",
   "common.password": "Password",
+  "common.showPassword": "Show password",
+  "common.hidePassword": "Hide password",
   "common.signIn": "Sign in",
   "common.back": "Back",
 
@@ -100,11 +102,8 @@ const en = {
   "auth.verify.code": "6-digit code",
   "auth.verify.working": "Confirming…",
   "auth.verify.submit": "Confirm",
-  "auth.verify.doneTitle": "Email confirmed.",
-  "auth.verify.doneBody": "Social features are unlocked.",
   "auth.verify.failTitle": "That code didn't work.",
   "auth.verify.failBody": "{error} Codes expire after a day; you can send a new one below.",
-  "auth.verify.open": "Open PaceStreak",
   "auth.verify.resend": "Send the code again",
   "auth.verify.resent": "Sent. Check your inbox.",
 
@@ -132,8 +131,6 @@ const en = {
   "auth.confirmEmail.code": "6-digit code",
   "auth.confirmEmail.working": "Confirming…",
   "auth.confirmEmail.submit": "Confirm",
-  "auth.confirmEmail.doneTitle": "Email address updated.",
-  "auth.confirmEmail.doneBody": "Use it to sign in from now on. We've told your old address.",
   "auth.confirmEmail.failTitle": "That code didn't work.",
   "auth.confirmEmail.failBody": "{error} Start the change again from Settings, Security.",
 
