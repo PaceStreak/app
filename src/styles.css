@@ -1,102 +1,97 @@
 /* PaceStreak app - tokens and the few components that are genuinely
    component-shaped. Everything else is Tailwind utilities in the markup.
 
-   The world is a printed wall calendar crossed off in felt-tip marker:
-   white coated paper, black print, calendar red for today and the action,
-   1px printed rules, square corners, condensed numerals. Dark mode is the
-   same calendar under a desk lamp. */
+   Near-black ground, lime as the single action colour, flame for the streak
+   and for risk, and a daylight theme for outdoor use. The week board, the
+   marker X and the tear-off date come from the calendar redesign; its paper
+   palette was rejected and must not come back. See DESIGN.md. */
 
 @import "tailwindcss";
 @import "@fontsource-variable/archivo/wdth.css";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Paper first: the default when the system asks for light, and the one the
-   product is designed around - a printed wall calendar crossed off in felt-tip
-   marker. */
 :root,
-[data-theme="light"] {
-  color-scheme: light;
-  /* The wall behind the calendar, then the calendar sheet itself. */
-  --bg: #fbfbf8;
-  --bg-alt: #f5f5f1;
-  --surface: #fbfbf8;
-  --surface-2: #f1f0eb;
-  --surface-3: #e6e5df;
-  /* Printed grid rules. */
-  --line: #dddcd6;
-  --line-lit: #bebdb6;
-  --ink: #141414;
-  --muted: #45454a;
-  /* 6.1:1 on the paper. */
-  --dim: #5c5c62;
-  /* Calendar red: today, the action, the marker X. 5.0:1 as a fill under
-     white text; the text variant is 6.6:1 on paper. */
-  --accent: #d6281f;
-  --accent-ink: #ffffff;
-  --accent-text: #b31d15;
-  --accent-soft: rgb(214 40 31 / 0.09);
-  /* The orange marker: streak fire and risk. */
-  --flame: #e8641b;
-  --flame-text: #a5410a;
-  --flame-soft: rgb(232 100 27 / 0.12);
-  --info: #1f5fbf;
-  --danger: #b3261e;
-  --danger-soft: rgb(179 38 30 / 0.08);
-  --shadow: none;
-  /* Marker pressure: from an empty box to a heavy red X. */
-  --heat-0: #ebeae5;
-  --heat-1: #f5cdc7;
-  --heat-2: #ec9186;
-  --heat-3: #dc4a3d;
-  --heat-4: #b31d15;
-  --scrim: rgb(20 20 20 / 0.36);
-  --chart: #c23a2e;
-  /* The felt-tip set habits are drawn in. */
-  --marker-red: #d6281f;
-  --marker-blue: #1f5fbf;
-  --marker-green: #1d8048;
-  --marker-orange: #d9661a;
-  --marker-violet: #7440ad;
-}
-
-/* The same calendar at night, under a desk lamp. */
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #151517;
-  --bg-alt: #18181a;
-  --surface: #151517;
-  --surface-2: #212125;
-  --surface-3: #2a2a2f;
-  --line: #2c2c31;
-  --line-lit: #3d3d44;
-  --ink: #f2f0ea;
-  --muted: #b7b5ae;
-  /* 5.9:1 on --surface. */
-  --dim: #95938c;
-  --accent: #ff4d3d;
-  --accent-ink: #1c0604;
-  --accent-text: #ff7466;
-  --accent-soft: rgb(255 77 61 / 0.13);
-  --flame: #ff8a3d;
-  --flame-text: #ffa36a;
-  --flame-soft: rgb(255 138 61 / 0.14);
-  --info: #7fb0ff;
+  --bg: #0a0a0b;
+  --bg-alt: #0e0e10;
+  --surface: #141417;
+  --surface-2: #1a1a1e;
+  --surface-3: #222228;
+  --line: #26262c;
+  --line-lit: #34343d;
+  --ink: #f4f4f5;
+  --muted: #a1a1aa;
+  /* 5.87:1 on --bg, 5.45:1 on --surface. Measured, like www's. */
+  --dim: #8b8b95;
+  --accent: #d3ff3e;
+  --accent-ink: #14170a;
+  /* Accent used AS text. On dark it is the accent itself (14.9:1). */
+  --accent-text: #d3ff3e;
+  --accent-soft: rgb(211 255 62 / 0.12);
+  --flame: #ff6b35;
+  --flame-text: #ff8a5c;
+  --flame-soft: rgb(255 107 53 / 0.14);
+  --info: #7cc7ff;
   --danger: #ff6b6b;
   --danger-soft: rgb(255 107 107 / 0.12);
-  --shadow: none;
-  --heat-0: #232327;
-  --heat-1: #4a1e1a;
-  --heat-2: #7d2a22;
-  --heat-3: #c63a2d;
-  --heat-4: #ff5a49;
+  --shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  --heat-0: #1c1c21;
+  --heat-1: #34420f;
+  --heat-2: #5f7c16;
+  --heat-3: #9ac72a;
+  --heat-4: #d3ff3e;
   --scrim: rgb(5 5 6 / 0.62);
-  --chart: #e0503f;
-  --marker-red: #ff5a49;
-  --marker-blue: #6ea2ff;
-  --marker-green: #4cc27e;
-  --marker-orange: #ff9a4a;
-  --marker-violet: #b58cf0;
+  /* Chart marks. Validated with the dataviz validator against --surface:
+     the brand lime itself sits outside the dark lightness band. */
+  --chart: #7fa214;
+  /* Habit marker set, tuned to read on the dark surfaces. */
+  --marker-red: #d3ff3e;
+  --marker-blue: #7cc7ff;
+  --marker-green: #4fd98a;
+  --marker-orange: #ff8a5c;
+  --marker-violet: #c29bff;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f4f5;
+  --bg-alt: #eceef0;
+  --surface: #fbfbfc;
+  --surface-2: #eef0f2;
+  --surface-3: #e3e6e9;
+  --line: #dcdfe3;
+  --line-lit: #c6cad0;
+  --ink: #111214;
+  --muted: #4b4f57;
+  /* 6.1:1 on --surface */
+  --dim: #5b606a;
+  --accent: #d3ff3e;
+  --accent-ink: #14170a;
+  /* Lime is unreadable as text on light grounds; this is the same hue
+     deepened to 6.3:1 on --surface. */
+  --accent-text: #4a6300;
+  --accent-soft: rgb(120 160 0 / 0.14);
+  --flame: #f25a1f;
+  --flame-text: #a8390b;
+  --flame-soft: rgb(242 90 31 / 0.12);
+  --info: #095f9e;
+  --danger: #b71c1c;
+  --danger-soft: rgb(198 40 40 / 0.09);
+  --shadow: 0 1px 2px rgb(17 18 20 / 0.06), 0 12px 28px -14px rgb(17 18 20 / 0.22);
+  --heat-0: #e3e6e9;
+  --heat-1: #dbf4a2;
+  --heat-2: #b4e257;
+  --heat-3: #82bd1c;
+  --heat-4: #4a7400;
+  --scrim: rgb(17 18 20 / 0.4);
+  --chart: #6a8f00;
+  --marker-red: #4a7400;
+  --marker-blue: #1f5fbf;
+  --marker-green: #1d8048;
+  --marker-orange: #c2410c;
+  --marker-violet: #7440ad;
 }
 
 @theme inline {
@@ -126,8 +121,8 @@
   --font-sans: "Archivo Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --radius-card: 4px;
-  --radius-control: 4px;
+  --radius-card: 16px;
+  --radius-control: 12px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -223,7 +218,7 @@
     gap: 0.5rem;
     min-height: 44px;
     padding: 0 1.1rem;
-    border-radius: var(--radius-control);
+    border-radius: 999px;
     border: 1px solid transparent;
     font-weight: 650;
     font-size: 0.95rem;
@@ -348,16 +343,19 @@
   }
 
   /* Segmented control: the selected pill slides between options. */
-  /* Index tabs on a ruled edge, like a planner's section tabs. */
   .seg {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
-    border-bottom: 1px solid var(--ink);
+    padding: 4px;
+    gap: 4px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
   }
   .seg button {
-    min-height: 38px;
-    border-radius: 0;
+    min-height: 36px;
+    border-radius: 999px;
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--muted);
@@ -365,10 +363,9 @@
   }
   .seg button[aria-pressed="true"],
   .seg button[aria-selected="true"] {
-    background: transparent;
-    color: var(--accent-text);
-    font-weight: 750;
-    box-shadow: inset 0 -3px 0 var(--accent);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow);
   }
 
   .chip {
@@ -377,7 +374,7 @@
     gap: 0.35rem;
     height: 28px;
     padding: 0 0.7rem;
-    border-radius: 4px;
+    border-radius: 999px;
     font-size: 0.8125rem;
     font-weight: 600;
     background: var(--surface-2);
@@ -402,7 +399,7 @@
     flex: none;
     width: 46px;
     height: 28px;
-    border-radius: 3px;
+    border-radius: 999px;
     background: var(--surface-3);
     border: 1px solid var(--line-lit);
     transition: background-color 200ms var(--ease-out);
@@ -414,7 +411,7 @@
     left: 3px;
     width: 20px;
     height: 20px;
-    border-radius: 2px;
+    border-radius: 999px;
     background: var(--ink);
     transition: transform 200ms var(--ease-out);
   }
@@ -433,7 +430,7 @@
      - the same bug www hit. Paint cells only via the level class. */
   .heat i {
     display: block;
-    border-radius: 1px;
+    border-radius: 3px;
     aspect-ratio: 1;
   }
   .lvl-0 { background: var(--heat-0); }
@@ -484,7 +481,7 @@
     position: relative;
     overflow: hidden;
     background: var(--surface-2);
-    border-radius: 4px;
+    border-radius: 12px;
   }
   .skeleton::after {
     content: "";
@@ -502,14 +499,12 @@
   .safe-top {
     padding-top: env(safe-area-inset-top);
   }
-  /* Calendar index tabs: the current section is a red tab on the rule. */
   .tabbar {
     padding-bottom: env(safe-area-inset-bottom);
-    background: var(--bg);
-    border-top: 1px solid var(--ink);
-  }
-  .tabbar a[aria-current="page"] {
-    box-shadow: inset 0 3px 0 var(--accent);
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-top: 1px solid var(--line);
   }
   @supports not (backdrop-filter: blur(1px)) {
     .tabbar { background: var(--bg); }
@@ -570,9 +565,8 @@
     max-height: calc(100dvh - 2.5rem - env(safe-area-inset-top));
     background: var(--surface);
     border: 1px solid var(--line-lit);
-    border-top: 2px solid var(--ink);
     border-bottom: 0;
-    border-radius: 4px 4px 0 0;
+    border-radius: 24px 24px 0 0;
     padding-bottom: env(safe-area-inset-bottom);
     box-shadow: var(--shadow);
     transform: translateY(100%);
@@ -599,7 +593,7 @@
       align-items: center;
     }
     .sheet-panel {
-      border-radius: 4px;
+      border-radius: 24px;
       border-bottom: 1px solid var(--line-lit);
       transform: translateY(12px) scale(0.98);
       opacity: 0;
@@ -625,8 +619,8 @@
   }
   .sheet-handle span {
     width: 38px;
-    height: 4px;
-    border-radius: 1px;
+    height: 5px;
+    border-radius: 999px;
     background: var(--line-lit);
   }
   .sheet-body {
@@ -672,9 +666,9 @@
     width: 100%;
     max-width: 420px;
     padding: 0.85rem 0.9rem;
-    border-radius: 4px;
-    background: var(--surface);
-    border: 1px solid var(--ink);
+    border-radius: 18px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-lit);
     box-shadow: var(--shadow);
     opacity: 0;
     transform: translateY(16px) scale(0.98);
@@ -742,12 +736,10 @@
 }
 
 @layer components {
-  /* The Log button is a marker cap: a squared red cap with a clip band. */
   .log-fab {
-    border-radius: 6px 6px 4px 4px !important;
     box-shadow:
-      0 0 0 4px var(--bg),
-      inset 0 -9px 0 color-mix(in srgb, var(--ink) 22%, var(--accent));
+      0 0 0 5px var(--bg),
+      0 10px 24px -6px color-mix(in srgb, var(--accent) 45%, transparent);
   }
   .splash-bolt {
     animation: bolt-in 520ms var(--ease-out) both;
@@ -782,7 +774,7 @@
 @layer components {
   .week-dot {
     display: block;
-    border-radius: 1px;
+    border-radius: 999px;
     background: var(--surface-3);
     transition: background-color 300ms var(--ease-out), transform 300ms var(--ease-out);
   }
@@ -803,7 +795,7 @@
   /* The lead coach card is the note pinned to the calendar: a printed memo
      with a band in its tone, not a glowing panel. */
   .coach-lead {
-    border-top: 4px solid var(--ink);
+    border-top: 3px solid var(--line-lit);
     box-shadow: var(--shadow);
   }
   .coach-icon {
@@ -912,7 +904,7 @@
   }
   .set-kind {
     height: 40px;
-    border-radius: 4px;
+    border-radius: 10px;
     font-weight: 700;
     font-size: 0.9rem;
     color: var(--muted);
@@ -925,7 +917,7 @@
     height: 44px;
     width: 100%;
     min-width: 0;
-    border-radius: 4px;
+    border-radius: 12px;
     background: var(--surface-2);
     border: 1px solid transparent;
     text-align: center;
@@ -949,7 +941,7 @@
     display: grid;
     place-items: center;
     height: 44px;
-    border-radius: 4px;
+    border-radius: 12px;
     background: var(--surface-2);
     color: var(--dim);
     transition:
@@ -1009,7 +1001,7 @@
     transform: translateX(-50%);
     white-space: nowrap;
     padding: 6px 9px;
-    border-radius: 4px;
+    border-radius: 10px;
     background: var(--surface-3);
     border: 1px solid var(--line-lit);
     color: var(--ink);
@@ -1034,8 +1026,7 @@
   /* Exercises in a superset share an accent edge, so the group reads as one
      unit; the "Superset A" label says it in words too. */
   .superset-block {
-    outline: 1px dashed var(--line-lit);
-    outline-offset: -1px;
+    box-shadow: inset 3px 0 0 var(--accent-text);
   }
   /* Paused: hatched, like paused days on the heatmap - distinct from missed
      without relying on hue. */
@@ -1131,7 +1122,7 @@
     flex-shrink: 0;
     overflow: hidden;
     border: 1px solid var(--line-lit);
-    border-radius: var(--radius-card);
+    border-radius: 14px;
     background: var(--surface);
     box-shadow: var(--shadow);
     text-align: center;
@@ -1197,7 +1188,7 @@
   .board-day[data-today="true"] {
     background: var(--accent-soft);
     color: var(--accent-text);
-    box-shadow: inset 0 0 0 1.5px var(--accent);
+    box-shadow: inset 0 0 0 1.5px var(--accent-text);
   }
   .board-day[data-future="true"] {
     color: color-mix(in srgb, var(--dim) 45%, transparent);
@@ -1210,15 +1201,14 @@
 @layer components {
   /* The sidebar Log button is the same marker cap as the mobile one. */
   .log-cap {
-    box-shadow: inset 0 -7px 0 color-mix(in srgb, var(--ink) 22%, var(--accent));
-    padding-bottom: 5px;
+    box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--accent) 55%, transparent);
   }
 }
 
 @layer components {
   /* A section of a printed page: a heavy rule above, no box around. */
   .ruled {
-    border-top: 2px solid var(--ink);
+    border-top: 1px solid var(--line-lit);
     padding-top: 1rem;
   }
 }

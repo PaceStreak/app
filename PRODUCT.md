@@ -53,11 +53,11 @@ coach consent, attendance-based challenges, opt-in leaderboards.
 
 ## Brand Commitments
 
-Name PaceStreak. Visual world (redesigned 2026-09-27, see DESIGN.md): a
-printed wall calendar crossed off in felt-tip marker. Paper `#fbfbf8`, black
-print, calendar red, square corners and ruled lines, self-hosted Archivo with
-condensed numerals, the marker X as the one mark for done, and the calendar-
-page logo. The same world runs across app, www and blog. Voice: plain, direct, dry, honest about limits,
+Name PaceStreak. Palette (restored 2026-09-27 at the user's request): near-
+black ground, lime `#d3ff3e` as the single action colour, flame `#ff6b35` for
+the streak and risk, a daylight theme. Structure from the calendar redesign
+stays: the week board, the marker X as the one mark for done, the tear-off
+date, the calendar-page logo, self-hosted Archivo. Voice: plain, direct, dry, honest about limits,
 never guilt-tripping ("skip it if you're hurt").
 
 ## Evidence on Hand

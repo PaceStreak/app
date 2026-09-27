@@ -34,7 +34,7 @@ export function MarkerRing({ className = "", tone = "var(--flame)" }: { classNam
 export function TickBox({ done, size = 20, label }: { done: boolean; size?: number; label?: string }) {
   return (
     <span
-      className="relative inline-block shrink-0 rounded-[2px] border-[1.5px] border-ink/70 bg-surface"
+      className="relative inline-block shrink-0 rounded-[5px] border-[1.5px] border-line-lit bg-surface-2"
       style={{ width: size, height: size }}
       role={label ? "img" : undefined}
       aria-label={label}

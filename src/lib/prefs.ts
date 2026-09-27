@@ -70,7 +70,7 @@ export function applyTheme() {
   document.documentElement.dataset.theme = theme;
   document
     .querySelectorAll('meta[name="theme-color"]')
-    .forEach((m) => m.setAttribute("content", theme === "light" ? "#efeeea" : "#0f0f11"));
+    .forEach((m) => m.setAttribute("content", theme === "light" ? "#f3f4f5" : "#0a0a0b"));
 }
 
 media?.addEventListener("change", applyTheme);

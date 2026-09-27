@@ -80,7 +80,7 @@ export default function Progress() {
         <Loading rows={4} />
       ) : (
         <>
-          <div className="grid grid-cols-3 divide-x divide-line border-y border-ink/80">
+          <div className="grid grid-cols-3 divide-x divide-line border-y border-line">
             {[
               ["Sessions", compact(s.totals.sessions)],
               ["Days", compact(s.totals.active_days)],
@@ -225,7 +225,7 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
           <p className="text-sm text-dim">{plural(chain.target, "day")} a week</p>
         </div>
         <div className="text-right">
-          <p className="num text-[2rem] leading-none font-extrabold text-accent-text">
+          <p className="num text-[2rem] leading-none font-extrabold text-flame-text">
             {chain.current}
             <span className="ml-1 text-sm font-semibold text-muted">wk</span>
           </p>

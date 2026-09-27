@@ -122,7 +122,7 @@ export default function HabitDetail() {
       )}
       {h.why && <p className="mt-3 rounded-md bg-surface-2 px-4 py-3 text-sm text-muted">Why: {h.why}</p>}
 
-      <div className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-ink/80 [&>*]:px-3 [&>*]:py-3 [&>*:first-child]:pl-0">
+      <div className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-line [&>*]:px-3 [&>*]:py-3 [&>*:first-child]:pl-0">
         {h.kind === "quit" ? (
           <>
             <Stat label="Clean days" value={h.clean_run ?? 0} sub={`best ${h.best_clean_run ?? 0}`} />

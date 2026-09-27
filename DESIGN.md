@@ -1,45 +1,62 @@
 ---
 name: PaceStreak
-description: A printed wall calendar you cross off in felt-tip marker; the chain of X's is the product.
+description: A near-black training log where the week is a calendar page you cross off in marker; lime is the one action, flame is the streak.
 colors:
-  calendar-red: "#d6281f"
-  calendar-red-text: "#b31d15"
-  calendar-red-ink: "#ffffff"
-  calendar-red-wash: "rgb(214 40 31 / 0.09)"
-  marker-orange-flame: "#e8641b"
-  marker-orange-flame-text: "#a5410a"
-  info-blue: "#1f5fbf"
-  danger: "#b3261e"
-  coated-paper: "#fbfbf8"
-  paper-shade: "#f5f5f1"
-  paper-fill: "#f1f0eb"
-  paper-fill-deep: "#e6e5df"
-  printed-rule: "#dddcd6"
-  printed-rule-lit: "#bebdb6"
-  print-ink: "#141414"
-  print-ink-muted: "#45454a"
-  print-ink-dim: "#5c5c62"
-  marker-red: "#d6281f"
-  marker-blue: "#1f5fbf"
-  marker-green: "#1d8048"
-  marker-orange: "#d9661a"
-  marker-violet: "#7440ad"
-  heat-0: "#ebeae5"
-  heat-1: "#f5cdc7"
-  heat-2: "#ec9186"
-  heat-3: "#dc4a3d"
-  heat-4: "#b31d15"
-  desk-lamp-paper: "#151517"
-  desk-lamp-fill: "#212125"
-  desk-lamp-fill-deep: "#2a2a2f"
-  desk-lamp-rule: "#2c2c31"
-  desk-lamp-rule-lit: "#3d3d44"
-  chalk-ink: "#f2f0ea"
-  chalk-ink-muted: "#b7b5ae"
-  chalk-ink-dim: "#95938c"
-  desk-lamp-red: "#ff4d3d"
-  desk-lamp-red-text: "#ff7466"
-  desk-lamp-red-ink: "#1c0604"
+  lime: "#d3ff3e"
+  lime-ink: "#14170a"
+  lime-wash: "rgb(211 255 62 / 0.12)"
+  lime-text-day: "#4a6300"
+  lime-wash-day: "rgb(120 160 0 / 0.14)"
+  flame: "#ff6b35"
+  flame-text: "#ff8a5c"
+  flame-wash: "rgb(255 107 53 / 0.14)"
+  flame-day: "#f25a1f"
+  flame-text-day: "#a8390b"
+  info-sky: "#7cc7ff"
+  info-day: "#095f9e"
+  danger: "#ff6b6b"
+  danger-day: "#b71c1c"
+  near-black: "#0a0a0b"
+  near-black-alt: "#0e0e10"
+  night-surface: "#141417"
+  night-surface-2: "#1a1a1e"
+  night-surface-3: "#222228"
+  night-rule: "#26262c"
+  night-rule-lit: "#34343d"
+  night-ink: "#f4f4f5"
+  night-ink-muted: "#a1a1aa"
+  night-ink-dim: "#8b8b95"
+  day-ground: "#f3f4f5"
+  day-ground-alt: "#eceef0"
+  day-surface: "#fbfbfc"
+  day-surface-2: "#eef0f2"
+  day-surface-3: "#e3e6e9"
+  day-rule: "#dcdfe3"
+  day-rule-lit: "#c6cad0"
+  day-ink: "#111214"
+  day-ink-muted: "#4b4f57"
+  day-ink-dim: "#5b606a"
+  marker-blue: "#7cc7ff"
+  marker-green: "#4fd98a"
+  marker-orange: "#ff8a5c"
+  marker-violet: "#c29bff"
+  marker-default-day: "#4a7400"
+  marker-blue-day: "#1f5fbf"
+  marker-green-day: "#1d8048"
+  marker-orange-day: "#c2410c"
+  marker-violet-day: "#7440ad"
+  heat-0: "#1c1c21"
+  heat-1: "#34420f"
+  heat-2: "#5f7c16"
+  heat-3: "#9ac72a"
+  heat-4: "#d3ff3e"
+  heat-0-day: "#e3e6e9"
+  heat-1-day: "#dbf4a2"
+  heat-2-day: "#b4e257"
+  heat-3-day: "#82bd1c"
+  heat-4-day: "#4a7400"
+  chart-olive: "#7fa214"
+  chart-olive-day: "#6a8f00"
 typography:
   date-numeral:
     fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
@@ -63,6 +80,13 @@ typography:
     fontWeight: 600
     lineHeight: 1.1
     letterSpacing: "-0.03em"
+    fontVariation: "'wdth' 88"
+  page-title:
+    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.65rem"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "-0.02em"
     fontVariation: "'wdth' 88"
   title:
     fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
@@ -89,10 +113,14 @@ typography:
     lineHeight: 1.2
     letterSpacing: "0.06em"
 rounded:
-  hairline: "1px"
-  box: "2px"
-  card: "4px"
-  control: "4px"
+  cell: "3px"
+  tick: "5px"
+  md: "6px"
+  control: "12px"
+  card: "16px"
+  toast: "18px"
+  sheet: "24px"
+  pill: "999px"
 spacing:
   grid-gap: "3px"
   gutter-tight: "0.75rem"
@@ -100,67 +128,72 @@ spacing:
   sheet: "1.25rem"
 components:
   button-primary:
-    backgroundColor: "{colors.calendar-red}"
-    textColor: "{colors.calendar-red-ink}"
-    rounded: "{rounded.control}"
+    backgroundColor: "{colors.lime}"
+    textColor: "{colors.lime-ink}"
+    rounded: "{rounded.pill}"
     padding: "0 1.1rem"
     height: "44px"
   button-secondary:
-    backgroundColor: "{colors.paper-fill}"
-    textColor: "{colors.print-ink}"
-    rounded: "{rounded.control}"
+    backgroundColor: "{colors.night-surface-2}"
+    textColor: "{colors.night-ink}"
+    rounded: "{rounded.pill}"
     padding: "0 1.1rem"
     height: "44px"
   button-secondary-hover:
-    backgroundColor: "{colors.paper-fill-deep}"
+    backgroundColor: "{colors.night-surface-3}"
   button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.print-ink}"
-    rounded: "{rounded.control}"
+    textColor: "{colors.night-ink}"
+    rounded: "{rounded.pill}"
     height: "44px"
   input:
-    backgroundColor: "{colors.paper-fill}"
-    textColor: "{colors.print-ink}"
+    backgroundColor: "{colors.night-surface-2}"
+    textColor: "{colors.night-ink}"
     rounded: "{rounded.control}"
     padding: "0 0.95rem"
     height: "48px"
   input-focus:
-    backgroundColor: "{colors.coated-paper}"
+    backgroundColor: "{colors.night-surface}"
   chip:
-    backgroundColor: "{colors.paper-fill}"
-    textColor: "{colors.print-ink-muted}"
-    rounded: "{rounded.card}"
+    backgroundColor: "{colors.night-surface-2}"
+    textColor: "{colors.night-ink-muted}"
+    rounded: "{rounded.pill}"
     padding: "0 0.7rem"
     height: "28px"
   chip-accent:
-    backgroundColor: "{colors.calendar-red-wash}"
-    textColor: "{colors.calendar-red-text}"
-    rounded: "{rounded.card}"
+    backgroundColor: "{colors.lime-wash}"
+    textColor: "{colors.lime}"
+    rounded: "{rounded.pill}"
+  chip-flame:
+    backgroundColor: "{colors.flame-wash}"
+    textColor: "{colors.flame-text}"
+    rounded: "{rounded.pill}"
   card:
-    backgroundColor: "{colors.coated-paper}"
+    backgroundColor: "{colors.night-surface}"
     rounded: "{rounded.card}"
   tearoff-head:
-    backgroundColor: "{colors.calendar-red}"
-    textColor: "{colors.calendar-red-ink}"
+    backgroundColor: "{colors.lime}"
+    textColor: "{colors.lime-ink}"
     typography: "{typography.calendar-header}"
   tearoff-day:
-    backgroundColor: "{colors.coated-paper}"
-    textColor: "{colors.print-ink}"
+    backgroundColor: "{colors.night-surface}"
+    textColor: "{colors.night-ink}"
     typography: "{typography.date-numeral}"
     width: "6.25rem"
   board-day:
-    textColor: "{colors.print-ink-dim}"
+    textColor: "{colors.night-ink-dim}"
     height: "3rem"
   board-day-today:
-    backgroundColor: "{colors.calendar-red-wash}"
-    textColor: "{colors.calendar-red-text}"
-  log-cap:
-    backgroundColor: "{colors.calendar-red}"
-    textColor: "{colors.calendar-red-ink}"
+    backgroundColor: "{colors.lime-wash}"
+    textColor: "{colors.lime}"
+  log-button:
+    backgroundColor: "{colors.lime}"
+    textColor: "{colors.lime-ink}"
+    rounded: "{rounded.pill}"
     size: "56px"
   tick-box:
-    backgroundColor: "{colors.coated-paper}"
-    rounded: "{rounded.box}"
+    backgroundColor: "{colors.night-surface-2}"
+    rounded: "{rounded.tick}"
     size: "20px"
 ---
 
@@ -168,56 +201,59 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Wall Calendar Chain"**
+**Creative North Star: "The Night Calendar"**
 
-PaceStreak is a printed wall calendar crossed off in felt-tip marker. The surface is bright coated calendar paper, not cream; type and rules are hard black print; the one loud colour is printed calendar red, the red a calendar uses for today and Sundays. Habits are drawn in a small felt-tip set, so each habit's X comes out of its own marker. Dark mode isn't a neon dashboard. It's the same calendar at night under a desk lamp: charcoal paper with chalk-white ink and a warmer, brighter red.
+PaceStreak is a wall calendar you cross off in marker, rendered on a near-black ground. The ground is almost black (near-black) with slightly lifted surfaces. One colour does the work: a hard electric lime that means "do this" (log, save, today). The streak has its own colour, flame orange, used for the chain count, risk and slips. There is a daylight theme under `[data-theme="light"]`. It is a cool pale grey ground with white cards. Lime stays the fill there, but lime used as text deepens to an olive (lime-text-day), because raw lime is unreadable on light grounds.
 
-The density is a calendar grid: 1px printed rules, square boxes, condensed heavy numerals for every date and count, and normal-width Archivo for reading. Depth comes from print, not light. There are no card shadows. Surfaces are separated by rules and slight paper tints. The one authored motion is the marker stroke. When a box is ticked, a hand-drawn X draws itself across the date in two strokes. It's slightly uneven on purpose, so it reads as a hand's mark and not a UI checkmark.
+The structure comes from a paper calendar. The week board sets out seven date boxes per habit. A done day is crossed off with a hand-drawn marker X. A tear-off date block sits at the top of Today. The logo is a calendar page. Numerals are condensed and heavy, like printed dates. Everything else is a calm modern app: soft rounded cards (16px), rounded controls (12px), pill buttons and chips, and soft ambient shadows on raised things. Reading text uses full-width Archivo.
 
-The world refuses the category default of rounded cards, progress rings and a dark neon dashboard. The old lime-on-near-black look is retired completely.
+The user rejected the paper-and-calendar-red palette ("meh and edgy"), so it is not coming back. The calendar survives as structure, not as colour.
 
 **Key Characteristics:**
-- Coated paper (#fbfbf8) and black print ink (#141414); calendar red reserved for today, Sundays, the streak and the primary action.
-- A felt-tip marker set (red, blue, green, orange, violet) assigned to habits by category.
-- 1px printed grid rules, square 4px corners, no shadows.
+- Near-black ground (#0a0a0b) with stepped surfaces; a light theme mirrors every token.
+- Lime (#d3ff3e) is the single action colour; flame (#ff6b35) is the streak, risk and slips.
+- A habit marker set (blue, green, orange, violet, default lime/olive) colours each habit's X by category.
+- Soft corners (16px cards, 12px controls, pills for buttons and chips) and soft ambient shadows on raised surfaces only.
 - Archivo variable: condensed (70-88% width) and heavy for numerals and headings, 100% width for text.
-- A marker X drawn in two strokes (150ms each, the second 120ms later) is the only signature motion.
+- The marker X, slash and ring, drawn in over 150ms, are the only marks for a day's state.
 
 ## Colors
 
-Printed matter: black on bright coated paper, one calendar red, and a felt-tip set for the habits.
+Near-black and lime, with flame for the streak. Every token has a light twin.
 
 ### Primary
-- **Calendar Red** (calendar-red): today, the primary action (Log button, primary buttons), the tear-off header band, selection, the active tab and index-tab rule, and the default marker X. As a fill under white text it measures 5.0:1.
-- **Calendar Red, Text** (calendar-red-text): red used as text or line on paper, such as the chain count, Sunday letters, links to totals, the focus ring and the caret (6.6:1 on paper).
-- **Red Wash** (calendar-red-wash): the tint inside today's column and done set rows, and accent chips.
+- **Electric Lime** (lime): the primary button, the mobile Log button, the tear-off header band, selection, switches when on, trained week dots, gold badges and the work phase of the interval timer. Lime ink (lime-ink) goes on top of it at 15.7:1.
+- **Lime as text**: in dark mode, lime itself is the text colour (15.9:1 on surface): today's column, the "done of total" link, focus rings, the caret. In light mode that role goes to **Olive** (lime-text-day, 6.6:1 on surface).
+- **Lime Wash** (lime-wash, lime-wash-day): the tint in today's board column, done set rows and accent chips.
 
 ### Secondary
-- **Orange Marker / Flame** (marker-orange-flame, marker-orange-flame-text): streak fire, risk, and the ring drawn around a slipped day on a habit being quit.
-- **Info Blue** (info-blue): informational toasts, rest and get-ready phases, frozen weeks.
-- **Danger** (danger): destructive actions and field errors only.
+- **Flame** (flame, flame-text, flame-wash and their day twins): the whole-life chain count, streak and at-risk states, the ring around a slipped day on a habit being quit, drop and failure sets, bronze badges. Flame text measures 7.9:1 on the dark surface and 6.2:1 on the light one.
+- **Info Sky** (info-sky / info-day): informational toasts, rest and get-ready phases, frozen weeks, warm-up sets.
+- **Danger** (danger / danger-day): destructive actions and field errors only.
 
-### Tertiary: the felt-tip set
-- **Marker Red / Blue / Green / Orange / Violet** (marker-*): the colour each habit's X is drawn in, mapped by category. Learning and creative get blue. Health and home get green. Mind and social get violet. Money and productivity get orange. Everything else gets red. The green, orange and violet are deeper than the direction contract's first values (#1f8a4c, #ef7d22, #7b3fb5). The build wins.
+### Tertiary: the marker set
+- **Marker Blue / Green / Orange / Violet** (marker-*): the colour each habit's X is drawn in, by category. Learning and creative get blue. Health and home get green. Mind and social get violet. Money and productivity get orange. Everything else gets the default marker. The default marker is lime at night and deep olive (marker-default-day) by day. In code the default is the `--marker-red` variable, which is left over from the calendar palette and now holds lime or olive. The day set is deeper so it reads on white.
+- **Heat ramp** (heat-0 to heat-4, with day twins): a lime ramp of fill levels on the year grid.
+- **Chart Olive** (chart-olive / chart-olive-day): bars, kept weeks and muscle fills. It is a darker lime, checked for chart use, because full lime sits outside the dark chart lightness band.
 
 ### Neutral
-- **Coated Paper** (coated-paper): page background and card surface. They are the same sheet.
-- **Paper Shade / Fill / Fill Deep** (paper-shade, paper-fill, paper-fill-deep): alternating bands, inputs and secondary buttons, then hover and pressed fills.
-- **Printed Rule / Rule Lit** (printed-rule, printed-rule-lit): 1px grid lines and card borders, with the lit rule for raised edges (tear-off, sheets, toasts).
-- **Print Ink / Muted / Dim** (print-ink, print-ink-muted, print-ink-dim): text in three weights of emphasis. Dim is the floor at 6.1:1 on paper. No grey goes lighter.
-- **Heat ramp** (heat-0 to heat-4): marker pressure on the year grid, from an empty box to a heavy red X.
-
-### Dark: the desk lamp
-- **Charcoal Paper** (desk-lamp-paper), **fills** (desk-lamp-fill, desk-lamp-fill-deep), **rules** (desk-lamp-rule, desk-lamp-rule-lit), **Chalk Ink** (chalk-ink, chalk-ink-muted, chalk-ink-dim at 5.9:1), **Lamp Red** (desk-lamp-red, desk-lamp-red-text, with desk-lamp-red-ink under it). Every light token has a dark twin under `[data-theme="dark"]`. The marker set and heat ramp brighten to match.
+- **Near-black ground** (near-black, near-black-alt): the page and alternating bands. **Day Ground** (day-ground, day-ground-alt) is the light twin.
+- **Surfaces** (night-surface, -2, -3 / day-surface, -2, -3): cards, then inputs and secondary buttons, then hover, pressed and empty states.
+- **Rules** (night-rule, night-rule-lit / day-rule, day-rule-lit): 1px borders and board lines. The lit rule marks raised things: the tear-off block, sheets, toasts, the tick box.
+- **Ink** (night-ink, -muted, -dim / day-ink, -muted, -dim): text at three levels of emphasis. Dim is the floor: 5.87:1 on the dark ground and 5.45:1 on the dark surface, 6.1:1 on the light surface.
 
 ### Named Rules
-**The Calendar Red Rule.** Red marks what a printed calendar marks in red: today, Sundays, the streak, and the one action that crosses a day off. It is never decoration and never a second accent.
+**The One Lime Rule.** Lime means act or today: the primary action, today's box and the tear-off band, done states, selection. It is never decoration and never a second meaning.
 
-**The Measured Grey Rule.** Every muted text colour is measured against the paper it sits on. Dim is the lightest grey allowed (6.1:1 light, 5.9:1 dark).
+**The Flame Is the Chain Rule.** Flame belongs to the streak and risk to it. The count, a slip, a warning. Nothing else is orange except the orange habit marker.
+
+**The Lime Never Reads on Day Rule.** On the light theme, lime is a fill with lime-ink on it, never text or a line. Text and strokes use lime-text-day.
+
+**The Measured Grey Rule.** Every muted text colour is measured on the surface it sits on, cards included. Dim is the lightest grey allowed.
 
 ## Typography
 
-**Display Font:** Archivo Variable, condensed (with ui-sans-serif, system-ui fallback)
+**Display Font:** Archivo Variable, condensed (self-hosted via @fontsource-variable, with ui-sans-serif, system-ui fallback)
 **Body Font:** Archivo Variable, normal width (same stack)
 **Label/Mono Font:** ui-monospace stack, rarely used
 
@@ -225,82 +261,91 @@ Printed matter: black on bright coated paper, one calendar red, and a felt-tip s
 
 ### Hierarchy
 - **Date numeral** (850, 3.4rem, 70% width, line-height 1): the tear-off day number.
-- **Count numeral** (800, 2.6rem, 82% width): the whole-life chain count, in calendar red text.
-- **Headline** (600, 2rem, line-height 1.1, -0.03em, 88% width): page titles. Secondary pages use 1.65rem.
-- **Title** (600-700, 1.05-1.25rem, 88% width): section heads such as "This week".
+- **Count numeral** (800, 2.6rem, 82% width): the whole-life chain count, in flame text. Stat values use the same treatment at 2rem.
+- **Headline** (600, 2rem, line-height 1.1, -0.03em, 88% width): auth and onboarding titles.
+- **Page title** (600, 1.65rem, -0.02em): secondary page headers.
+- **Title** (700, 1.15rem, 88% width): section heads such as "This week".
 - **Body** (400, 16px, line-height 1.5): all running text.
 - **Label** (600, 0.8125rem): field labels, hints, chips.
-- **Calendar header** (700, 0.72rem, +0.06em, uppercase): the weekday on the tear-off band and the narrow weekday letters over board columns. Uppercase belongs to the calendar's own printed headers.
+- **Calendar header** (700, 0.72rem, +0.06em, uppercase): the weekday on the tear-off band. The weekday letters over the board columns (0.68rem, bold, uppercase) follow it. This is the calendar's own printed header, not a section label.
 
 ### Named Rules
 **The Printed Numeral Rule.** Every date, count and measure is condensed and tabular (`.num`: 82% width, tabular-nums), so columns line up like a printed grid.
 
 ## Layout
 
-The app is a mobile-first single column (max 560px under the tab bar), with a sidebar at `lg` (1024px). The spatial model is the calendar week: seven equal columns (`repeat(7, minmax(0, 1fr))`) separated by 1px rules. A habit's name spans all seven columns above its row of date boxes. Boxes are 3rem tall. The year grid packs square cells with a 3px gap. The month view on a habit is a 7-column grid whose 1px gaps show the rule colour through. Page gutters are 1rem. Sheets pad 1.25rem. Sheets rise from the bottom on phones and centre as dialogs from 640px. The Today header puts the tear-off block (6.25rem wide) beside the chain count.
+The app is mobile first. It is one column, max 560px, above a fixed five-slot tab bar with Log in the centre. At 1024px it becomes a 248px sidebar plus content (max 720px). The spatial model on Today is the calendar week: seven equal columns (`repeat(7, minmax(0, 1fr))`) separated by 1px rules. Each habit's name spans the full row above its seven 3rem date boxes. The Today header puts the tear-off block (6.25rem wide) beside the chain count. The year grid packs square cells with a 3px gap. Page gutters are 1rem and sheets pad 1.25rem. Sheets rise from the bottom on phones and become centred dialogs from 640px. Route content settles in once (240ms, 6px rise). List entry is staggered in 40ms steps, capped at 160ms.
 
 ## Elevation & Depth
 
-The system is flat. `--shadow` is `none` in both themes. Depth is print: a 1px rule, a lit rule for anything that sits on top (tear-off, sheet, toast), and slight paper tints. Only three box-shadow uses remain, and none is a cast shadow. The first is inset rules: today's 1.5px red outline, the 3px red index-tab bar on the active tab and segment, and outlined heat cells. The second is the Log cap's 4px paper-coloured ring that cuts it out of the tab bar rule. The third is the cap's darker clip band.
+The system is a hybrid: tonal layers first, then soft ambient shadows on things that float. Cards at rest are a surface tone with a 1px rule and no shadow. Raised cards, the tear-off block, sheets, toasts, tooltips and the lead coach card carry `--shadow`, a soft ambient drop. At night it adds a faint top highlight. The two Log buttons carry a lime-tinted drop. The mobile one also has a 5px ground-coloured ring that cuts it out of the tab bar. Inset rings mark state rather than depth: today's box, rest and planned heat cells, open weeks.
+
+### Shadow Vocabulary
+- **Ambient, dark** (`box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 32px -12px rgb(0 0 0 / 0.6)`): anything that floats, at night.
+- **Ambient, light** (`box-shadow: 0 1px 2px rgb(17 18 20 / 0.06), 0 12px 28px -14px rgb(17 18 20 / 0.22)`): the same role by day.
+- **Log lift** (`box-shadow: 0 0 0 5px var(--bg), 0 10px 24px -6px color-mix(in srgb, var(--accent) 45%, transparent)`): the mobile Log button only. The sidebar version is `0 10px 24px -10px` at 55%.
+- **Today ring** (`box-shadow: inset 0 0 0 1.5px var(--accent-text)`): today's board box.
 
 ### Named Rules
-**The Print, Not Light Rule.** Nothing casts a shadow. If something needs to sit above something else, give it a rule or a tint.
+**The Float, Not Rest Rule.** Shadows go only on things that sit above the page: sheets, toasts, the tear-off block, raised cards, Log. Plain cards stay flat, with a rule and a tone.
 
 ## Shapes
 
-Corners are square, like a printed calendar. Cards, controls and chips use 4px. The tick box uses 2px. Heat cells and week dots use 1px. The Log button is a marker cap: 6px on top and 4px at the base, with a clip band across the bottom. Index tabs (segmented controls, the tab bar) have no radius. They are a ruled edge with a 3px red bar on the current one. The marker marks are open SVG paths with round caps at stroke width 4.6 in a 40-unit box. The logo is a calendar page with a red header and two binder pegs, crossed off in red.
+Corners are soft and consistent. Cards use 16px, controls and inputs 12px, and buttons, chips, switches and avatars are full pills. Toasts use 18px. Bottom sheets use 24px on their top corners. The tear-off block uses 14px, the tick box 5px, and heat cells and week marks 3px. Small inline elements use 6px (the Tailwind md radius). The marker marks are open SVG paths with round caps, at stroke width 4.6 in a 40-unit box, and are slightly uneven on purpose. The logo is a calendar page with a lime header band, two binder pegs and a marker X, outlined in ink.
 
 ## Components
 
 ### Buttons
-- **Shape:** square-cornered (4px), 44px tall (36px small), weight 650.
-- **Primary:** calendar red with white ink. Hover brightens it slightly (brightness 1.06). Press scales it to 0.97 over 160ms.
-- **Secondary / Ghost:** a paper-fill button with a 1px rule, or transparent. Both darken to paper-fill-deep on hover.
+- **Shape:** full pill (999px), 44px tall (36px for small, 44px square for icon buttons), weight 650.
+- **Primary:** a lime fill with lime ink. Hover brightens it (brightness 1.06, fine pointers only). Press scales it to 0.97 over 160ms.
+- **Secondary / Ghost:** surface-2 with a 1px rule, or transparent. Both move to surface-3 on hover.
 - **Danger:** a danger wash with danger text and a 30% danger rule.
 
 ### Chips
-- **Style:** 28px tall, 4px corners, paper fill with a rule, muted text. The accent and flame variants use a wash and coloured text with no border.
+- **Style:** 28px pill, surface-2 with a rule, muted text. The accent chip is a lime wash with lime text. The flame chip is a flame wash with flame text. Neither has a border.
 
 ### Cards / Containers
-- **Corner Style:** 4px.
-- **Background:** coated paper, the same as the page, with a 1px printed rule. The raised variant uses the lit rule.
-- **Shadow Strategy:** none (see Elevation).
+- **Corner Style:** 16px.
+- **Background:** the surface tone on the ground, with a 1px rule. The raised variant uses the lit rule plus the ambient shadow.
 - **Internal Padding:** 1rem.
+- **Ruled section:** where a box would be too heavy, a section gets a 1px lit rule above it and 1rem of top padding instead.
 
 ### Inputs / Fields
-- **Style:** 48px tall, paper fill, 1px rule, 4px corners.
-- **Focus:** the border turns calendar-red-text and the fill lightens to paper. The global focus ring is a 2px calendar-red-text outline at a 2px offset.
+- **Style:** 48px tall, surface-2 fill, 1px rule, 12px corners.
+- **Focus:** the border turns to lime text and the fill lifts to the surface tone. The global focus ring is a 2px lime-text outline at a 2px offset.
 - **Error:** a danger border and a danger message below.
 
 ### Navigation
-- **Tab bar:** calendar index tabs. The bar sits on a 1px ink rule. Labels are 0.7rem at weight 600. The current tab turns ink and gets a 3px red bar along the rule. The Log cap sits raised in the centre.
-- **Segmented control:** planner section tabs on a 1px ink rule. The selected tab has red text at weight 750 and a 3px red underline.
+- **Tab bar (mobile):** the ground at 86% with an 18px backdrop blur, on a 1px top rule. There are five slots. The centre slot is a raised 56px lime circle for Log.
+- **Sidebar (lg):** 248px wide. Its Log is a full-width primary pill with the lime drop.
+- **Segmented control:** a pill track (surface-2, 4px inset). The selected option becomes a surface pill with the ambient shadow.
 
 ### The Week Board (signature)
-Seven columns of date boxes, one row per habit. Today's column is washed red and outlined in 1.5px red. Future boxes are faded and disabled. A done day gets a marker X in the habit's colour, and the printed date fades to 35% under it. A part-done day gets a single slash. A slip on a habit being quit gets an orange ring.
+Seven columns of date boxes, one row per habit, inside a card. Today's column has a lime wash, lime text and a 1.5px lime ring. On Sundays the weekday letter is in lime text. Future boxes are faded and disabled. A done day gets a marker X in the habit's marker colour, and the date fades to 35% under it. A part-done day gets a single slash. A slip on a habit being quit gets a flame ring. Every box has an aria-label that names the state in words.
 
 ### The Tear-off Block (signature)
-A torn-off calendar page: a red header band with the uppercase weekday, then a dashed perforation, a huge condensed day number, and the month and year in muted text.
+Today as a torn calendar page. It has a lime header band with the uppercase weekday, a dashed perforation in lime ink at 45%, a 3.4rem condensed day number and the month in muted text. The corners are 14px, with the lit rule and the ambient shadow.
 
 ### Marker Marks and the Tick Box (signature)
-MarkerX, MarkerSlash and MarkerRing draw their strokes in (`stroke-dashoffset` over 150ms, the second stroke 120ms later), and appear instantly with reduced motion. The TickBox is a 2px-cornered printed box with a 1.5px ink border. It is crossed off with MarkerX, so there is exactly one way "done" looks in the product.
+MarkerX, MarkerSlash and MarkerRing draw their strokes in with `stroke-dashoffset`: 150ms per stroke, the second stroke 120ms later, at 94% opacity. With reduced motion they appear instantly. The TickBox is a 20px box with 5px corners, a surface-2 fill and a 1.5px lit-rule border. It is crossed off with MarkerX, so "done" looks the same everywhere.
 
 ### Sibling surfaces
-`web/` (www) and `blog/` share the paper, rule, ink and Archivo tokens through their own `@theme` blocks. The www hero uses a calendar page (`CalendarPage.astro`), and `public/marks/` ships the X and tick as static SVGs.
+`web/` (www) and `blog/` share the palette through their own `@theme` blocks: the near-black ground, surfaces, rules, ink, lime, lime ink, flame and Archivo. Where their radii differ from the app's (www card 14px, xl2 20px), they follow their own stylesheets.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** separate surfaces with a 1px printed rule and a paper tint, never a shadow.
-- **Do** mark done with a MarkerX drawn in the habit's category marker, and keep the date visible underneath at reduced opacity.
+- **Do** use lime for the primary action and for today, and only there.
+- **Do** use flame for the chain count, streak risk and slips.
+- **Do** mark a done day with a MarkerX in the habit's category marker, and keep the date visible underneath at 35%.
 - **Do** set every date and count in condensed, tabular Archivo (`.num`).
-- **Do** keep calendar red for today, Sundays, the streak and the Log action.
-- **Do** define every colour in both the paper theme and the desk-lamp theme.
-- **Do** keep the marker stroke as the one authored motion, and show it instantly under reduced motion.
+- **Do** define every colour in both the dark and the light block, and use lime-text-day wherever lime would be text on the light theme.
+- **Do** keep flat cards flat. Put the ambient shadow only on things that float.
+- **Do** put every animation behind `prefers-reduced-motion`, and have the marker stroke appear instantly under it.
 
 ### Don't:
-- **Don't** add card shadows, glows or progress rings. The world is print.
-- **Don't** round corners past 4px on cards, controls or boxes; the marker cap's 6px top is the one exception, because a real cap has it.
-- **Don't** bring back the old lime-on-near-black palette, and don't treat dark mode as a neon dashboard. Dark is the same calendar under a desk lamp.
-- **Don't** invent a second "done" mark. The tick box and board both use the marker X.
-- **Don't** use a grey lighter than print-ink-dim for text.
+- **Don't** bring back the paper-and-calendar-red palette. The user rejected it.
+- **Don't** use raw lime as text, a line or a thin stroke on the light theme.
+- **Don't** invent a second "done" mark. The tick box and the board both use the marker X.
+- **Don't** add a second accent colour. Lime acts, flame is the streak, and the marker set only colours habit marks.
+- **Don't** use a grey lighter than dim for text.

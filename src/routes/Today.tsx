@@ -223,7 +223,7 @@ export default function Today() {
           <div>
             <p className="text-sm font-semibold text-dim">Whole-life chain</p>
             <p className="mt-0.5 flex items-baseline gap-2">
-              <span className="num text-[2.6rem] leading-none font-extrabold tracking-tight text-accent-text">{stats.data?.life?.current ?? main?.current ?? 0}</span>
+              <span className="num text-[2.6rem] leading-none font-extrabold tracking-tight text-flame-text">{stats.data?.life?.current ?? main?.current ?? 0}</span>
               <span className="text-[0.95rem] font-semibold">{(stats.data?.life?.current ?? main?.current ?? 0) === 1 ? "week" : "weeks"} unbroken</span>
             </p>
           </div>

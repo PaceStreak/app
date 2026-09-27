@@ -150,7 +150,7 @@ function ShellInner() {
         <button type="button" className="btn btn-primary log-cap mb-6 w-full" onClick={() => openLog()}>
           <Plus size={18} weight="bold" /> Log a session
         </button>
-        <nav className="flex flex-col border-t border-ink" aria-label="Main">
+        <nav className="flex flex-col gap-1" aria-label="Main">
           {[
             ...TABS,
             { to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: unread },
@@ -164,7 +164,7 @@ function ShellInner() {
               to={t.to}
               end={"end" in t ? t.end : false}
               className={({ isActive }) =>
-                `press flex items-center gap-3 border-b px-3 py-2.5 font-medium ${isActive ? "border-accent font-bold text-accent-text" : "border-line text-muted hover:text-ink"}`
+                `press flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium ${isActive ? "bg-surface-2 text-ink" : "text-muted hover:text-ink"}`
               }
             >
               <t.icon size={20} />
@@ -187,7 +187,7 @@ function ShellInner() {
               {(!online || offline || sync.pending > 0) && <OfflinePill online={online && !offline} pending={sync.pending} />}
               <NavLink to="/notifications" className="btn btn-ghost btn-icon relative" aria-label={`${t("nav.notifications")}${unread ? `, ${t("nav.unread", { count: unread })}` : ""}`}>
                 <Bell size={22} />
-                {unread > 0 && <span className="absolute top-2 right-2 size-2.5 rounded-full bg-accent ring-2 ring-bg" />}
+                {unread > 0 && <span className="absolute top-2 right-2 size-2.5 rounded-full bg-flame ring-2 ring-bg" />}
               </NavLink>
             </div>
           </div>

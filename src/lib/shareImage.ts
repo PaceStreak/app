@@ -9,12 +9,12 @@ import { addDays } from "./dates";
 
 const W = 1080;
 const H = 1350;
-const BG = "#efeeea";
-const SURFACE = "#ffffff";
-const INK = "#141414";
-const DIM = "#5c5c62";
-const ACCENT = "#d6281f";
-const LEVELS = ["#ebeae5", "#f5cdc7", "#ec9186", "#dc4a3d", "#b31d15"];
+const BG = "#0b0b0d";
+const SURFACE = "#17171b";
+const INK = "#f4f4f5";
+const DIM = "#8b8b95";
+const ACCENT = "#d3ff3e";
+const LEVELS = ["#1f1f24", "#3b4a12", "#6b8a17", "#a3cc22", "#d3ff3e"];
 const FONT = '"Archivo Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 function canvas(): [HTMLCanvasElement, CanvasRenderingContext2D] {
