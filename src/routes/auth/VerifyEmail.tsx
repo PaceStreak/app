@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
+import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
@@ -15,6 +16,7 @@ export default function VerifyEmail() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [resent, setResent] = useState(false);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -35,7 +37,8 @@ export default function VerifyEmail() {
   const resend = async () => {
     setBusy(true);
     try {
-      await api("/auth/resend-verification", { body: { email }, auth: false });
+      const token = await captchaRef.current?.getFreshToken().catch(() => null);
+      await api("/auth/resend-verification", { body: { email, turnstile_token: token }, auth: false });
       setResent(true);
     } catch (err) {
       setError(errorText(err));
@@ -73,6 +76,7 @@ export default function VerifyEmail() {
         <button className="btn btn-primary w-full" disabled={busy || code.length !== 6 || !email}>
           {busy ? t("auth.verify.working") : t("auth.verify.submit")}
         </button>
+        <Turnstile ref={captchaRef} onToken={() => {}} />
         <button type="button" className="btn btn-secondary w-full" onClick={resend} disabled={busy || !email}>
           {resent ? t("auth.verify.resent") : t("auth.verify.resend")}
         </button>
