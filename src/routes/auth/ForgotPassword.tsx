@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
+import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { AuthLayout } from "./AuthLayout";
@@ -10,15 +11,18 @@ export default function ForgotPassword() {
   const [sent, setSent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      const res = await api<{ detail: string }>("/auth/forgot-password", { body: { email }, auth: false });
+      const res = await api<{ detail: string }>("/auth/forgot-password", { body: { email, turnstile_token: captcha }, auth: false });
       setSent(res.detail);
     } catch (err) {
       setError(errorText(err));
+      captchaRef.current?.getFreshToken().then(setCaptcha).catch(() => setCaptcha(null));
     } finally {
       setBusy(false);
     }
@@ -32,6 +36,7 @@ export default function ForgotPassword() {
       {!sent && (
         <form onSubmit={submit} className="space-y-5">
           <Field label={t("common.email")} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus error={error} />
+          <Turnstile ref={captchaRef} onToken={setCaptcha} />
           <button className="btn btn-primary w-full" disabled={busy}>
             {busy ? t("auth.forgot.busy") : t("auth.forgot.submit")}
           </button>

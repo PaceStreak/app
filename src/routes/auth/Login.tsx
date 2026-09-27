@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { Fingerprint } from "../../components/phosphor";
+import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
-import { api, errorText } from "../../lib/api";
+import { api, ApiError, errorText } from "../../lib/api";
 import { conditionalSupported, passkeysSupported, signInWithPasskey, wasCancelled } from "../../lib/passkeys";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
@@ -22,6 +23,10 @@ export default function Login() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsVerify, setNeedsVerify] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   const done = async (tokens: Tokens) => {
     const me = await signIn(tokens);
@@ -68,14 +73,30 @@ export default function Login() {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setNeedsVerify(false);
     try {
       if (mfa) {
         await done(await api<Tokens>("/auth/2fa/verify", { body: { mfa_token: mfa, code: code.replace(/\s/g, "") }, auth: false }));
       } else {
-        const res = await api<Tokens | Challenge>("/auth/login", { body: { email, password }, auth: false });
+        const res = await api<Tokens | Challenge>("/auth/login", { body: { email, password, turnstile_token: captcha }, auth: false });
         if ("mfa_token" in res) setMfa(res.mfa_token);
         else await done(res);
       }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) setNeedsVerify(true);
+      setError(errorText(err));
+      captchaRef.current?.getFreshToken().then(setCaptcha).catch(() => setCaptcha(null));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resend = async () => {
+    setBusy(true);
+    try {
+      const token = await captchaRef.current?.getFreshToken().catch(() => null);
+      await api("/auth/resend-verification", { body: { email, turnstile_token: token }, auth: false });
+      setResent(true);
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -124,10 +145,16 @@ export default function Login() {
       <form onSubmit={submit} className="space-y-5">
         <Field label={t("common.email")} type="email" autoComplete="username webauthn" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
+        <Turnstile ref={captchaRef} onToken={setCaptcha} />
         {error && (
           <p className="field-error" role="alert">
             {error}
           </p>
+        )}
+        {needsVerify && (
+          <button type="button" className="btn btn-secondary w-full" onClick={() => void resend()} disabled={busy || resent}>
+            {resent ? t("auth.verify.resent") : t("auth.verify.resend")}
+          </button>
         )}
         <button className="btn btn-primary w-full" disabled={busy}>
           {busy ? t("auth.login.busy") : t("auth.login.submit")}

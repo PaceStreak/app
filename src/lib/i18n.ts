@@ -75,6 +75,8 @@ const en = {
   "auth.signup.submit": "Create account",
   "auth.signup.busy": "Creating…",
   "auth.signup.agree": "By continuing you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>.",
+  "auth.signup.verifyTitle": "Check your inbox.",
+  "auth.signup.verifyBody": "We sent a link to {email}. Open it to finish creating your account.",
 
   "auth.forgot.title": "Reset your password.",
   "auth.forgot.sentTitle": "Check your inbox.",
@@ -101,6 +103,8 @@ const en = {
   "auth.verify.failBody": "{error} Links expire after a day; you can send a new one from Settings.",
   "auth.verify.noToken": "This link has no token in it.",
   "auth.verify.open": "Open PaceStreak",
+  "auth.verify.resend": "Send the link again",
+  "auth.verify.resent": "Sent. Check your inbox.",
 
   "auth.unsubscribe.title": "Stop these emails?",
   "auth.unsubscribe.doneTitle": "Unsubscribed.",

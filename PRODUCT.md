@@ -11,7 +11,9 @@ web
 React + Vite + TypeScript, Tailwind CSS v4, installable PWA. Static SPA on
 Cloudflare Pages (Git-connected); talks only to `api.pacestreak.com`
 (FastAPI). CSP is `default-src 'self'` with no `unsafe-inline`: no inline
-scripts/styles in markup, no third-party origins, `assetsInlineLimit: 0`.
+scripts/styles in markup, `assetsInlineLimit: 0`, and one deliberate
+third-party exception for Cloudflare Turnstile (`challenges.cloudflare.com`,
+2026-09-27) on the forms that could otherwise be used to spam email.
 
 ## Users
 
@@ -47,7 +49,8 @@ coach consent, attendance-based challenges, opt-in leaderboards.
 - Web never gains auth; this app is `noindex`, own `robots.txt`.
 - Weights stored in kg, distances in m; units convert only at display.
 - Under 13: no account. Under 16: private-only, no social/boards.
-- No pricing claims anywhere. No third-party services or scripts.
+- No pricing claims anywhere. No third-party services or scripts, except
+  Cloudflare Turnstile guarding signup/login/password/recovery forms.
 - Body metrics are private and never competitive.
 - Habits are never shown to anyone else: no feed, profile, group or board.
 

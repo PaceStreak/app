@@ -81,6 +81,10 @@ because it determines what the Pages project is allowed to run.
   workflow, no API token in this repository.
 - **No third-party scripts.** The CSP is `default-src 'self'`, and it stays
   that way. No analytics CDN, no font CDN, no widget. Vendor what you need.
+  One deliberate exception: Cloudflare Turnstile (`challenges.cloudflare.com`)
+  on signup, login, forgot-password, resend-verification and recover, to stop
+  those from being used to empty the free SMTP quota. See
+  `api/README.md#cloudflare-turnstile-guards-the-mailer-and-passwordrecovery-endpoints`.
 - **Assets are content-hashed by the build.** Do not hand-roll cache busting —
   it was tried on the marketing site and shipping new markup against a stale
   cached stylesheet is how that ends.

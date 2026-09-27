@@ -183,7 +183,7 @@ export default function Today() {
           break;
         }
         case "resend":
-          await api("/auth/resend-verification", { body: { email: me.user.email }, auth: false });
+          await api("/auth/resend-verification", { body: { email: me.user.email } });
           toast.success("Sent", { body: `Check ${me.user.email}.` });
           break;
         case "timezone":

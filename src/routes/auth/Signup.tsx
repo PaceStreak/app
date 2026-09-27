@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
-import { api, errorText } from "../../lib/api";
+import { api, ApiError, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
 import { t } from "../../lib/i18n";
@@ -14,6 +15,9 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsVerify, setNeedsVerify] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
   const short = password.length > 0 && password.length < 16;
 
   const submit = async (e: FormEvent) => {
@@ -22,21 +26,44 @@ export default function Signup() {
     setBusy(true);
     setError(null);
     try {
-      await api("/auth/signup", { body: { email, password }, auth: false });
+      await api("/auth/signup", { body: { email, password, turnstile_token: captcha }, auth: false });
       // Signup does not sign in by design; do it straight away so the next
-      // screen is onboarding, not a second form.
-      const tokens = await api<{ access_token: string; expires_in: number; csrf_token?: string }>("/auth/login", {
-        body: { email, password },
-        auth: false,
-      });
-      await signIn(tokens);
-      navigate("/welcome", { replace: true });
+      // screen is onboarding, not a second form. A Turnstile token can only
+      // be redeemed once, so the widget solves again (usually invisibly)
+      // for this second request rather than reusing the signup token.
+      const loginCaptcha = await captchaRef.current?.getFreshToken().catch(() => null);
+      try {
+        const tokens = await api<{ access_token: string; expires_in: number; csrf_token?: string }>("/auth/login", {
+          body: { email, password, turnstile_token: loginCaptcha },
+          auth: false,
+        });
+        await signIn(tokens);
+        navigate("/welcome", { replace: true });
+      } catch (err) {
+        // Production requires a verified address before the first sign-in,
+        // so the account exists (signup above succeeded) but this second
+        // call is expected to fail here - not an error, just a fork in the
+        // flow. Anything else re-throws to the outer catch.
+        if (err instanceof ApiError && err.status === 403) setNeedsVerify(true);
+        else throw err;
+      }
     } catch (err) {
       setError(errorText(err));
+      captchaRef.current?.getFreshToken().then(setCaptcha).catch(() => setCaptcha(null));
     } finally {
       setBusy(false);
     }
   };
+
+  if (needsVerify) {
+    return (
+      <AuthLayout
+        title={t("auth.signup.verifyTitle")}
+        subtitle={t("auth.signup.verifyBody", { email })}
+        footer={<Link to="/login" className="font-semibold text-accent-text">{t("common.signIn")}</Link>}
+      />
+    );
+  }
 
   return (
     <AuthLayout
@@ -59,6 +86,7 @@ export default function Signup() {
           error={short ? t("auth.signup.more", { count: 16 - password.length }) : null}
           hint={t("auth.signup.hint")}
         />
+        <Turnstile ref={captchaRef} onToken={setCaptcha} />
         {error && (
           <p className="field-error" role="alert">
             {error}

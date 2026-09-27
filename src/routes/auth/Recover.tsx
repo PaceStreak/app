@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
+import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { t } from "../../lib/i18n";
@@ -15,16 +16,19 @@ export default function Recover() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await api("/auth/recover", { body: { email, recovery_code: code.trim(), new_password: password }, auth: false });
+      await api("/auth/recover", { body: { email, recovery_code: code.trim(), new_password: password, turnstile_token: captcha }, auth: false });
       setDone(true);
     } catch (err) {
       setError(errorText(err));
+      captchaRef.current?.getFreshToken().then(setCaptcha).catch(() => setCaptcha(null));
     } finally {
       setBusy(false);
     }
@@ -39,6 +43,7 @@ export default function Recover() {
         <Field label={t("common.email")} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         <Field label={t("auth.recover.code")} autoComplete="off" autoCapitalize="none" spellCheck={false} value={code} onChange={(e) => setCode(e.target.value)} required />
         <PasswordField value={password} onChange={setPassword} autoComplete="new-password" label={t("auth.recover.newPassword")} hint={t("auth.recover.hint")} error={error} />
+        <Turnstile ref={captchaRef} onToken={setCaptcha} />
         <button className="btn btn-primary w-full" disabled={busy || password.length < 16 || code.trim().length < 6}>
           {busy ? t("auth.recover.busy") : t("auth.recover.submit")}
         </button>

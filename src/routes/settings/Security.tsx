@@ -138,7 +138,7 @@ export function Security() {
         <Banner
           icon={<EnvelopeSimple size={18} />}
           action={
-            <button type="button" className="btn btn-sm btn-secondary" onClick={() => void api("/auth/resend-verification", { body: { email: me.user.email }, auth: false }).then(() => toast.success("Sent"))}>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={() => void api("/auth/resend-verification", { body: { email: me.user.email } }).then(() => toast.success("Sent"))}>
               Resend
             </button>
           }
