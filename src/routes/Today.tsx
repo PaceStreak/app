@@ -32,7 +32,7 @@ import { WorkoutRow } from "../components/WorkoutRow";
 import { Skeleton } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import { buildCards, placeName, type CardAction, type CoachCard } from "../lib/coach";
-import { addDays, fmtFullDay, localToday } from "../lib/dates";
+import { addDays, fmtFullDay, localToday, parseDay } from "../lib/dates";
 import { kvGet } from "../lib/db";
 import { haptic, prefs } from "../lib/prefs";
 import { canInstall, currentPushSubscription, enablePush, install, onInstallChange, pushSupported } from "../lib/pwa";
@@ -69,6 +69,9 @@ function deviceTimezone(): string | null {
     return null;
   }
 }
+
+const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "long", timeZone: "UTC" });
+const monthShort = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
 
 export default function Today() {
   const me = useMe();
@@ -208,42 +211,54 @@ export default function Today() {
   const gamified = stats.data?.gamification_enabled ?? me.profile.gamification_enabled;
 
   return (
-    <div className="pt-3 lg:pt-8">
-      {/* Status strip: streak, week, level. */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-baseline gap-1.5">
-          <Fire size={22} weight="fill" className="self-center text-flame" />
-          <span className="num text-[1.6rem] leading-none font-semibold tracking-tight">{main?.current ?? 0}</span>
-          <span className="text-sm text-muted">{main?.current === 1 ? "week" : "weeks"}</span>
+    <div className="pt-4 lg:pt-8">
+      {/* The tear-off page for today, beside the chain it extends. */}
+      <header className="flex items-stretch gap-4">
+        <div className="tearoff" aria-label={fmtFullDay(today)}>
+          <div className="tearoff-head">{weekdayShort.format(parseDay(today))}</div>
+          <div className="tearoff-day">{Number(today.slice(8))}</div>
+          <div className="tearoff-month">{monthShort.format(parseDay(today))}</div>
         </div>
-        <span className="h-5 w-px bg-line" aria-hidden />
-        <div className="flex items-center gap-2">
-          <WeekDots dots={week.dots} size="sm" />
-          <span className="num text-sm text-muted">
-            {Math.max(week.count, main?.this_week_days ?? 0)}/{main?.this_week_target ?? 3}
-          </span>
+        <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
+          <div>
+            <p className="text-sm font-semibold text-dim">Whole-life chain</p>
+            <p className="mt-0.5 flex items-baseline gap-2">
+              <span className="num text-[2.6rem] leading-none font-extrabold tracking-tight text-accent-text">{stats.data?.life?.current ?? main?.current ?? 0}</span>
+              <span className="text-[0.95rem] font-semibold">{(stats.data?.life?.current ?? main?.current ?? 0) === 1 ? "week" : "weeks"} unbroken</span>
+            </p>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+            <span className="flex items-center gap-1.5">
+              <WeekDots dots={week.dots} size="sm" />
+              <span className="num text-muted">
+                {Math.max(week.count, main?.this_week_days ?? 0)}/{main?.this_week_target ?? 3} training
+              </span>
+            </span>
+            {main && main.current > 0 && stats.data?.life && (
+              <span className="num flex items-center gap-1 text-muted">
+                <Fire size={14} weight="fill" className="text-flame" aria-hidden /> {main.current} wk training
+              </span>
+            )}
+            {gamified && stats.data && (
+              <Link to="/progress/xp" className="chip">
+                Lv {stats.data.level.level}
+              </Link>
+            )}
+          </div>
         </div>
-        {stats.data?.life && (
-          <Link to="/habits" className="chip" title="Whole-life streak: weeks with any training or habit">
-            Life {stats.data.life.current} wk
-          </Link>
-        )}
-        {gamified && stats.data && (
-          <Link to="/progress/xp" className="chip ml-auto">
-            Lv {stats.data.level.level}
-          </Link>
-        )}
-      </div>
-      <p className="mt-1 text-sm text-dim">{fmtFullDay(today)}</p>
+      </header>
 
       <div className="mt-5">
         {!stats.seeded || !workouts ? (
-          <Skeleton className="h-64 rounded-[20px]" />
+          <Skeleton className="h-64" />
         ) : (
           <>
-            <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
-            <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
             <HabitsToday today={today} />
+            <div className="mt-7">
+              <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
+            </div>
+            <div className="mt-4" />
+            <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
             {(stats.data?.totals.sessions ?? 0) > 0 && !stats.data?.paused_today && <ReadinessCard today={today} onAdjust={() => setAdjusting(true)} />}
             {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
             {gamified && stats.data?.quests && <QuestsCard quests={stats.data.quests} />}
@@ -256,7 +271,7 @@ export default function Today() {
       {recent.length > 0 && (
         <section className="mt-9">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[1.05rem] font-semibold tracking-tight">Recent</h2>
+            <h2 className="text-[1.15rem] font-bold">Recent sessions</h2>
             <Link to="/history" className="text-sm font-semibold text-accent-text">
               All sessions
             </Link>
@@ -272,7 +287,7 @@ export default function Today() {
       {stats.data && stats.data.totals.sessions > 0 && (
         <Link to="/progress" className="press card mt-6 block p-4 sm:p-5">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="font-semibold tracking-tight">The grid</h2>
+            <h2 className="font-bold">The year so far</h2>
             <span className="num text-sm text-dim">
               {plural(stats.data.totals.active_days, "day")} · longest {main?.longest ?? 0} wk
             </span>
@@ -358,19 +373,21 @@ function ActionButton({ action, onAction, primary }: { action: CardAction; onAct
 
 function LeadCard({ card, onAction, onDismiss }: { card: CoachCard; onAction: (a: CardAction) => void; onDismiss: (c: CoachCard) => void }) {
   return (
-    <article className="coach-lead card-raised relative flex flex-col p-5 sm:p-6" data-tone={card.tone}>
-      <div className="flex items-start justify-between gap-3">
-        <span className="coach-icon grid size-11 place-items-center rounded-2xl text-[22px]">{ICONS[card.icon]}</span>
+    <article className="coach-lead card relative flex flex-col p-4 sm:p-5" data-tone={card.tone}>
+      <div className="flex items-start gap-3">
+        <span className="coach-icon grid size-10 shrink-0 place-items-center rounded-md text-[20px]">{ICONS[card.icon]}</span>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[1.35rem] leading-[1.15] font-bold">{card.title}</h1>
+          <p className="mt-1.5 max-w-[52ch] text-[0.95rem] text-muted">{card.body}</p>
+        </div>
         {card.dismissible && (
-          <button type="button" aria-label="Dismiss" className="btn btn-ghost btn-icon -mt-2 -mr-2 text-dim" onClick={() => onDismiss(card)}>
+          <button type="button" aria-label="Dismiss" className="btn btn-ghost btn-icon -mt-2 -mr-2 shrink-0 text-dim" onClick={() => onDismiss(card)}>
             <X size={18} />
           </button>
         )}
       </div>
-      <h1 className="mt-auto pt-10 text-[1.75rem] leading-[1.12] font-semibold tracking-[-0.025em] text-balance">{card.title}</h1>
-      <p className="mt-2.5 max-w-[46ch] text-[1rem] text-muted">{card.body}</p>
       {(card.primary || card.secondary) && (
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2 pl-13">
           {card.primary && <ActionButton action={card.primary} onAction={onAction} primary />}
           {card.secondary && <ActionButton action={card.secondary} onAction={onAction} />}
         </div>
@@ -383,7 +400,7 @@ function SmallCard({ card, onAction, onDismiss }: { card: CoachCard; onAction: (
   const action = card.primary ?? card.secondary;
   return (
     <article className="card coach-small flex items-center gap-3 p-3.5 pr-2" data-tone={card.tone}>
-      <span className="coach-icon grid size-10 shrink-0 place-items-center rounded-xl text-[19px]">{ICONS[card.icon]}</span>
+      <span className="coach-icon grid size-10 shrink-0 place-items-center rounded-md text-[19px]">{ICONS[card.icon]}</span>
       <button type="button" className="min-w-0 flex-1 text-left" onClick={() => action && onAction(action)}>
         <span className="block truncate font-semibold">{card.title}</span>
         <span className="line-clamp-1 text-sm text-dim">{card.body}</span>

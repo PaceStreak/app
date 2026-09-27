@@ -103,7 +103,7 @@ export default function EventDetail() {
                   <Link to={`/u/${c.author.handle}`} aria-label={`${personName(c.author)}'s profile`}>
                     <Avatar name={personName(c.author)} hue={c.author.avatar_hue} size={32} />
                   </Link>
-                  <div className="min-w-0 flex-1 rounded-2xl bg-surface px-3.5 py-2.5">
+                  <div className="min-w-0 flex-1 rounded-md bg-surface px-3.5 py-2.5">
                     <p className="text-sm">
                       <span className="font-semibold">{personName(c.author)}</span> <span className="text-dim">{timeAgo(c.created_at)}</span>
                     </p>

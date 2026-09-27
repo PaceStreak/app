@@ -189,14 +189,14 @@ export default function Profile() {
           <Sheet open={menu} onClose={() => setMenu(false)} title={personName(p)}>
             <div className="-mx-2 flex flex-col">
               {p.relationship?.follows_you === "accepted" && (
-                <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void removeFollower()}>
+                <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void removeFollower()}>
                   Remove from my followers
                 </button>
               )}
-              <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setReport(true); }}>
+              <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setReport(true); }}>
                 Report
               </button>
-              <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2" onClick={() => void block()}>
+              <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2" onClick={() => void block()}>
                 {p.relationship?.blocked ? "Unblock" : "Block"}
               </button>
             </div>

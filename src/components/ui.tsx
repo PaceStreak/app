@@ -109,7 +109,7 @@ export function RowLink({
 }) {
   const inner = (
     <>
-      {icon && <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted">{icon}</span>}
+      {icon && <span className="grid size-9 shrink-0 place-items-center text-ink">{icon}</span>}
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{title}</span>
         {detail && <span className="block truncate text-sm text-dim">{detail}</span>}
@@ -146,7 +146,7 @@ export function Empty({
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      {icon && <div className="mb-4 grid size-14 place-items-center rounded-2xl bg-surface-2 text-dim">{icon}</div>}
+      {icon && <div className="mb-4 grid size-14 place-items-center rounded-md bg-surface-2 text-dim">{icon}</div>}
       <p className="font-semibold">{title}</p>
       {body && <p className="mt-1.5 max-w-[34ch] text-[0.95rem] text-muted">{body}</p>}
       {action && <div className="mt-5">{action}</div>}
@@ -300,7 +300,7 @@ export function Banner({
     accent: "bg-accent-soft text-ink",
   } as const;
   return (
-    <div className={`flex items-start gap-3 rounded-2xl px-4 py-3 ${tones[tone]}`}>
+    <div className={`flex items-start gap-3 rounded-md px-4 py-3 ${tones[tone]}`}>
       {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1 text-[0.95rem]">{children}</div>
       {action && <div className="shrink-0">{action}</div>}

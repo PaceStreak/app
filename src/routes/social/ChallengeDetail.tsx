@@ -142,19 +142,19 @@ export default function ChallengeDetail() {
           <Sheet open={menu} onClose={() => setMenu(false)} title={c.title}>
             <div className="-mx-2 flex flex-col">
               {c.joined && !c.is_creator && (
-                <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); void act(() => api(`/challenges/${id}/leave`, { method: "POST" }), "Left"); }}>
+                <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); void act(() => api(`/challenges/${id}/leave`, { method: "POST" }), "Left"); }}>
                   Leave challenge
                 </button>
               )}
               {!c.is_creator && (
-                <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setReport(true); }}>
+                <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setReport(true); }}>
                   Report
                 </button>
               )}
               {c.is_creator && (
                 <button
                   type="button"
-                  className="press rounded-xl px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2"
+                  className="press rounded-md px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2"
                   onClick={async () => {
                     setMenu(false);
                     if (!(await ask({ title: "Delete this challenge?", body: "For everyone in it.", confirm: "Delete", danger: true }))) return;

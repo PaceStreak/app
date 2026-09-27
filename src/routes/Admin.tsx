@@ -90,7 +90,7 @@ function Reports() {
                 {r.prior_actioned ? <span className="text-flame-text"> · {r.prior_actioned} earlier actioned</span> : null}
                 {r.reported?.suspended ? " · suspended" : ""}
               </p>
-              {r.snapshot && <pre className="mt-2 max-h-40 overflow-auto rounded-xl bg-surface-2 p-3 text-xs whitespace-pre-wrap">{JSON.stringify(r.snapshot, null, 1)}</pre>}
+              {r.snapshot && <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-surface-2 p-3 text-xs whitespace-pre-wrap">{JSON.stringify(r.snapshot, null, 1)}</pre>}
               {r.detail && <p className="mt-2 text-sm text-muted">"{r.detail}"</p>}
               {r.status === "open" && (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -384,7 +384,7 @@ function Ops() {
                 </button>
                 {open === e.id && (
                   <div className="mt-2 space-y-2">
-                    {e.stack && <pre className="max-h-60 overflow-auto rounded-xl bg-surface-2 p-3 text-xs">{e.stack}</pre>}
+                    {e.stack && <pre className="max-h-60 overflow-auto rounded-md bg-surface-2 p-3 text-xs">{e.stack}</pre>}
                     {e.user_agent && <p className="text-xs text-dim">{e.user_agent}</p>}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => void resolve(e)}>Mark fixed</button>
                   </div>

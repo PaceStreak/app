@@ -98,7 +98,7 @@ export function AdjustToday({ open, onClose, planned }: { open: boolean; onClose
       <ul className="-mx-2 flex flex-col">
         {choices.map((c) => (
           <li key={c.id}>
-            <button type="button" className="press flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-surface-2" onClick={c.run}>
+            <button type="button" className="press flex w-full items-start gap-3 rounded-md px-3 py-3 text-left hover:bg-surface-2" onClick={c.run}>
               <c.icon size={22} className="mt-0.5 shrink-0 text-accent-text" aria-hidden />
               <span>
                 <span className="block font-semibold">{c.title}</span>

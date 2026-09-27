@@ -35,7 +35,7 @@ export function Appearance() {
                 prefs.setTheme(v);
                 setTheme(v);
               }}
-              className={`press flex flex-col items-center gap-2 rounded-2xl border py-4 text-sm font-semibold ${theme === v ? "border-accent-text bg-accent-soft" : "border-line bg-surface"}`}
+              className={`press flex flex-col items-center gap-2 rounded-md border py-4 text-sm font-semibold ${theme === v ? "border-accent-text bg-accent-soft" : "border-line bg-surface"}`}
             >
               <Icon size={22} /> {label}
             </button>

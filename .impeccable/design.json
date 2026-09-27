@@ -1,0 +1,774 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T02:04:41+00:00",
+  "title": "Design System: PaceStreak",
+  "extensions": {
+    "colorMeta": {
+      "calendar-red": {
+        "role": "primary",
+        "displayName": "Calendar Red",
+        "canonical": "oklch(56.7% 0.209 28.9)",
+        "tonalRamp": [
+          "#4a0d09",
+          "#7a160f",
+          "#b31d15",
+          "#d6281f",
+          "#dc4a3d",
+          "#ec9186",
+          "#f5cdc7",
+          "#fbeae7"
+        ]
+      },
+      "calendar-red-text": {
+        "role": "primary",
+        "displayName": "Calendar Red, Text",
+        "canonical": "oklch(49.4% 0.185 29.1)",
+        "tonalRamp": [
+          "#200000",
+          "#4f0000",
+          "#840000",
+          "#b31c14",
+          "#db493a",
+          "#ff6f5d",
+          "#ff9e8c",
+          "#ffd3c5"
+        ]
+      },
+      "calendar-red-ink": {
+        "role": "primary",
+        "displayName": "White Ink on Red",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "marker-orange-flame": {
+        "role": "secondary",
+        "displayName": "Orange Marker / Flame",
+        "canonical": "oklch(65.9% 0.181 44.1)",
+        "tonalRamp": [
+          "#1f0100",
+          "#4d0400",
+          "#800a00",
+          "#ae2c00",
+          "#d65300",
+          "#fe7836",
+          "#ffa672",
+          "#ffd8b5"
+        ]
+      },
+      "marker-orange-flame-text": {
+        "role": "secondary",
+        "displayName": "Flame Text",
+        "canonical": "oklch(50.5% 0.145 43.0)",
+        "tonalRamp": [
+          "#1b0300",
+          "#461000",
+          "#762100",
+          "#a13d03",
+          "#c76032",
+          "#ef8456",
+          "#ffae87",
+          "#ffddc2"
+        ]
+      },
+      "info-blue": {
+        "role": "secondary",
+        "displayName": "Info Blue",
+        "canonical": "oklch(50.2% 0.164 259.0)",
+        "tonalRamp": [
+          "#000923",
+          "#002155",
+          "#013c8d",
+          "#1c5cbc",
+          "#4080e3",
+          "#62a4ff",
+          "#91caff",
+          "#c8f1ff"
+        ]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Danger",
+        "canonical": "oklch(50.1% 0.178 28.7)",
+        "tonalRamp": [
+          "#1f0000",
+          "#4e0000",
+          "#820000",
+          "#b0221b",
+          "#d84c3f",
+          "#ff7161",
+          "#ffa090",
+          "#ffd4c7"
+        ]
+      },
+      "coated-paper": {
+        "role": "neutral",
+        "displayName": "Coated Paper",
+        "canonical": "oklch(98.7% 0.004 106.5)",
+        "tonalRamp": [
+          "#0b0b09",
+          "#252523",
+          "#424240",
+          "#61615f",
+          "#828280",
+          "#a5a5a2",
+          "#c9c9c6",
+          "#efefec"
+        ]
+      },
+      "paper-shade": {
+        "role": "neutral",
+        "displayName": "Paper Shade",
+        "canonical": "oklch(96.9% 0.005 106.5)",
+        "tonalRamp": [
+          "#0b0b09",
+          "#252522",
+          "#42423f",
+          "#61615e",
+          "#82827f",
+          "#a5a5a1",
+          "#c9c9c5",
+          "#efefeb"
+        ]
+      },
+      "paper-fill": {
+        "role": "neutral",
+        "displayName": "Paper Fill",
+        "canonical": "oklch(95.5% 0.007 97.4)",
+        "tonalRamp": [
+          "#0c0b08",
+          "#262521",
+          "#43423e",
+          "#62615d",
+          "#83827e",
+          "#a6a5a0",
+          "#cac9c4",
+          "#efeeea"
+        ]
+      },
+      "paper-fill-deep": {
+        "role": "neutral",
+        "displayName": "Paper Fill Deep",
+        "canonical": "oklch(92.1% 0.008 98.9)",
+        "tonalRamp": [
+          "#0c0b08",
+          "#262521",
+          "#43423d",
+          "#62615c",
+          "#83827d",
+          "#a6a59f",
+          "#cac9c3",
+          "#f0efe9"
+        ]
+      },
+      "printed-rule": {
+        "role": "neutral",
+        "displayName": "Printed Rule",
+        "canonical": "oklch(89.4% 0.008 98.9)",
+        "tonalRamp": [
+          "#0c0b08",
+          "#262521",
+          "#43423d",
+          "#62615c",
+          "#83827d",
+          "#a6a59f",
+          "#cac9c3",
+          "#f0efe9"
+        ]
+      },
+      "printed-rule-lit": {
+        "role": "neutral",
+        "displayName": "Printed Rule, Lit",
+        "canonical": "oklch(79.7% 0.010 100.0)",
+        "tonalRamp": [
+          "#0c0b07",
+          "#262520",
+          "#43423c",
+          "#62615b",
+          "#83837c",
+          "#a6a59e",
+          "#cac9c2",
+          "#f0efe7"
+        ]
+      },
+      "print-ink": {
+        "role": "neutral",
+        "displayName": "Print Ink",
+        "canonical": "oklch(19.1% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "print-ink-muted": {
+        "role": "neutral",
+        "displayName": "Print Ink, Muted",
+        "canonical": "oklch(39.2% 0.008 286.0)",
+        "tonalRamp": [
+          "#0b0b0f",
+          "#252529",
+          "#414146",
+          "#616166",
+          "#828287",
+          "#a4a4aa",
+          "#c8c8ce",
+          "#eeeef4"
+        ]
+      },
+      "print-ink-dim": {
+        "role": "neutral",
+        "displayName": "Print Ink, Dim",
+        "canonical": "oklch(47.7% 0.010 286.0)",
+        "tonalRamp": [
+          "#0b0b0f",
+          "#24242a",
+          "#414147",
+          "#606067",
+          "#828288",
+          "#a4a4ab",
+          "#c8c8cf",
+          "#eeeef5"
+        ]
+      },
+      "marker-red": {
+        "role": "tertiary",
+        "displayName": "Red Felt-tip",
+        "canonical": "oklch(56.7% 0.209 28.9)",
+        "tonalRamp": [
+          "#220000",
+          "#530000",
+          "#8b0000",
+          "#bb0000",
+          "#e5392d",
+          "#ff6352",
+          "#ff9784",
+          "#ffcfbf"
+        ]
+      },
+      "marker-blue": {
+        "role": "tertiary",
+        "displayName": "Blue Felt-tip",
+        "canonical": "oklch(50.2% 0.164 259.0)",
+        "tonalRamp": [
+          "#000923",
+          "#002155",
+          "#013c8d",
+          "#1c5cbc",
+          "#4080e3",
+          "#62a4ff",
+          "#91caff",
+          "#c8f1ff"
+        ]
+      },
+      "marker-green": {
+        "role": "tertiary",
+        "displayName": "Green Felt-tip",
+        "canonical": "oklch(53.1% 0.124 153.2)",
+        "tonalRamp": [
+          "#001004",
+          "#002f12",
+          "#005223",
+          "#06753d",
+          "#3b975e",
+          "#61bb80",
+          "#92dea9",
+          "#cafdd8"
+        ]
+      },
+      "marker-orange": {
+        "role": "tertiary",
+        "displayName": "Orange Felt-tip",
+        "canonical": "oklch(64.0% 0.165 47.8)",
+        "tonalRamp": [
+          "#1d0200",
+          "#490c00",
+          "#7a1a00",
+          "#a73700",
+          "#ce5c03",
+          "#f6803c",
+          "#ffac75",
+          "#ffdcb7"
+        ]
+      },
+      "marker-violet": {
+        "role": "tertiary",
+        "displayName": "Violet Felt-tip",
+        "canonical": "oklch(48.9% 0.168 302.6)",
+        "tonalRamp": [
+          "#10041f",
+          "#30124d",
+          "#532481",
+          "#7541ae",
+          "#9764d4",
+          "#ba88fb",
+          "#dbb2ff",
+          "#fbdfff"
+        ]
+      },
+      "heat-0": {
+        "role": "tertiary",
+        "displayName": "Marker pressure 0",
+        "canonical": "#ebeae5",
+        "tonalRamp": [
+          "#b31d15",
+          "#dc4a3d",
+          "#ec9186",
+          "#f5cdc7",
+          "#ebeae5"
+        ]
+      },
+      "heat-1": {
+        "role": "tertiary",
+        "displayName": "Marker pressure 1",
+        "canonical": "#f5cdc7",
+        "tonalRamp": [
+          "#b31d15",
+          "#dc4a3d",
+          "#ec9186",
+          "#f5cdc7",
+          "#ebeae5"
+        ]
+      },
+      "heat-2": {
+        "role": "tertiary",
+        "displayName": "Marker pressure 2",
+        "canonical": "#ec9186",
+        "tonalRamp": [
+          "#b31d15",
+          "#dc4a3d",
+          "#ec9186",
+          "#f5cdc7",
+          "#ebeae5"
+        ]
+      },
+      "heat-3": {
+        "role": "tertiary",
+        "displayName": "Marker pressure 3",
+        "canonical": "#dc4a3d",
+        "tonalRamp": [
+          "#b31d15",
+          "#dc4a3d",
+          "#ec9186",
+          "#f5cdc7",
+          "#ebeae5"
+        ]
+      },
+      "heat-4": {
+        "role": "tertiary",
+        "displayName": "Marker pressure 4",
+        "canonical": "#b31d15",
+        "tonalRamp": [
+          "#b31d15",
+          "#dc4a3d",
+          "#ec9186",
+          "#f5cdc7",
+          "#ebeae5"
+        ]
+      },
+      "desk-lamp-paper": {
+        "role": "neutral",
+        "displayName": "Charcoal Paper (dark)",
+        "canonical": "oklch(19.7% 0.004 286.0)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#252527",
+          "#424244",
+          "#616163",
+          "#828285",
+          "#a5a5a7",
+          "#c9c9cc",
+          "#eeeef1"
+        ]
+      },
+      "desk-lamp-fill": {
+        "role": "neutral",
+        "displayName": "Desk-lamp Fill (dark)",
+        "canonical": "oklch(24.9% 0.007 285.8)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#252529",
+          "#414146",
+          "#616165",
+          "#828287",
+          "#a4a4aa",
+          "#c8c8ce",
+          "#eeeef3"
+        ]
+      },
+      "desk-lamp-fill-deep": {
+        "role": "neutral",
+        "displayName": "Desk-lamp Fill Deep (dark)",
+        "canonical": "oklch(28.7% 0.009 285.8)",
+        "tonalRamp": [
+          "#0b0b0f",
+          "#242429",
+          "#414147",
+          "#606166",
+          "#828288",
+          "#a4a4ab",
+          "#c8c8cf",
+          "#eeeef4"
+        ]
+      },
+      "desk-lamp-rule": {
+        "role": "neutral",
+        "displayName": "Desk-lamp Rule (dark)",
+        "canonical": "oklch(29.5% 0.009 285.8)",
+        "tonalRamp": [
+          "#0b0b0f",
+          "#242429",
+          "#414147",
+          "#606166",
+          "#828288",
+          "#a4a4ab",
+          "#c8c8cf",
+          "#eeeef4"
+        ]
+      },
+      "desk-lamp-rule-lit": {
+        "role": "neutral",
+        "displayName": "Desk-lamp Rule, Lit (dark)",
+        "canonical": "oklch(36.3% 0.012 285.8)",
+        "tonalRamp": [
+          "#0b0a10",
+          "#24242b",
+          "#414148",
+          "#606068",
+          "#818189",
+          "#a4a4ac",
+          "#c8c8d1",
+          "#ededf6"
+        ]
+      },
+      "chalk-ink": {
+        "role": "neutral",
+        "displayName": "Chalk Ink (dark)",
+        "canonical": "oklch(95.5% 0.008 91.5)",
+        "tonalRamp": [
+          "#0c0b07",
+          "#262521",
+          "#43423d",
+          "#63615c",
+          "#84827d",
+          "#a7a59f",
+          "#cbc9c3",
+          "#f0eee8"
+        ]
+      },
+      "chalk-ink-muted": {
+        "role": "neutral",
+        "displayName": "Chalk Ink, Muted (dark)",
+        "canonical": "oklch(77.3% 0.010 93.6)",
+        "tonalRamp": [
+          "#0d0b07",
+          "#272520",
+          "#44423c",
+          "#63615b",
+          "#84827c",
+          "#a7a59e",
+          "#cbc9c2",
+          "#f1eee7"
+        ]
+      },
+      "chalk-ink-dim": {
+        "role": "neutral",
+        "displayName": "Chalk Ink, Dim (dark)",
+        "canonical": "oklch(66.3% 0.010 93.6)",
+        "tonalRamp": [
+          "#0d0b07",
+          "#27251f",
+          "#44423c",
+          "#63615b",
+          "#84827b",
+          "#a7a59e",
+          "#cbc9c2",
+          "#f1eee7"
+        ]
+      },
+      "desk-lamp-red": {
+        "role": "primary",
+        "displayName": "Lamp Red (dark)",
+        "canonical": "oklch(67.1% 0.217 29.2)",
+        "tonalRamp": [
+          "#230000",
+          "#550000",
+          "#8d0000",
+          "#be0000",
+          "#e83427",
+          "#ff5f4d",
+          "#ff9581",
+          "#ffcebd"
+        ]
+      },
+      "desk-lamp-red-text": {
+        "role": "primary",
+        "displayName": "Lamp Red, Text (dark)",
+        "canonical": "oklch(72.3% 0.172 27.9)",
+        "tonalRamp": [
+          "#1f0000",
+          "#4d0102",
+          "#800307",
+          "#ae2721",
+          "#d64f44",
+          "#ff7466",
+          "#ffa293",
+          "#ffd5c9"
+        ]
+      },
+      "desk-lamp-red-ink": {
+        "role": "primary",
+        "displayName": "Ink on Lamp Red (dark)",
+        "canonical": "oklch(16.2% 0.041 29.9)",
+        "tonalRamp": [
+          "#110908",
+          "#30211e",
+          "#543b37",
+          "#775954",
+          "#997a74",
+          "#bd9c96",
+          "#dfc1bc",
+          "#fee9e5"
+        ]
+      },
+      "calendar-red-wash": {
+        "role": "primary",
+        "displayName": "Red Wash",
+        "canonical": "rgb(214 40 31 / 0.09)",
+        "tonalRamp": []
+      }
+    },
+    "typographyMeta": {
+      "date-numeral": {
+        "displayName": "Date numeral",
+        "purpose": "The tear-off day number."
+      },
+      "count-numeral": {
+        "displayName": "Count numeral",
+        "purpose": "The whole-life chain count, in calendar red text."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles; 1.65rem on secondary pages."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section heads such as \"This week\"."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All running text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, hints, chips."
+      },
+      "calendar-header": {
+        "displayName": "Calendar header",
+        "purpose": "Uppercase weekday on the tear-off band and board column letters; the calendar's own printed header."
+      }
+    },
+    "shadows": [
+      {
+        "name": "none",
+        "value": "none",
+        "purpose": "--shadow is none in both themes; depth is rules and tints."
+      },
+      {
+        "name": "today-outline",
+        "value": "inset 0 0 0 1.5px var(--accent)",
+        "purpose": "Today's box on the week board."
+      },
+      {
+        "name": "index-tab-bar",
+        "value": "inset 0 -3px 0 var(--accent)",
+        "purpose": "Selected segment (tab bar uses inset 0 3px 0)."
+      },
+      {
+        "name": "cap-band",
+        "value": "0 0 0 4px var(--bg), inset 0 -9px 0 color-mix(in srgb, var(--ink) 22%, var(--accent))",
+        "purpose": "Log marker cap: paper cut-out ring and clip band (sidebar variant: inset 0 -7px 0 only)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "marker-draw",
+        "value": "150ms cubic-bezier(0.3, 0.6, 0.2, 1), second stroke +120ms",
+        "purpose": "The signature: a marker stroke drawing itself via stroke-dashoffset. Instant under reduced motion."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Press feedback (160ms, scale 0.97 buttons / 0.985 rows) and page entry (240ms)."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+        "purpose": "Symmetric state changes."
+      },
+      {
+        "name": "ease-drawer",
+        "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "purpose": "Bottom sheet rise, 320ms; 220ms closing."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sheet-dialog",
+        "value": "640px"
+      },
+      {
+        "name": "lg-sidebar",
+        "value": "1024px"
+      }
+    ],
+    "siblingSurfaces": [
+      {
+        "path": "web/src/styles/global.css",
+        "note": "Shares paper, rule, ink, Archivo; accent #c9241c and radius-card 6px diverge from app."
+      },
+      {
+        "path": "blog/src/styles/global.css",
+        "note": "Shares paper, rule, ink, Archivo; accent #c9241c."
+      },
+      {
+        "path": "web/public/marks/",
+        "note": "Static x.svg and tick.svg marker marks."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action: calendar red, square 4px corners.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Save</button>",
+      "css": ".ds-btn{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 1.1rem;border-radius:4px;border:1px solid transparent;font-weight:650;font-size:.95rem;line-height:1;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1),background-color 160ms ease}.ds-btn:active{transform:scale(.97)}.ds-btn:focus-visible{outline:2px solid var(--accent-text,#b31d15);outline-offset:2px}.ds-btn-primary{background:var(--accent,#d6281f);color:var(--accent-ink,#fff)}.ds-btn-primary:hover{filter:brightness(1.06)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Paper fill on a printed rule.",
+      "html": "<button class=\"ds-btn2\">Archive</button>",
+      "css": ".ds-btn2{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;min-height:44px;padding:0 1.1rem;border-radius:4px;border:1px solid var(--line,#dddcd6);background:var(--surface-2,#f1f0eb);color:var(--ink,#141414);font-weight:650;font-size:.95rem;cursor:pointer;transition:background-color 160ms ease,transform 160ms cubic-bezier(.23,1,.32,1)}.ds-btn2:hover{background:var(--surface-3,#e6e5df)}.ds-btn2:active{transform:scale(.97)}.ds-btn2:focus-visible{outline:2px solid var(--accent-text,#b31d15);outline-offset:2px}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "48px field on paper fill; focus turns the rule red.",
+      "html": "<label class=\"ds-label\">Habit name<input class=\"ds-input\" placeholder=\"Read 20 pages\"></label>",
+      "css": ".ds-label{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;display:block;font-size:.8125rem;font-weight:600;color:var(--muted,#45454a)}.ds-input{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;display:block;margin-top:.4rem;width:100%;min-height:48px;padding:0 .95rem;border-radius:4px;background:var(--surface-2,#f1f0eb);border:1px solid var(--line,#dddcd6);color:var(--ink,#141414);font-size:1rem;transition:border-color 160ms ease,background-color 160ms ease}.ds-input::placeholder{color:var(--dim,#5c5c62)}.ds-input:focus{outline:none;border-color:var(--accent-text,#b31d15);background:var(--surface,#fbfbf8)}"
+    },
+    {
+      "name": "Segmented Index Tabs",
+      "kind": "nav",
+      "description": "Planner section tabs on a ruled ink edge; current tab gets a 3px red bar.",
+      "html": "<div class=\"ds-seg\"><button aria-pressed=\"true\">Week</button><button aria-pressed=\"false\">Month</button><button aria-pressed=\"false\">Year</button></div>",
+      "css": ".ds-seg{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border-bottom:1px solid var(--ink,#141414)}.ds-seg button{min-height:38px;border:0;border-radius:0;background:transparent;font:inherit;font-size:.875rem;font-weight:600;color:var(--muted,#45454a);cursor:pointer;transition:color 180ms ease}.ds-seg button:hover{color:var(--ink,#141414)}.ds-seg button:focus-visible{outline:2px solid var(--accent-text,#b31d15);outline-offset:2px}.ds-seg button[aria-pressed=\"true\"]{color:var(--accent-text,#b31d15);font-weight:750;box-shadow:inset 0 -3px 0 var(--accent,#d6281f)}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Square 28px tag; accent variant is a red wash.",
+      "html": "<span class=\"ds-chip\">Lv 4</span> <span class=\"ds-chip ds-chip-accent\">3 wk</span>",
+      "css": ".ds-chip{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;display:inline-flex;align-items:center;height:28px;padding:0 .7rem;border-radius:4px;font-size:.8125rem;font-weight:600;background:var(--surface-2,#f1f0eb);color:var(--muted,#45454a);border:1px solid var(--line,#dddcd6)}.ds-chip-accent{background:var(--accent-soft,rgb(214 40 31/.09));color:var(--accent-text,#b31d15);border-color:transparent}"
+    },
+    {
+      "name": "Tear-off Date Block",
+      "kind": "card",
+      "refersTo": "tearoff-day",
+      "description": "Today as a torn calendar page: red weekday band, perforation, condensed day numeral.",
+      "html": "<div class=\"ds-tearoff\"><div class=\"ds-th\">Sunday</div><div class=\"ds-td\">27</div><div class=\"ds-tm\">September 2026</div></div>",
+      "css": ".ds-tearoff{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;display:grid;grid-template-rows:auto 1fr auto;width:6.25rem;overflow:hidden;border:1px solid var(--line-lit,#bebdb6);border-radius:4px;background:var(--surface,#fbfbf8);color:var(--ink,#141414);text-align:center}.ds-th{background:var(--accent,#d6281f);color:var(--accent-ink,#fff);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.3rem 0 .25rem;border-bottom:1px dashed rgb(255 255 255/.45)}.ds-td{font-size:3.4rem;line-height:1;font-weight:850;font-stretch:70%;letter-spacing:-.03em;padding-top:.35rem;font-variant-numeric:tabular-nums}.ds-tm{font-size:.78rem;font-weight:600;color:var(--muted,#45454a);padding-bottom:.45rem}"
+    },
+    {
+      "name": "Week Board Row",
+      "kind": "custom",
+      "refersTo": "board-day",
+      "description": "One habit, seven ruled date boxes; today outlined red; done days crossed off in the habit's marker.",
+      "html": "<div class=\"ds-board\"><div class=\"ds-bn\">Read 20 pages <span>3/5</span></div><button class=\"ds-bd\"><span class=ds-faded>21</span><span style=\"color:#1f5fbf\"><svg viewBox=\"0 0 40 40\" class=\"ds-marker\" aria-hidden=\"true\"><path class=\"ds-stroke\" pathLength=\"1\" d=\"M8.5 9.5c6.5 5.4 15 13.2 23 21.8\"/><path class=\"ds-stroke ds-stroke-2\" pathLength=\"1\" d=\"M31.5 8.8C24 15 16.4 22.3 8.8 31\"/></svg></span></button><button class=\"ds-bd\"><span>22</span></button><button class=\"ds-bd\"><span class=ds-faded>23</span><span style=\"color:#1f5fbf\"><svg viewBox=\"0 0 40 40\" class=\"ds-marker\" aria-hidden=\"true\"><path class=\"ds-stroke\" pathLength=\"1\" d=\"M8.5 9.5c6.5 5.4 15 13.2 23 21.8\"/><path class=\"ds-stroke ds-stroke-2\" pathLength=\"1\" d=\"M31.5 8.8C24 15 16.4 22.3 8.8 31\"/></svg></span></button><button class=\"ds-bd\"><span>24</span></button><button class=\"ds-bd\"><span class=ds-faded>25</span><span style=\"color:#1f5fbf\"><svg viewBox=\"0 0 40 40\" class=\"ds-marker\" aria-hidden=\"true\"><path class=\"ds-stroke\" pathLength=\"1\" d=\"M8.5 9.5c6.5 5.4 15 13.2 23 21.8\"/><path class=\"ds-stroke ds-stroke-2\" pathLength=\"1\" d=\"M31.5 8.8C24 15 16.4 22.3 8.8 31\"/></svg></span></button><button class=\"ds-bd\"><span>26</span></button><button class=\"ds-bd\" data-today><span>27</span></button></div>",
+      "css": ".ds-board{font-family:\"Archivo Variable\",ui-sans-serif,system-ui,sans-serif;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line,#dddcd6);border-radius:4px;background:var(--surface,#fbfbf8);color:var(--ink,#141414)}.ds-bn{grid-column:1/-1;display:flex;justify-content:space-between;padding:.6rem .75rem .4rem;font-size:.95rem;font-weight:600}.ds-bn span{font-size:.75rem;color:var(--dim,#5c5c62);font-stretch:82%;font-variant-numeric:tabular-nums}.ds-bd{position:relative;display:grid;place-items:center;height:3rem;border:0;border-top:1px solid var(--line,#dddcd6);border-left:1px solid var(--line,#dddcd6);background:transparent;font:inherit;font-size:.85rem;font-weight:600;font-stretch:80%;color:var(--dim,#5c5c62);cursor:pointer;transition:background-color 160ms ease}.ds-bd:nth-of-type(1){border-left:0}.ds-bd:hover:not(:disabled){background:var(--surface-2,#f1f0eb)}.ds-bd:focus-visible{outline:2px solid var(--accent-text,#b31d15);outline-offset:-2px}.ds-bd[data-today]{background:var(--accent-soft,rgb(214 40 31/.09));color:var(--accent-text,#b31d15);box-shadow:inset 0 0 0 1.5px var(--accent,#d6281f)}.ds-bd:disabled{color:rgb(92 92 98/.45);cursor:default}.ds-faded{opacity:.35}.ds-marker{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}.ds-stroke{fill:none;stroke:currentColor;stroke-width:4.6;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.94;animation:ds-draw 150ms cubic-bezier(.3,.6,.2,1) both}.ds-stroke-2{animation-delay:120ms}@keyframes ds-draw{from{stroke-dashoffset:1}}@media (prefers-reduced-motion:reduce){.ds-stroke{animation:none}}"
+    },
+    {
+      "name": "Tick Box",
+      "kind": "custom",
+      "refersTo": "tick-box",
+      "description": "The one way done looks: a printed box crossed off with the marker X.",
+      "html": "<span class=\"ds-tick\"></span> <span class=\"ds-tick\"><svg viewBox=\"0 0 40 40\" class=\"ds-marker\" style=\"color:#d6281f\" aria-hidden=\"true\"><path class=\"ds-stroke\" pathLength=\"1\" d=\"M8.5 9.5c6.5 5.4 15 13.2 23 21.8\"/><path class=\"ds-stroke ds-stroke-2\" pathLength=\"1\" d=\"M31.5 8.8C24 15 16.4 22.3 8.8 31\"/></svg></span>",
+      "css": ".ds-tick{position:relative;display:inline-block;width:20px;height:20px;border-radius:2px;border:1.5px solid rgb(20 20 20/.7);background:var(--surface,#fbfbf8);vertical-align:middle}.ds-marker{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}.ds-stroke{fill:none;stroke:currentColor;stroke-width:4.6;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.94;animation:ds-draw 150ms cubic-bezier(.3,.6,.2,1) both}.ds-stroke-2{animation-delay:120ms}@keyframes ds-draw{from{stroke-dashoffset:1}}@media (prefers-reduced-motion:reduce){.ds-stroke{animation:none}}"
+    },
+    {
+      "name": "Log Marker Cap",
+      "kind": "button",
+      "refersTo": "log-cap",
+      "description": "The Log button as a felt-tip cap: squared red cap, darker clip band, cut out of the tab-bar rule by a paper ring.",
+      "html": "<button class=\"ds-cap\" aria-label=\"Log\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M228 128a12 12 0 0 1-12 12h-76v76a12 12 0 0 1-24 0v-76H40a12 12 0 0 1 0-24h76V40a12 12 0 0 1 24 0v76h76a12 12 0 0 1 12 12Z\"/></svg></button>",
+      "css": ".ds-cap{display:grid;place-items:center;width:56px;height:56px;border:0;border-radius:6px 6px 4px 4px;background:var(--accent,#d6281f);color:var(--accent-ink,#fff);cursor:pointer;box-shadow:0 0 0 4px var(--bg,#fbfbf8),inset 0 -9px 0 color-mix(in srgb,var(--ink,#141414) 22%,var(--accent,#d6281f));transition:transform 160ms cubic-bezier(.23,1,.32,1)}.ds-cap:active{transform:scale(.985)}.ds-cap:focus-visible{outline:2px solid var(--accent-text,#b31d15);outline-offset:6px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Wall Calendar Chain",
+    "overview": "**Creative North Star: \"The Wall Calendar Chain\"**\n\nPaceStreak is a printed wall calendar crossed off in felt-tip marker. The surface is bright coated calendar paper, not cream; type and rules are hard black print; the one loud colour is printed calendar red, the red a calendar uses for today and Sundays. Habits are drawn in a small felt-tip set, so each habit's X comes out of its own marker. Dark mode isn't a neon dashboard. It's the same calendar at night under a desk lamp: charcoal paper with chalk-white ink and a warmer, brighter red.\n\nThe density is a calendar grid: 1px printed rules, square boxes, condensed heavy numerals for every date and count, and normal-width Archivo for reading. Depth comes from print, not light. There are no card shadows. Surfaces are separated by rules and slight paper tints. The one authored motion is the marker stroke. When a box is ticked, a hand-drawn X draws itself across the date in two strokes. It's slightly uneven on purpose, so it reads as a hand's mark and not a UI checkmark.\n\nThe world refuses the category default of rounded cards, progress rings and a dark neon dashboard. The old lime-on-near-black look is retired completely.",
+    "keyCharacteristics": [
+      "Coated paper (#fbfbf8) and black print ink (#141414); calendar red reserved for today, Sundays, the streak and the primary action.",
+      "A felt-tip marker set (red, blue, green, orange, violet) assigned to habits by category.",
+      "1px printed grid rules, square 4px corners, no shadows.",
+      "Archivo variable: condensed (70-88% width) and heavy for numerals and headings, 100% width for text.",
+      "A marker X drawn in two strokes (150ms each, the second 120ms later) is the only signature motion."
+    ],
+    "rules": [
+      {
+        "name": "The Calendar Red Rule",
+        "body": "Red marks what a printed calendar marks in red: today, Sundays, the streak, and the one action that crosses a day off. It is never decoration and never a second accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Measured Grey Rule",
+        "body": "Every muted text colour is measured against the paper it sits on. Dim is the lightest grey allowed (6.1:1 light, 5.9:1 dark).",
+        "section": "colors"
+      },
+      {
+        "name": "The Printed Numeral Rule",
+        "body": "Every date, count and measure is condensed and tabular (`.num`: 82% width, tabular-nums), so columns line up like a printed grid.",
+        "section": "typography"
+      },
+      {
+        "name": "The Print, Not Light Rule",
+        "body": "Nothing casts a shadow. If something needs to sit above something else, give it a rule or a tint.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do separate surfaces with a 1px printed rule and a paper tint, never a shadow.",
+      "Do mark done with a MarkerX drawn in the habit's category marker, and keep the date visible underneath at reduced opacity.",
+      "Do set every date and count in condensed, tabular Archivo (`.num`).",
+      "Do keep calendar red for today, Sundays, the streak and the Log action.",
+      "Do define every colour in both the paper theme and the desk-lamp theme.",
+      "Do keep the marker stroke as the one authored motion, and show it instantly under reduced motion."
+    ],
+    "donts": [
+      "Don't add card shadows, glows or progress rings. The world is print.",
+      "Don't round corners past 4px on cards, controls or boxes; the marker cap's 6px top is the one exception, because a real cap has it.",
+      "Don't bring back the old lime-on-near-black palette, and don't treat dark mode as a neon dashboard. Dark is the same calendar under a desk lamp.",
+      "Don't invent a second \"done\" mark. The tick box and board both use the marker X.",
+      "Don't use a grey lighter than print-ink-dim for text."
+    ]
+  }
+}

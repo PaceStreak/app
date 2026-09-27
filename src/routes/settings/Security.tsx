@@ -37,7 +37,7 @@ function QR({ text }: { text: string }) {
     return { size: n, cells: out };
   }, [text]);
   return (
-    <svg viewBox={`-2 -2 ${size + 4} ${size + 4}`} className="mx-auto size-52 rounded-xl bg-white p-1" role="img" aria-label="QR code for your authenticator app" shapeRendering="crispEdges">
+    <svg viewBox={`-2 -2 ${size + 4} ${size + 4}`} className="mx-auto size-52 rounded-md bg-white p-1" role="img" aria-label="QR code for your authenticator app" shapeRendering="crispEdges">
       <path d={cells.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("")} fill="#111" />
     </svg>
   );
@@ -252,7 +252,7 @@ export function Security() {
           (setup.codes ? (
             <div>
               <p className="text-muted">Each works once if you lose your phone. This is the only time they're shown.</p>
-              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-surface-2 p-4 font-mono text-sm">
+              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm">
                 {setup.codes.map((c) => (
                   <li key={c}>{c}</li>
                 ))}
@@ -288,7 +288,7 @@ export function Security() {
           (regen.codes ? (
             <div>
               <p className="text-muted">Your old codes no longer work. Each of these works once; this is the only time they're shown.</p>
-              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-surface-2 p-4 font-mono text-sm">
+              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm">
                 {regen.codes.map((c) => (
                   <li key={c}>{c}</li>
                 ))}

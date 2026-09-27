@@ -10,8 +10,9 @@ import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { ErrorState, Loading, PageHeader, Section, Stat } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
-import { WEEKDAYS, addDays, fmtFullDay, fmtMonthDay, fmtMonthYear, fmtProjected, localToday, weekStart } from "../../lib/dates";
-import { isDone, setHabitDay, skillProjection } from "../../lib/habits";
+import { WEEKDAYS, addDays, weekday, fmtFullDay, fmtMonthDay, fmtMonthYear, fmtProjected, localToday, weekStart } from "../../lib/dates";
+import { isDone, markerFor, setHabitDay, skillProjection } from "../../lib/habits";
+import { MarkerRing, MarkerSlash, MarkerX } from "../../components/Marker";
 import { queryClient, useHabitCatalog } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import type { Habit } from "../../lib/types";
@@ -119,9 +120,9 @@ export default function HabitDetail() {
           <HabitRow habit={h} today={today} strip={false} />
         </div>
       )}
-      {h.why && <p className="mt-3 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">Why: {h.why}</p>}
+      {h.why && <p className="mt-3 rounded-md bg-surface-2 px-4 py-3 text-sm text-muted">Why: {h.why}</p>}
 
-      <div className="card mt-4 grid grid-cols-3 gap-4 p-4">
+      <div className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-ink/80 [&>*]:px-3 [&>*]:py-3 [&>*:first-child]:pl-0">
         {h.kind === "quit" ? (
           <>
             <Stat label="Clean days" value={h.clean_run ?? 0} sub={`best ${h.best_clean_run ?? 0}`} />
@@ -136,7 +137,7 @@ export default function HabitDetail() {
           </>
         )}
       </div>
-      {nudge && <p className="mt-3 rounded-2xl bg-accent-soft px-4 py-3 text-sm font-medium text-accent-text">{nudge}</p>}
+      {nudge && <p className="mt-3 border-l-0 text-[0.95rem] font-semibold text-accent-text">{nudge}</p>}
       {weeks.length > 1 && (
         <div className="mt-3">
           <div className="flex gap-1" aria-label="The last weeks: kept, missed or in progress">
@@ -144,7 +145,7 @@ export default function HabitDetail() {
               <span
                 key={w.week_start}
                 title={`Week of ${fmtMonthDay(w.week_start)}: ${w.days}/${w.target} · ${w.status}`}
-                className={`h-2 flex-1 rounded-full ${w.status === "kept" || w.status === "repaired" ? "bg-accent" : w.status === "open" ? "bg-accent/35" : w.status === "missed" ? "bg-flame/60" : "bg-surface-2"}`}
+                className={`h-2 flex-1 rounded-none ${w.status === "kept" || w.status === "repaired" ? "bg-accent" : w.status === "open" ? "bg-accent/35" : w.status === "missed" ? "bg-flame/60" : "bg-surface-2"}`}
               />
             ))}
           </div>
@@ -160,8 +161,8 @@ export default function HabitDetail() {
             <p className="num font-semibold">
               {h.kind === "duration" ? `${Math.round(h.total / 6) / 10} of ${Math.round(h.total_goal! / 60)} hours` : `${h.total} of ${h.total_goal} ${h.unit ?? ""}`}
             </p>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={skill.pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to the long goal">
-              <div className="h-full rounded-full bg-accent" style={{ width: `${skill.pct}%` }} />
+            <div className="mt-2 h-2 overflow-hidden rounded-none bg-surface-2" role="progressbar" aria-valuenow={skill.pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to the long goal">
+              <div className="h-full rounded-none bg-accent" style={{ width: `${skill.pct}%` }} />
             </div>
             <p className="mt-2 text-sm text-dim">
               {skill.pct >= 100
@@ -191,10 +192,10 @@ export default function HabitDetail() {
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-[0.7rem] font-medium text-dim" aria-hidden>
               {heads.map((d) => (
-                <span key={d}>{d.slice(0, 2)}</span>
+                <span key={d} className={d === "Sun" ? "text-accent-text" : ""}>{d.slice(0, 2)}</span>
               ))}
             </div>
-            <div className="mt-1 grid grid-cols-7 gap-1" role="grid" aria-label={`${fmtMonthYear(month)}, tap a day to fill in or correct`}>
+            <div className="mt-1 grid grid-cols-7 gap-px overflow-hidden rounded-sm border border-line bg-line [&>*]:bg-surface" role="grid" aria-label={`${fmtMonthYear(month)}, tap a day to fill in or correct`}>
               {cells.map((date) => {
                 if (date.slice(0, 7) !== month.slice(0, 7)) return <span key={date} />;
                 const amount = amounts.get(date) ?? 0;
@@ -211,11 +212,14 @@ export default function HabitDetail() {
                     disabled={!editable}
                     onClick={() => tapDay(date)}
                     aria-label={`${fmtFullDay(date)}: ${slipped ? "slipped" : done ? "done" : partial ? `${amount}, partly done` : "not done"}${noted.has(date) ? ", has a note" : ""}`}
-                    className={`press num relative grid aspect-square place-items-center rounded-lg text-sm transition-colors ${
-                      slipped ? "bg-flame-soft font-semibold text-flame" : done ? "bg-accent font-semibold text-accent-ink" : partial ? "bg-accent-soft text-accent-text" : future || before ? "text-dim/50" : "bg-surface-2 text-muted"
-                    } ${date === today ? "ring-2 ring-ink/60 ring-offset-2 ring-offset-surface" : ""} disabled:cursor-default`}
+                    className={`press num relative grid aspect-square place-items-center text-sm transition-colors hover:bg-surface-2 ${
+                      future || before ? "text-dim/45" : done || slipped || partial ? "text-dim/50" : weekday(date) === 6 ? "text-accent-text" : "text-ink"
+                    } ${date === today ? "ring-2 ring-accent" : ""} disabled:cursor-default`}
                   >
                     {Number(date.slice(8))}
+                    {done && h.kind !== "quit" && <MarkerX tone={markerFor(h.category)} />}
+                    {partial && <MarkerSlash tone={markerFor(h.category)} />}
+                    {slipped && <MarkerRing />}
                     {noted.has(date) && <span className="absolute bottom-1 size-1 rounded-full bg-current" aria-hidden />}
                   </button>
                 );

@@ -215,7 +215,7 @@ export function AddHabit({ open, onClose }: { open: boolean; onClose: () => void
           {shown.map((t) => (
             <li key={t.id}>
               <button type="button" disabled={busy} className="press flex w-full items-start gap-3 py-3 text-left" onClick={() => void create({ template_id: t.id })}>
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-xl" aria-hidden>
+                <span className="grid size-10 shrink-0 place-items-center rounded-md bg-surface-2 text-xl" aria-hidden>
                   {t.emoji}
                 </span>
                 <span className="min-w-0 flex-1">

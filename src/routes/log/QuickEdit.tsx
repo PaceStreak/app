@@ -100,7 +100,7 @@ export function QuickEdit({ workout }: { workout: Workout }) {
           <legend className="field-label">How it felt</legend>
           <div className="grid grid-cols-5 gap-2">
             {FEEL.map((f) => (
-              <button key={f.value} type="button" aria-pressed={feel === f.value} onClick={() => setFeel(feel === f.value ? null : f.value)} className={`press flex flex-col items-center gap-1 rounded-2xl border py-2.5 text-xs font-semibold ${feel === f.value ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}>
+              <button key={f.value} type="button" aria-pressed={feel === f.value} onClick={() => setFeel(feel === f.value ? null : f.value)} className={`press flex flex-col items-center gap-1 rounded-md border py-2.5 text-xs font-semibold ${feel === f.value ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}>
                 <FeelIcon value={f.value} size={24} weight={feel === f.value ? "fill" : "regular"} />
                 {f.label}
               </button>

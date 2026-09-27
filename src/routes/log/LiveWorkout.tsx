@@ -482,7 +482,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
 
       {draft.exercises.length === 0 && (
         <div className="card flex flex-col items-center px-6 py-12 text-center">
-          <span className="mb-4 grid size-14 place-items-center rounded-2xl bg-surface-2">
+          <span className="mb-4 grid size-14 place-items-center rounded-md bg-surface-2">
             <Barbell size={28} />
           </span>
           <p className="font-semibold">Add your first exercise</p>
@@ -598,7 +598,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
               <button
                 key={item.label}
                 type="button"
-                className={`press flex items-center gap-3 rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2 ${item.danger ? "text-danger" : ""}`}
+                className={`press flex items-center gap-3 rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2 ${item.danger ? "text-danger" : ""}`}
                 onClick={() => {
                   item.run();
                   if (!item.keep) setMenu(null);
@@ -701,7 +701,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
                 type="button"
                 aria-pressed={draft.feel === f.value}
                 onClick={() => update((d) => ({ ...d, feel: d.feel === f.value ? null : f.value }))}
-                className={`press flex flex-col items-center gap-1 rounded-2xl border py-2.5 text-xs font-semibold ${draft.feel === f.value ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}
+                className={`press flex flex-col items-center gap-1 rounded-md border py-2.5 text-xs font-semibold ${draft.feel === f.value ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}
               >
                 <FeelIcon value={f.value} size={24} weight={draft.feel === f.value ? "fill" : "regular"} />
                 {f.label}
@@ -927,7 +927,7 @@ function ExerciseBlock({
           <DotsThreeVertical size={20} weight="bold" />
         </button>
       </div>
-      {cue && meta?.cue && <p className="mx-4 mb-2 rounded-xl bg-surface-2 px-3 py-2 text-sm text-muted">{meta.cue}</p>}
+      {cue && meta?.cue && <p className="mx-4 mb-2 rounded-md bg-surface-2 px-3 py-2 text-sm text-muted">{meta.cue}</p>}
 
       <div className="px-2 pb-2">
         <div className="set-grid px-2 pb-1 text-[0.7rem] font-semibold tracking-wide text-dim uppercase">
@@ -941,7 +941,7 @@ function ExerciseBlock({
           const ghost = lastWork[i] ?? lastWork[lastWork.length - 1];
           return (
             <div key={s.key}>
-              <div className={`set-grid set-row items-center rounded-xl px-2 py-1 ${s.done ? "is-done" : ""}`}>
+              <div className={`set-grid set-row items-center rounded-md px-2 py-1 ${s.done ? "is-done" : ""}`}>
                 <button type="button" onClick={() => cycleKind(s)} className="set-kind" data-kind={s.kind} aria-label={`Set type: ${s.kind}. Tap to change.`}>
                   {s.kind === "work" ? workNumber : s.kind === "warmup" ? "W" : s.kind === "drop" ? "D" : "F"}
                 </button>

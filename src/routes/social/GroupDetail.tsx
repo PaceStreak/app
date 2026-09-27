@@ -241,7 +241,7 @@ export default function GroupDetail() {
                           <span key={w.week_start} className={`week-mark is-${w.status} h-5 flex-1`} title={`${fmtMonthDay(w.week_start)}: ${w.days}/${w.target}`} />
                         ))}
                       </div>
-                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-3 py-2 text-sm">
+                      <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-surface-2 px-3 py-2 text-sm">
                         <span className="min-w-0 truncate">
                           {m.plan ? (
                             <>
@@ -276,22 +276,22 @@ export default function GroupDetail() {
           <Sheet open={menu} onClose={() => setMenu(false)} title={group.name}>
             <div className="-mx-2 flex flex-col">
               {manager && (
-                <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setEditing(true); }}>
+                <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setEditing(true); }}>
                   Edit name and description
                 </button>
               )}
               {group.my_role !== "owner" && (
-                <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void leave()}>
+                <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void leave()}>
                   Leave group
                 </button>
               )}
               {!manager && (
-                <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setReport(true); }}>
+                <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => { setMenu(false); setReport(true); }}>
                   Report group
                 </button>
               )}
               {group.my_role === "owner" && (
-                <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2" onClick={() => void remove()}>
+                <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2" onClick={() => void remove()}>
                   Delete group
                 </button>
               )}
@@ -327,16 +327,16 @@ function MemberMenu({ groupId, member, isOwner, coaching, onDone }: { groupId: s
       <Sheet open={open} onClose={() => setOpen(false)} title={`@${member.handle}`}>
         <div className="-mx-2 flex flex-col">
           {roles.map((r) => (
-            <button key={r} type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void run(() => api(`/groups/${groupId}/members/${member.id}`, { method: "PATCH", body: { role: r } }))}>
+            <button key={r} type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void run(() => api(`/groups/${groupId}/members/${member.id}`, { method: "PATCH", body: { role: r } }))}>
               Make {r}
             </button>
           ))}
           {isOwner && (
-            <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void run(() => api(`/groups/${groupId}/members/${member.id}`, { method: "PATCH", body: { role: "owner" } }))}>
+            <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void run(() => api(`/groups/${groupId}/members/${member.id}`, { method: "PATCH", body: { role: "owner" } }))}>
               Hand over ownership
             </button>
           )}
-          <button type="button" className="press rounded-xl px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2" onClick={() => void run(() => api(`/groups/${groupId}/members/${member.id}`, { method: "DELETE" }))}>
+          <button type="button" className="press rounded-md px-3 py-3.5 text-left font-medium text-danger hover:bg-surface-2" onClick={() => void run(() => api(`/groups/${groupId}/members/${member.id}`, { method: "DELETE" }))}>
             Remove from group
           </button>
         </div>

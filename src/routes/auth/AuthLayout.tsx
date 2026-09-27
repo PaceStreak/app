@@ -1,3 +1,4 @@
+import { Logo } from "../../components/Logo";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { t } from "../../lib/i18n";
@@ -6,9 +7,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
   return (
     <main className="safe-top mx-auto flex min-h-[100dvh] w-full max-w-[420px] flex-col px-5 pb-10">
       <Link to="/" className="mt-10 mb-10 flex items-center gap-2.5 text-[1.05rem] font-semibold tracking-tight">
-        <svg viewBox="0 0 64 64" className="size-8" aria-hidden>
-          <path d="M37 10 14 36h14l-2 18 24-26H36l1-18Z" fill="var(--accent)" />
-        </svg>
+        <Logo className="size-8" />
         PaceStreak
       </Link>
       <div className="page-enter">

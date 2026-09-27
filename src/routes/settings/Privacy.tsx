@@ -27,7 +27,7 @@ export function Privacy() {
       <Section title="Who can see your activity" className="mt-0">
         <div className="space-y-2">
           {options.map((o) => (
-            <label key={o.v} className={`press flex cursor-pointer items-start gap-3 rounded-2xl border p-4 ${p.visibility === o.v ? "border-accent-text bg-accent-soft" : "border-line bg-surface"} ${!me.social_allowed && o.v !== "private" ? "pointer-events-none opacity-50" : ""}`}>
+            <label key={o.v} className={`press flex cursor-pointer items-start gap-3 rounded-md border p-4 ${p.visibility === o.v ? "border-accent-text bg-accent-soft" : "border-line bg-surface"} ${!me.social_allowed && o.v !== "private" ? "pointer-events-none opacity-50" : ""}`}>
               <input type="radio" name="vis" className="sr-only" checked={p.visibility === o.v} onChange={() => void save({ visibility: o.v }, "Saved")} disabled={!me.social_allowed && o.v !== "private"} />
               <o.icon size={22} className="mt-0.5 shrink-0" />
               <span>

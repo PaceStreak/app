@@ -7,7 +7,8 @@ import { LoadCard } from "../../components/LoadCard";
 import { Recovery } from "../../components/Recovery";
 import { ShareGridButton } from "../../components/Share";
 import { Heatmap, HeatLegend } from "../../components/Heatmap";
-import { ArrowCounterClockwise, Barbell, CalendarCheck, CalendarStar, CaretDown, CheckCircle, Circle, Fire, Medal, Scales, Snowflake, Sparkle, Trophy } from "../../components/phosphor";
+import { TickBox } from "../../components/Marker";
+import { ArrowCounterClockwise, Barbell, CalendarCheck, CalendarStar, CaretDown, Medal, Scales, Snowflake, Sparkle, Trophy } from "../../components/phosphor";
 import { toast } from "../../components/toast";
 import { ErrorState, List, Loading, PageHeader, RowLink, Section, Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
@@ -79,15 +80,15 @@ export default function Progress() {
         <Loading rows={4} />
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 divide-x divide-line border-y border-ink/80">
             {[
               ["Sessions", compact(s.totals.sessions)],
               ["Days", compact(s.totals.active_days)],
               ["Hours", compact(s.totals.hours)],
             ].map(([label, value]) => (
-              <div key={label} className="card p-4">
+              <div key={label} className="px-3 py-3 first:pl-0">
                 <p className="text-sm text-dim">{label}</p>
-                <p className="num mt-1 text-2xl font-semibold tracking-tight">{value}</p>
+                <p className="num mt-0.5 text-[2rem] leading-none font-extrabold">{value}</p>
               </div>
             ))}
           </div>
@@ -121,7 +122,7 @@ export default function Progress() {
           <Section
             title="Week by week"
             action={
-              <select className="input h-9 min-h-0 w-auto rounded-full py-0 text-sm" value={range} onChange={(e) => setRange(Number(e.target.value))} aria-label="Range">
+              <select className="input h-9 min-h-0 w-auto py-0 text-sm" value={range} onChange={(e) => setRange(Number(e.target.value))} aria-label="Range">
                 <option value={12}>12 weeks</option>
                 <option value={26}>6 months</option>
                 <option value={52}>A year</option>
@@ -220,13 +221,13 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
     <div className="card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-semibold">{chain.name}</p>
+          <p className="font-semibold">{chain.name === "Everything" ? "Training chain" : chain.name}</p>
           <p className="text-sm text-dim">{plural(chain.target, "day")} a week</p>
         </div>
         <div className="text-right">
-          <p className="num flex items-center justify-end gap-1 text-2xl font-semibold tracking-tight">
-            <Fire size={20} weight="fill" className="text-flame" />
+          <p className="num text-[2rem] leading-none font-extrabold text-accent-text">
             {chain.current}
+            <span className="ml-1 text-sm font-semibold text-muted">wk</span>
           </p>
           <p className="text-xs text-dim">best {chain.longest}</p>
         </div>
@@ -256,7 +257,7 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
             const met = r.done >= r.days;
             return (
               <li key={i} className="flex items-center gap-2">
-                {met ? <CheckCircle size={16} weight="fill" className="text-accent-text" aria-hidden /> : <Circle size={16} className="text-dim" aria-hidden />}
+                <TickBox done={met} size={16} />
                 <span className={met ? "" : "text-muted"}>
                   {r.disciplines.map((d) => lib?.discipline(d)?.name ?? d).join(" or ")}: {r.done} of {r.days}
                   <span className="sr-only">{met ? ", done" : ", not yet"}</span>
@@ -266,13 +267,13 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
           })}
         </ul>
       )}
-      <dl className="mt-3 grid grid-cols-3 gap-2 text-center" aria-label="Consistency">
+      <dl className="mt-3 grid grid-cols-3 divide-x divide-line border-y border-line text-center" aria-label="Consistency">
         {[
           ["4 weeks", chain.consistency],
           ["12 weeks", chain.consistency_12],
           ["52 weeks", chain.consistency_52],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl bg-surface-2 px-2 py-2">
+          <div key={label} className="px-2 py-2">
             <dt className="text-xs text-dim">{label}</dt>
             <dd className="num text-lg font-semibold">{value}%</dd>
           </div>
@@ -291,7 +292,7 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
 function StreakRules() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl bg-surface-2/60 px-4 py-3">
+    <div className="rounded-md bg-surface-2/60 px-4 py-3">
       <button type="button" className="flex w-full items-center justify-between gap-3 text-left text-sm font-semibold" aria-expanded={open} onClick={() => setOpen(!open)}>
         How streaks work here
         <CaretDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />

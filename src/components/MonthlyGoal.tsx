@@ -37,7 +37,7 @@ export function MonthlyGoalCard() {
     return (
       <section className="card p-4" aria-label={`${name} goal`}>
         <p className="font-semibold">Active days in {name}</p>
-        <div className="mt-3 flex items-center justify-between rounded-2xl bg-surface-2 p-3">
+        <div className="mt-3 flex items-center justify-between rounded-md bg-surface-2 p-3">
           <button type="button" className="btn btn-secondary btn-icon" aria-label="Fewer days" onClick={() => setEditing(Math.max(1, editing - 1))}>
             <Minus size={16} />
           </button>

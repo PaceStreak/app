@@ -114,7 +114,7 @@ export default function WorkoutDetail() {
       {done && (
         <div className="card-raised coach-lead-done mb-5 p-5" data-tone="accent">
           <div className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-2xl bg-accent text-accent-ink">
+            <span className="grid size-11 place-items-center rounded-md bg-accent text-accent-ink">
               <Fire size={22} weight="fill" />
             </span>
             <div>
@@ -145,7 +145,7 @@ export default function WorkoutDetail() {
 
       <div className="card mt-4 p-5">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-2xl bg-surface-2">
+          <span className="grid size-11 place-items-center rounded-md bg-surface-2">
             <DisciplineIcon id={w.discipline} size={22} />
           </span>
           <span className="font-medium text-muted">{lib?.discipline(w.discipline)?.name}</span>

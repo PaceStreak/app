@@ -174,7 +174,7 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
     >
       <div className="space-y-5">
         <input className="input" placeholder="Name, e.g. Running" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} aria-label="Streak name" />
-        <div className="flex items-center justify-between rounded-2xl bg-surface-2 p-4">
+        <div className="flex items-center justify-between rounded-md bg-surface-2 p-4">
           <div>
             <p className="num text-3xl font-semibold">{target}</p>
             <p className="text-sm text-dim">days a week</p>
@@ -194,7 +194,7 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
             {lib?.lib.disciplines.map((d) => {
               const on = disciplines.includes(d.id);
               return (
-                <button key={d.id} type="button" aria-pressed={on} onClick={() => setDisciplines(on ? disciplines.filter((x) => x !== d.id) : [...disciplines, d.id])} className={`press flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm ${on ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}>
+                <button key={d.id} type="button" aria-pressed={on} onClick={() => setDisciplines(on ? disciplines.filter((x) => x !== d.id) : [...disciplines, d.id])} className={`press flex items-center gap-2 rounded-md border px-2.5 py-2 text-sm ${on ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}>
                   <DisciplineIcon id={d.id} size={16} /> <span className="truncate">{d.name}</span>
                 </button>
               );
@@ -207,7 +207,7 @@ function ChainSheet({ chain, onClose, onSaved, isOnly }: { chain: Chain | "new" 
           <p className="mb-3 text-sm text-dim">For a balanced week, e.g. at least 2 of your days are runs and 1 is strength. Applies from this week on.</p>
           <ul className="space-y-3">
             {reqs.map((r, i) => (
-              <li key={i} className="rounded-2xl bg-surface-2 p-3">
+              <li key={i} className="rounded-md bg-surface-2 p-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted">At least</span>
                   <button type="button" className="btn btn-secondary btn-icon btn-sm" aria-label="Fewer days" onClick={() => setReqs(reqs.map((x, j) => (j === i ? { ...x, days: Math.max(1, x.days - 1) } : x)))}>

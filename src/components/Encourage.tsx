@@ -36,7 +36,7 @@ export function EncourageButton({ handle, className = "btn btn-secondary btn-sm"
         <ul className="space-y-2">
           {(presets.data ?? []).map((p) => (
             <li key={p.id}>
-              <button type="button" className="press w-full rounded-2xl border border-line px-4 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void send(p.id)}>
+              <button type="button" className="press w-full rounded-md border border-line px-4 py-3.5 text-left font-medium hover:bg-surface-2" onClick={() => void send(p.id)}>
                 {p.text}
               </button>
             </li>

@@ -105,3 +105,24 @@ export function skillProjection(total: number, goal: number | null, days: { date
   const eta = left <= 0 ? today : perDay > 0 ? addDays(today, Math.ceil(left / perDay)) : null;
   return { pct: Math.min(100, Math.round((total / goal) * 100)), eta: eta && eta <= addDays(today, 3650) ? eta : null, perWeek: Math.round(perDay * 7 * 10) / 10 };
 }
+
+/** Which felt-tip a habit is drawn in, by what kind of habit it is. The
+ * colour is a second cue only: done or not is always the X itself. */
+export function markerFor(category: string | null | undefined): string {
+  switch (category) {
+    case "learning":
+    case "creative":
+      return "var(--marker-blue)";
+    case "health":
+    case "home":
+      return "var(--marker-green)";
+    case "mind":
+    case "social":
+      return "var(--marker-violet)";
+    case "money":
+    case "productivity":
+      return "var(--marker-orange)";
+    default:
+      return "var(--marker-red)";
+  }
+}

@@ -78,7 +78,7 @@ function Chooser({ onPick, onClose }: { onPick: (d: string) => void; onClose: ()
               haptic(6);
               onPick(d.id);
             }}
-            className="press flex aspect-[1.1] flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface-2 text-sm font-semibold"
+            className="press flex aspect-[1.1] flex-col items-center justify-center gap-2 rounded-md border border-line bg-surface-2 text-sm font-semibold"
           >
             <DisciplineIcon id={d.id} size={28} />
             <span className="px-1 text-center leading-tight">{d.name}</span>
@@ -87,8 +87,8 @@ function Chooser({ onPick, onClose }: { onPick: (d: string) => void; onClose: ()
       </div>
 
       <div className="mt-5 space-y-2">
-        <button type="button" onClick={() => go("/workouts/live")} className="press flex w-full items-center gap-3 rounded-2xl bg-accent-soft px-4 py-3.5 text-left">
-          <span className="grid size-10 place-items-center rounded-xl bg-accent text-accent-ink">
+        <button type="button" onClick={() => go("/workouts/live")} className="press flex w-full items-center gap-3 rounded-md bg-accent-soft px-4 py-3.5 text-left">
+          <span className="grid size-10 place-items-center rounded-md bg-accent text-accent-ink">
             <Play size={20} weight="fill" />
           </span>
           <span className="flex-1">
@@ -97,8 +97,8 @@ function Chooser({ onPick, onClose }: { onPick: (d: string) => void; onClose: ()
           </span>
         </button>
         {recentRoutines.map((r) => (
-          <button key={r.id} type="button" onClick={() => go(`/workouts/live?routine=${r.id}`)} className="press flex w-full items-center gap-3 rounded-2xl border border-line px-4 py-3 text-left">
-            <span className="grid size-10 place-items-center rounded-xl bg-surface-2">
+          <button key={r.id} type="button" onClick={() => go(`/workouts/live?routine=${r.id}`)} className="press flex w-full items-center gap-3 rounded-md border border-line px-4 py-3 text-left">
+            <span className="grid size-10 place-items-center rounded-md bg-surface-2">
               <Barbell size={20} />
             </span>
             <span className="min-w-0 flex-1">
@@ -148,7 +148,7 @@ function RestToday({ onDone }: { onDone: () => void }) {
     );
   }
   return (
-    <div className="rounded-2xl border border-line p-3">
+    <div className="rounded-md border border-line p-3">
       <Segmented label="Kind of rest" value={kind} onChange={setKind} options={REST_KINDS.map((k) => ({ ...k }))} />
       <button type="button" className="btn btn-secondary mt-3 w-full" onClick={() => void save()}>
         Log rest day
@@ -249,7 +249,7 @@ function Details({ discipline, when, prefill, onBack, onDone }: { discipline: st
         <button type="button" className="btn btn-ghost btn-icon -ml-3" onClick={onBack} aria-label="Pick a different activity">
           <ArrowLeft size={20} />
         </button>
-        <span className="grid size-11 place-items-center rounded-2xl bg-accent text-accent-ink">
+        <span className="grid size-11 place-items-center rounded-md bg-accent text-accent-ink">
           <DisciplineIcon id={discipline} size={24} weight="fill" />
         </span>
         <h2 className="text-xl font-semibold tracking-tight">{d?.name ?? discipline}</h2>
@@ -262,7 +262,7 @@ function Details({ discipline, when, prefill, onBack, onDone }: { discipline: st
             onDone();
             navigate("/workouts/live");
           }}
-          className="press mb-5 flex w-full items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-left"
+          className="press mb-5 flex w-full items-center gap-3 rounded-md bg-surface-2 px-4 py-3 text-left"
         >
           <Play size={20} weight="fill" className="text-accent-text" />
           <span className="flex-1 text-[0.95rem]">
@@ -361,7 +361,7 @@ function Details({ discipline, when, prefill, onBack, onDone }: { discipline: st
               type="button"
               aria-pressed={feel === f.value}
               onClick={() => setFeel(feel === f.value ? null : f.value)}
-              className={`press flex flex-col items-center gap-1 rounded-2xl border py-2.5 text-xs font-semibold ${feel === f.value ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}
+              className={`press flex flex-col items-center gap-1 rounded-md border py-2.5 text-xs font-semibold ${feel === f.value ? "border-transparent bg-accent text-accent-ink" : "border-line text-muted"}`}
             >
               <FeelIcon value={f.value} size={24} weight={feel === f.value ? "fill" : "regular"} />
               {f.label}

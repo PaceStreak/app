@@ -40,7 +40,7 @@ export function WorkoutRow({
 }) {
   return (
     <Link to={`/workouts/${w.id}`} className="press flex items-center gap-3.5 px-4 py-3.5 hover:bg-surface-2/60">
-      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-surface-2 text-ink">
+      <span className="grid size-11 shrink-0 place-items-center rounded-md bg-surface-2 text-ink">
         <DisciplineIcon id={w.discipline} size={22} />
       </span>
       <span className="min-w-0 flex-1">

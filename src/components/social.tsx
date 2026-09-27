@@ -157,7 +157,7 @@ export function FeedCard({ e, link = true }: { e: FeedEvent; link?: boolean }) {
           </p>
           <p className="text-sm text-dim">{timeAgo(e.created_at)}</p>
         </div>
-        <span className={`grid size-10 place-items-center rounded-xl ${e.kind === "workout" ? "bg-surface-2" : "bg-accent-soft text-accent-text"}`}>
+        <span className={`grid size-10 place-items-center rounded-md ${e.kind === "workout" ? "bg-surface-2" : "bg-accent-soft text-accent-text"}`}>
           <EventIcon e={e} />
         </span>
       </div>
@@ -231,7 +231,7 @@ export function ReportSheet({ open, onClose, target }: { open: boolean; onClose:
       <fieldset className="space-y-2">
         <legend className="sr-only">Reason</legend>
         {REASONS.map(([v, l]) => (
-          <label key={v} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 ${reason === v ? "border-accent-text bg-accent-soft" : "border-line"}`}>
+          <label key={v} className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 ${reason === v ? "border-accent-text bg-accent-soft" : "border-line"}`}>
             <input type="radio" name="reason" className="size-4 accent-[var(--accent)]" checked={reason === v} onChange={() => setReason(v)} />
             {l}
           </label>

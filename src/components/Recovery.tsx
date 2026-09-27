@@ -29,7 +29,7 @@ export function Recovery({ today }: { today: string }) {
             const m = map.get(id);
             const state = m ? STATES.find((s) => m.daysSince <= s.max)! : null;
             return (
-              <li key={id} className={`rounded-xl px-3 py-2 ${state ? state.cls : "bg-surface-2 text-dim"}`}>
+              <li key={id} className={`rounded-md px-3 py-2 ${state ? state.cls : "bg-surface-2 text-dim"}`}>
                 <span className="block truncate text-sm font-medium">{name}</span>
                 <span className="num block text-xs opacity-80">
                   {!m ? "Not trained yet" : m.daysSince === 0 ? "Today" : m.daysSince === 1 ? "Yesterday" : `${m.daysSince} days ago`}

@@ -466,8 +466,8 @@ function GoalCard({ goal, loading, series, today, unit }: { goal: WeightGoal | n
       </div>
       {view && (
         <>
-          <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.round(view.progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to goal">
-            <div className="h-full rounded-full bg-accent" style={{ width: `${view.progress * 100}%` }} />
+          <div className="h-2 overflow-hidden rounded-none bg-surface-2" role="progressbar" aria-valuenow={Math.round(view.progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to goal">
+            <div className="h-full rounded-none bg-accent" style={{ width: `${view.progress * 100}%` }} />
           </div>
           <p className="text-sm text-muted">
             {view.reached

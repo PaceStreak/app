@@ -152,7 +152,7 @@ export function IntervalTimer() {
 
 function Stepper({ label, value, step, min, max, format, onChange }: { label: string; value: number; step: number; min: number; max: number; format: (n: number) => string; onChange: (n: number) => void }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">
+    <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
       <span className="font-medium">{label}</span>
       <div className="flex items-center gap-2">
         <button type="button" className="btn btn-secondary btn-icon btn-sm" aria-label={`Less ${label.toLowerCase()}`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - step))}>

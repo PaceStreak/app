@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { fmtFullDay, parseDay } from "../lib/dates";
 import { haptic } from "../lib/prefs";
-import { isDone, progressText, setHabitDay, stepFor } from "../lib/habits";
+import { isDone, markerFor, progressText, setHabitDay, stepFor } from "../lib/habits";
+import { MarkerRing, MarkerSlash, MarkerX } from "./Marker";
 import type { Habit } from "../lib/types";
 import { useConfirm } from "./Confirm";
 import { HabitDaySheet } from "./HabitDaySheet";
@@ -70,7 +71,7 @@ export function HabitRow({ habit, today, strip = true }: { habit: Habit; today: 
   return (
     <div className="px-4 py-3">
       <div className="flex items-center gap-3">
-        <Link to={`/habits/${habit.id}`} className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-xl" aria-hidden tabIndex={-1}>
+        <Link to={`/habits/${habit.id}`} className="grid size-10 shrink-0 place-items-center text-xl" aria-hidden tabIndex={-1}>
           {habit.emoji}
         </Link>
         <div className="min-w-0 flex-1">
@@ -129,11 +130,14 @@ export function HabitRow({ habit, today, strip = true }: { habit: Habit; today: 
                 disabled={busy}
                 onClick={() => tapDay(d.date, d.amount)}
                 aria-label={`${fmtFullDay(d.date)}: ${slipped ? "slipped" : ok ? "done" : partial ? "partly done" : "not done"}${d.note ? ", has a note" : ""}`}
-                className={`press relative flex h-7 flex-1 max-w-9 items-center justify-center rounded-lg text-[0.7rem] font-semibold ${
-                  slipped ? "bg-flame-soft text-flame" : ok ? "bg-accent text-accent-ink" : partial ? "bg-accent-soft text-accent-text" : "bg-surface-2 text-dim"
-                } ${isToday ? "ring-1 ring-ink/50" : ""}`}
+                className={`press relative flex h-8 max-w-10 flex-1 items-center justify-center rounded-sm border text-[0.72rem] font-semibold ${
+                  isToday ? "border-accent text-accent-text" : "border-line text-dim"
+                }`}
               >
-                {initial.format(parseDay(d.date))}
+                <span className={ok && !slipped && habit.kind !== "quit" ? "opacity-35" : ""}>{initial.format(parseDay(d.date))}</span>
+                {ok && habit.kind !== "quit" && <MarkerX tone={markerFor(habit.category)} />}
+                {partial && <MarkerSlash tone={markerFor(habit.category)} />}
+                {slipped && <MarkerRing />}
                 {d.note && <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-current opacity-70" aria-hidden />}
               </button>
             );

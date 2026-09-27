@@ -146,7 +146,7 @@ export default function Welcome() {
                 error={tooYoung ? `PaceStreak is for people aged ${me?.min_age} and over.` : null}
                 hint={teen ? `Under ${me?.social_min_age}, your account stays private: the log and streaks work fully, sharing and leaderboards don't.` : undefined}
               />
-              <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-4">
+              <label className="flex cursor-pointer items-start gap-3 rounded-md bg-surface p-4">
                 <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1 size-5 accent-[var(--accent)]" />
                 <span className="text-[0.95rem] text-muted">
                   I agree to the{" "}
@@ -171,7 +171,7 @@ export default function Welcome() {
                     type="button"
                     aria-pressed={on}
                     onClick={() => setDisciplines(on ? disciplines.filter((x) => x !== d.id) : [...disciplines, d.id])}
-                    className={`press flex flex-col items-center gap-2 rounded-2xl border px-2 py-3.5 text-sm font-medium ${on ? "border-transparent bg-accent text-accent-ink" : "border-line bg-surface text-muted"}`}
+                    className={`press flex flex-col items-center gap-2 rounded-md border px-2 py-3.5 text-sm font-medium ${on ? "border-transparent bg-accent text-accent-ink" : "border-line bg-surface text-muted"}`}
                   >
                     <DisciplineIcon id={d.id} size={24} weight={on ? "fill" : "regular"} />
                     {d.name}
@@ -199,7 +199,7 @@ export default function Welcome() {
             </div>
 
             {disciplines.length > 1 && (
-              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-4">
+              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md bg-surface p-4">
                 <input type="checkbox" checked={separate} onChange={(e) => setSeparate(e.target.checked)} className="mt-1 size-5 accent-[var(--accent)]" />
                 <span className="text-[0.95rem] text-muted">
                   Also keep a separate streak for each of these. Your main streak still counts everything.
@@ -225,7 +225,7 @@ export default function Welcome() {
                 </div>
               </div>
               {teen ? (
-                <p className="rounded-2xl bg-surface p-4 text-[0.95rem] text-muted">Your account is private. Everything else works the same.</p>
+                <p className="rounded-md bg-surface p-4 text-[0.95rem] text-muted">Your account is private. Everything else works the same.</p>
               ) : (
                 <fieldset>
                   <legend className="field-label">Who can see your activity</legend>
@@ -235,7 +235,7 @@ export default function Welcome() {
                       { v: "public" as const, icon: Globe, title: "Anyone on PaceStreak", body: "Anyone signed in can follow and see your sessions." },
                       { v: "private" as const, icon: Lock, title: "Only me", body: "A private log. No feed, no leaderboards." },
                     ].map((o) => (
-                      <label key={o.v} className={`press flex cursor-pointer items-start gap-3 rounded-2xl border p-4 ${visibility === o.v ? "border-accent-text bg-accent-soft" : "border-line bg-surface"}`}>
+                      <label key={o.v} className={`press flex cursor-pointer items-start gap-3 rounded-md border p-4 ${visibility === o.v ? "border-accent-text bg-accent-soft" : "border-line bg-surface"}`}>
                         <input type="radio" name="visibility" className="sr-only" checked={visibility === o.v} onChange={() => setVisibility(o.v)} />
                         <o.icon size={22} className="mt-0.5 shrink-0" />
                         <span>

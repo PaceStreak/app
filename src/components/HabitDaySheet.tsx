@@ -74,14 +74,14 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
           {habit.kind === "check" ? (
             <div className="grid grid-cols-2 gap-2">
               {[1, 0].map((v) => (
-                <button key={v} type="button" aria-pressed={(final > 0 ? 1 : 0) === v} className={`press h-12 rounded-2xl font-semibold ${(final > 0 ? 1 : 0) === v ? "bg-accent text-accent-ink" : "bg-surface-2 text-muted"}`} onClick={() => { setTyped(""); setValue(v); }}>
+                <button key={v} type="button" aria-pressed={(final > 0 ? 1 : 0) === v} className={`press h-12 rounded-md font-semibold ${(final > 0 ? 1 : 0) === v ? "bg-accent text-accent-ink" : "bg-surface-2 text-muted"}`} onClick={() => { setTyped(""); setValue(v); }}>
                   {v ? "Done" : "Not done"}
                 </button>
               ))}
             </div>
           ) : (
           <div className="flex items-center justify-between gap-3">
-            <button type="button" className="press grid size-14 shrink-0 place-items-center rounded-2xl bg-surface-2" aria-label={`Take ${step} off`} disabled={final <= 0} onClick={() => bump(-(habit.kind === "quit" ? 1 : step))}>
+            <button type="button" className="press grid size-14 shrink-0 place-items-center rounded-md bg-surface-2" aria-label={`Take ${step} off`} disabled={final <= 0} onClick={() => bump(-(habit.kind === "quit" ? 1 : step))}>
               <Minus size={22} weight="bold" />
             </button>
             <div className="min-w-0 text-center">
@@ -90,13 +90,13 @@ export function HabitDaySheet({ habit, day, today, onClose }: { habit: Habit; da
                 {habit.kind === "quit" ? unit : `of ${fmtAmount(goal)} ${unit}`.trim()}
               </p>
             </div>
-            <button type="button" className="press grid size-14 shrink-0 place-items-center rounded-2xl bg-accent text-accent-ink" aria-label={`Add ${step}`} onClick={() => bump(habit.kind === "quit" ? 1 : step)}>
+            <button type="button" className="press grid size-14 shrink-0 place-items-center rounded-md bg-accent text-accent-ink" aria-label={`Add ${step}`} onClick={() => bump(habit.kind === "quit" ? 1 : step)}>
               <Plus size={22} weight="bold" />
             </button>
           </div>
           )}
           {(habit.kind === "count" || habit.kind === "duration") && (
-            <div className="h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden>
+            <div className="h-2 overflow-hidden rounded-none bg-surface-2" aria-hidden>
               <div className={`h-full rounded-full transition-[width] ${isDone(habit, final) ? "bg-accent" : "bg-accent/60"}`} style={{ width: `${pct}%` }} />
             </div>
           )}

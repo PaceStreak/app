@@ -6,7 +6,8 @@ import { prefs } from "../lib/prefs";
 import { currentPushSubscription, isStandalone } from "../lib/pwa";
 import { useHabits } from "../lib/queries";
 import { useMe } from "../lib/session";
-import { CheckCircle, Circle, X } from "./phosphor";
+import { TickBox } from "./Marker";
+import { X } from "./phosphor";
 
 /**
  * The first-run checklist. Every tick is read from real state - a session in
@@ -69,14 +70,14 @@ export function GettingStarted({ sessions, onLog, firstFortnight }: { sessions: 
           <X size={16} />
         </button>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3" aria-hidden>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-none bg-surface-3" aria-hidden>
         <span className="block h-full bg-accent" style={{ width: `${(done / steps.length) * 100}%` }} />
       </div>
       <ul className="mt-3 divide-y divide-line">
         {steps.map((s) => {
           const body = (
             <>
-              {s.done ? <CheckCircle size={20} weight="fill" className="shrink-0 text-accent-text" aria-hidden /> : <Circle size={20} className="shrink-0 text-dim" aria-hidden />}
+              <TickBox done={s.done} />
               <span className="min-w-0 flex-1">
                 <span className={`block font-medium ${s.done ? "text-dim line-through" : ""}`}>{s.label}</span>
                 {!s.done && <span className="block text-sm text-dim">{s.detail}</span>}

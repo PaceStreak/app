@@ -146,7 +146,7 @@ function BuddyCard({ b, onEnd }: { b: BuddyView; onEnd: () => void }) {
       <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
         <Progress label="You" days={me.days} target={me.target} />
         {them.paused ? (
-          <p className="flex items-center gap-1.5 rounded-xl bg-surface-2 px-3 py-2 text-muted">
+          <p className="flex items-center gap-1.5 rounded-md bg-surface-2 px-3 py-2 text-muted">
             <Pause size={14} aria-hidden /> @{b.buddy.handle} is paused
           </p>
         ) : (
@@ -167,7 +167,7 @@ function BuddyCard({ b, onEnd }: { b: BuddyView; onEnd: () => void }) {
 function Progress({ label, days, target }: { label: string; days: number; target: number }) {
   const done = days >= target;
   return (
-    <div className="rounded-xl bg-surface-2 px-3 py-2">
+    <div className="rounded-md bg-surface-2 px-3 py-2">
       <p className="truncate text-dim">{label}</p>
       <p className="num font-semibold">
         {days} of {target}

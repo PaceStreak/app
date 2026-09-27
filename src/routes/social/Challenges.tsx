@@ -20,7 +20,7 @@ export function ChallengeCard({ c }: { c: Challenge }) {
   return (
     <Link to={`/challenges/${c.id}`} className="press card block p-4 hover:border-line-lit">
       <div className="flex items-start gap-3">
-        <span className={`grid size-11 shrink-0 place-items-center rounded-2xl ${c.status === "live" ? "bg-accent text-accent-ink" : "bg-surface-2 text-muted"}`}>
+        <span className={`grid size-11 shrink-0 place-items-center rounded-md ${c.status === "live" ? "bg-accent text-accent-ink" : "bg-surface-2 text-muted"}`}>
           <Trophy size={22} weight="fill" />
         </span>
         <div className="min-w-0 flex-1">

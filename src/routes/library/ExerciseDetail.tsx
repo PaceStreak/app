@@ -89,7 +89,7 @@ export default function ExerciseDetail() {
           </div>
         </div>
       ) : (
-        <button type="button" className="press mt-3 flex w-full items-start gap-2 rounded-2xl border border-dashed border-line px-4 py-3 text-left text-sm" onClick={() => setNoteDraft(pinned)}>
+        <button type="button" className="press mt-3 flex w-full items-start gap-2 rounded-md border border-dashed border-line px-4 py-3 text-left text-sm" onClick={() => setNoteDraft(pinned)}>
           <PushPin size={16} className="mt-0.5 shrink-0 text-dim" aria-hidden />
           <span className={pinned ? "text-muted" : "text-dim"}>{pinned || "Pin a note: seat height, grip, a cue. Shown whenever you do this exercise."}</span>
         </button>

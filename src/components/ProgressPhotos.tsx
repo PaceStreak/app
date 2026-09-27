@@ -132,7 +132,7 @@ export function ProgressPhotos({ today }: { today: string }) {
               <li key={p.id} className="relative">
                 <button
                   type="button"
-                  className="press block w-full overflow-hidden rounded-xl"
+                  className="press block w-full overflow-hidden rounded-md"
                   aria-label={`Compare ${fmtMonthDay(p.date)} with ${forPose.length > 1 ? "the one before" : "itself"}`}
                   onClick={() => {
                     const other = forPose[i + 1] ?? forPose[i - 1] ?? p;
@@ -169,7 +169,7 @@ export function ProgressPhotos({ today }: { today: string }) {
                 </select>
               ))}
             </div>
-            <div className="relative mt-3 overflow-hidden rounded-2xl bg-surface-2">
+            <div className="relative mt-3 overflow-hidden rounded-md bg-surface-2">
               <img src={urls.get(b.id)} alt={`${b.pose} photo, ${fmtMonthDay(b.date)}`} className="block aspect-[3/4] w-full object-cover" />
               <img
                 src={urls.get(a.id)}

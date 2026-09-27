@@ -4,7 +4,8 @@ import { fmtMonthDay } from "../lib/dates";
 import { prefs } from "../lib/prefs";
 import { queryClient } from "../lib/queries";
 import type { QuestWeek, WagerState } from "../lib/types";
-import { CheckCircle, Circle, Handshake, X } from "./phosphor";
+import { TickBox } from "./Marker";
+import { Handshake, X } from "./phosphor";
 import { toast } from "./toast";
 
 /**
@@ -27,17 +28,17 @@ export function QuestsCard({ quests }: { quests: QuestWeek }) {
         {quests.items.map((q) => (
           <li key={q.id} className="flex items-start gap-3">
             {q.done ? (
-              <CheckCircle size={22} weight="fill" className="mt-0.5 shrink-0 text-accent-text" aria-label="Done" />
+              <span className="mt-0.5"><TickBox done size={22} label="Done" /></span>
             ) : (
-              <Circle size={22} className="mt-0.5 shrink-0 text-dim" aria-label="Not yet" />
+              <span className="mt-0.5"><TickBox done={false} size={22} label="Not yet" /></span>
             )}
             <div className="min-w-0 flex-1">
               <p className={`font-medium ${q.done ? "text-muted" : ""}`}>{q.title}</p>
               <p className="text-sm text-dim">{q.description}</p>
               {!q.done && q.goal > 1 && (
                 <div className="mt-1.5 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-                    <div className="h-full rounded-full bg-accent" style={{ width: `${(q.progress / q.goal) * 100}%` }} />
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-none bg-surface-2">
+                    <div className="h-full rounded-none bg-accent" style={{ width: `${(q.progress / q.goal) * 100}%` }} />
                   </div>
                   <span className="num text-xs text-dim">
                     {q.progress}/{q.goal}

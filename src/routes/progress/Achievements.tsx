@@ -66,7 +66,7 @@ function Badge({ a }: { a: Achievement }) {
   return (
     <article className={`card p-4 ${earned ? "" : "opacity-90"}`}>
       <div className="flex items-start gap-3">
-        <span className="badge-icon grid size-12 shrink-0 place-items-center rounded-2xl" data-tier={top ?? (earned ? "single" : "none")}>
+        <span className="badge-icon grid size-12 shrink-0 place-items-center rounded-md" data-tier={top ?? (earned ? "single" : "none")}>
           {a.secret ? <Lock size={22} /> : <Medal size={24} weight={earned ? "fill" : "regular"} />}
         </span>
         <div className="min-w-0 flex-1">
