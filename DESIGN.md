@@ -205,7 +205,7 @@ components:
 
 PaceStreak is a wall calendar you cross off in marker, rendered on a near-black ground. The ground is almost black (near-black) with slightly lifted surfaces. One colour does the work: a hard electric lime that means "do this" (log, save, today). The streak has its own colour, flame orange, used for the chain count, risk and slips. There is a daylight theme under `[data-theme="light"]`. It is a cool pale grey ground with white cards. Lime stays the fill there, but lime used as text deepens to an olive (lime-text-day), because raw lime is unreadable on light grounds.
 
-The structure comes from a paper calendar. The week board sets out seven date boxes per habit. A done day is crossed off with a hand-drawn marker X. A tear-off date block sits at the top of Today. The logo is a calendar page. Numerals are condensed and heavy, like printed dates. Everything else is a calm modern app: soft rounded cards (16px), rounded controls (12px), pill buttons and chips, and soft ambient shadows on raised things. Reading text uses full-width Archivo.
+The structure comes from a paper calendar. The week board sets out seven date boxes per habit. A done day is crossed off with a hand-drawn marker X. A tear-off date block sits at the top of Today. The logo is the lime bolt. Numerals are condensed and heavy, like printed dates. Everything else is a calm modern app: soft rounded cards (16px), rounded controls (12px), pill buttons and chips, and soft ambient shadows on raised things. Reading text uses full-width Archivo.
 
 The user rejected the paper-and-calendar-red palette ("meh and edgy"), so it is not coming back. The calendar survives as structure, not as colour.
 
@@ -291,7 +291,7 @@ The system is a hybrid: tonal layers first, then soft ambient shadows on things 
 
 ## Shapes
 
-Corners are soft and consistent. Cards use 16px, controls and inputs 12px, and buttons, chips, switches and avatars are full pills. Toasts use 18px. Bottom sheets use 24px on their top corners. The tear-off block uses 14px, the tick box 5px, and heat cells and week marks 3px. Small inline elements use 6px (the Tailwind md radius). The marker marks are open SVG paths with round caps, at stroke width 4.6 in a 40-unit box, and are slightly uneven on purpose. The logo is a calendar page with a lime header band, two binder pegs and a marker X, outlined in ink.
+Corners are soft and consistent. Cards use 16px, controls and inputs 12px, and buttons, chips, switches and avatars are full pills. Toasts use 18px. Bottom sheets use 24px on their top corners. The tear-off block uses 14px, the tick box 5px, and heat cells and week marks 3px. Small inline elements use 6px (the Tailwind md radius). The marker marks are open SVG paths with round caps, at stroke width 4.6 in a 40-unit box, and are slightly uneven on purpose. The logo is the original lime bolt, a single six-point path; the calendar-page mark was dropped because an X in a corner reads as "close".
 
 ## Components
 

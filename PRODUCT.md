@@ -57,7 +57,7 @@ Name PaceStreak. Palette (restored 2026-09-27 at the user's request): near-
 black ground, lime `#d3ff3e` as the single action colour, flame `#ff6b35` for
 the streak and risk, a daylight theme. Structure from the calendar redesign
 stays: the week board, the marker X as the one mark for done, the tear-off
-date, the calendar-page logo, self-hosted Archivo. Voice: plain, direct, dry, honest about limits,
+date, the lime bolt logo, self-hosted Archivo. Voice: plain, direct, dry, honest about limits,
 never guilt-tripping ("skip it if you're hurt").
 
 ## Evidence on Hand
