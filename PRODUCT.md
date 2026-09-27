@@ -15,10 +15,11 @@ scripts/styles in markup, no third-party origins, `assetsInlineLimit: 0`.
 
 ## Users
 
-Everyone who trains repeatedly: mixed-discipline regulars (lift, run, ride,
-climb in one week), dedicated lifters who want set-level logging, and
-beginners trying to make exercise stick at all. They log on a phone, usually
-mid-session or just after, often tired, frequently with bad or no signal.
+Anyone keeping something up weekly: training (mixed-discipline regulars,
+set-level lifters, beginners), and habits beyond it: learning a skill,
+health, calm, people, money, home, creative work, and habits being broken.
+They log on a phone, morning and evening or just after a session, often
+one-handed, frequently with bad or no signal.
 
 ## Product Purpose
 
@@ -48,12 +49,15 @@ coach consent, attendance-based challenges, opt-in leaderboards.
 - Under 13: no account. Under 16: private-only, no social/boards.
 - No pricing claims anywhere. No third-party services or scripts.
 - Body metrics are private and never competitive.
+- Habits are never shown to anyone else: no feed, profile, group or board.
 
 ## Brand Commitments
 
-Name PaceStreak. Existing marketing site at www.pacestreak.com: near-black
-surfaces, lime accent `#d3ff3e`, flame `#ff6b35`, system font stack, the
-five-level activity grid. Voice: plain, direct, dry, honest about limits,
+Name PaceStreak. Visual world (redesigned 2026-09-27, see DESIGN.md): a
+printed wall calendar crossed off in felt-tip marker. Paper `#fbfbf8`, black
+print, calendar red, square corners and ruled lines, self-hosted Archivo with
+condensed numerals, the marker X as the one mark for done, and the calendar-
+page logo. The same world runs across app, www and blog. Voice: plain, direct, dry, honest about limits,
 never guilt-tripping ("skip it if you're hurt").
 
 ## Evidence on Hand

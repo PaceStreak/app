@@ -13,7 +13,7 @@ import {
   CalendarCheck,
   CaretRight,
   ChartLineUp,
-  CheckCircle,
+  Check,
   DownloadSimple,
   EnvelopeSimple,
   Fire,
@@ -46,7 +46,7 @@ import { plural } from "../lib/units";
 
 const ICONS: Record<CoachCard["icon"], ReactNode> = {
   flame: <Fire weight="fill" />,
-  check: <CheckCircle weight="fill" />,
+  check: <Check weight="bold" />,
   warning: <Warning weight="fill" />,
   repair: <ArrowCounterClockwise weight="bold" />,
   trophy: <Trophy weight="fill" />,

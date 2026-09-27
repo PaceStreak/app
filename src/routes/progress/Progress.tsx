@@ -107,7 +107,7 @@ export default function Progress() {
           </Section>
 
           <Section title="The grid" action={<ShareGridButton days={s.heatmap} today={s.today} weekStartsOn={s.week_starts_on} activeDays={s.totals.active_days} longest={s.chains[0]?.longest ?? 0} />}>
-            <div className="card p-4">
+            <div className="ruled">
               <div className="-mx-4 overflow-x-auto px-4">
                 <div className="min-w-[640px]">
                   <Heatmap days={s.heatmap} weeks={s.chains[0]?.weeks} today={s.today} weekStartsOn={s.week_starts_on} span={53} plannedDays={s.training_days} pauses={s.pauses ?? []} restDays={restDays.data ?? []} />
@@ -129,7 +129,7 @@ export default function Progress() {
               </select>
             }
           >
-            <div className="card p-4">
+            <div className="ruled">
               <Segmented
                 label="Measure"
                 value={metric}
@@ -161,7 +161,7 @@ export default function Progress() {
 
           {weeks.some((w) => w.feel) && (
             <Section title="How it felt">
-              <div className="card p-4">
+              <div className="ruled">
                 <BarChart
                   title="Average feel per week"
                   bars={weeks.map((w) => ({ key: w.week_start, label: fmtMonthDay(w.week_start), value: w.feel ?? 0, display: w.feel ? `${w.feel} / 5` : "no rating" }))}
@@ -218,7 +218,7 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
     }
   };
   return (
-    <div className="card p-4 sm:p-5">
+    <div className="ruled">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold">{chain.name === "Everything" ? "Training chain" : chain.name}</p>
@@ -292,7 +292,7 @@ function ChainCard({ chain, repairAvailable }: { chain: Chain; repairAvailable: 
 function StreakRules() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-md bg-surface-2/60 px-4 py-3">
+    <div className="border-y border-line py-3">
       <button type="button" className="flex w-full items-center justify-between gap-3 text-left text-sm font-semibold" aria-expanded={open} onClick={() => setOpen(!open)}>
         How streaks work here
         <CaretDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
@@ -315,7 +315,7 @@ function Muscles({ muscles }: { muscles: ProgressData["muscles"] }) {
   const max = Math.max(22, ...rows.map((m) => m.weekly_avg_4w));
   return (
     <Section title="Sets per muscle">
-      <div className="card p-4">
+      <div className="ruled">
         <p className="mb-4 text-sm text-dim">Weekly average over four weeks. The shaded band is a common general guideline of about 10 to 20 hard sets a week, not a prescription.</p>
         <ul className="space-y-2.5">
           {rows.filter((m) => m.weekly_avg_4w > 0).map((m) => (

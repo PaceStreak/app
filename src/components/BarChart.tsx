@@ -31,7 +31,8 @@ export function BarChart({
   const [active, setActive] = useState<string | null>(null);
   const [asTable, setAsTable] = useState(false);
   const max = Math.max(1, target ?? 0, ...bars.map((b) => b.value)) * 1.08;
-  const every = Math.ceil(bars.length / 6);
+  // Room for a full "20 Jul" under every labelled bar: at most four labels.
+  const every = Math.ceil(bars.length / 4);
   return (
     <figure className="m-0">
       <div className="mb-1 flex justify-end">
@@ -65,7 +66,7 @@ export function BarChart({
       {!asTable && axisLabels && (
         <div className="mt-1.5 grid grid-flow-col text-[0.7rem] text-dim" style={{ gridAutoColumns: "1fr" }} aria-hidden>
           {bars.map((b, i) => (
-            <span key={b.key} className="truncate">
+            <span key={b.key} className="num overflow-visible whitespace-nowrap">
               {i % every === 0 ? b.label : ""}
             </span>
           ))}

@@ -35,7 +35,7 @@ export function MonthlyGoalCard() {
 
   if (editing != null) {
     return (
-      <section className="card p-4" aria-label={`${name} goal`}>
+      <section className="ruled" aria-label={`${name} goal`}>
         <p className="font-semibold">Active days in {name}</p>
         <div className="mt-3 flex items-center justify-between rounded-md bg-surface-2 p-3">
           <button type="button" className="btn btn-secondary btn-icon" aria-label="Fewer days" onClick={() => setEditing(Math.max(1, editing - 1))}>
@@ -67,7 +67,7 @@ export function MonthlyGoalCard() {
 
   if (g.goal == null) {
     return (
-      <button type="button" className="card press flex w-full items-center gap-3 p-4 text-left" onClick={() => setEditing(Math.min(12, g.days_in_month))}>
+      <button type="button" className="ruled press flex w-full items-center gap-3 pb-1 text-left" onClick={() => setEditing(Math.min(12, g.days_in_month))}>
         <CalendarBlank size={22} className="text-dim" aria-hidden />
         <span className="flex-1">
           <span className="block font-semibold">Set a goal for {name}</span>
@@ -82,7 +82,7 @@ export function MonthlyGoalCard() {
   const pct = Math.min(100, (g.done / g.goal) * 100);
   const met = g.done >= g.goal;
   return (
-    <section className="card p-4" aria-label={`${name} goal`}>
+    <section className="ruled" aria-label={`${name} goal`}>
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-semibold">{name}</p>
         <button type="button" className="text-sm font-semibold text-accent-text" onClick={() => setEditing(g.goal)}>
