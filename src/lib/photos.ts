@@ -31,8 +31,24 @@ export async function addPhoto(file: Blob, date: string, pose: Photo["pose"]): P
   return photo;
 }
 
+/**
+ * Uploads go straight from this device to R2, not through the API - see
+ * api/app/training/photos.py. The API hands out a presigned URL, this code
+ * PUTs the bytes directly to it (a plain fetch, not `api()`: it's a
+ * different origin, and it must carry neither our auth header nor cookies),
+ * and then tells the API to verify what actually landed there before it
+ * counts as backed up.
+ */
 async function upload(photo: Photo) {
-  await api(`/body-photos/${photo.id}?date=${photo.date}&pose=${photo.pose}`, { method: "PUT", blob: photo.blob });
+  const body = { date: photo.date, pose: photo.pose, content_type: photo.blob.type };
+  const { upload_url } = await api<{ upload_url: string }>(`/body-photos/${photo.id}/upload`, { body });
+  const put = await fetch(upload_url, {
+    method: "PUT",
+    headers: { "Content-Type": photo.blob.type },
+    body: photo.blob,
+  });
+  if (!put.ok) throw new Error("Photo upload failed");
+  await api(`/body-photos/${photo.id}/upload/complete`, { body });
   await (await db()).put("photos", { ...photo, synced: true });
 }
 
@@ -67,7 +83,12 @@ export async function syncPhotos(): Promise<number> {
   }
   for (const r of remote) {
     if (localIds.has(r.id)) continue;
-    const res = await api<Response>(`/body-photos/${r.id}`, { raw: true });
+    // Fetching the photo is two hops: the API returns a presigned R2 URL
+    // (never raw bytes), and this code fetches that plainly - again no auth
+    // header or cookies, since a presigned URL carries its own permission.
+    const { url } = await api<{ url: string }>(`/body-photos/${r.id}`);
+    const res = await fetch(url);
+    if (!res.ok) continue;
     await store.put("photos", { id: r.id, date: r.date, pose: r.pose, blob: await res.blob(), created_at: new Date().toISOString(), synced: true });
     moved++;
   }
