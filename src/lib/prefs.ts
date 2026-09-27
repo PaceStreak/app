@@ -83,11 +83,3 @@ export function haptic(pattern: number | number[] = 10) {
     /* unsupported */
   }
 }
-
-/** Disciplines picked at onboarding; orders the log grid until history takes over. */
-export function favouriteDisciplines(): string[] {
-  return read<string[]>("favDisciplines", []);
-}
-export function setFavouriteDisciplines(ids: string[]) {
-  write("favDisciplines", ids);
-}

@@ -7,7 +7,7 @@ import { toast } from "../../components/toast";
 import { Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { localDateOf, localToday, toLocalInput, uuid } from "../../lib/dates";
-import { favouriteDisciplines, haptic } from "../../lib/prefs";
+import { haptic } from "../../lib/prefs";
 import { queryClient, useGear, useLibrary, useRoutines, useWorkouts } from "../../lib/queries";
 import { useMe } from "../../lib/session";
 import { deleteWorkout, saveWorkout } from "../../lib/sync";
@@ -47,15 +47,16 @@ function Chooser({ onPick, onClose }: { onPick: (d: string) => void; onClose: ()
   const workouts = useWorkouts();
   const routines = useRoutines();
   const navigate = useNavigate();
+  const me = useMe();
 
   // Most-used first: what you did recently, then what you said you do.
   const ordered = useMemo(() => {
     const all = lib?.lib.disciplines ?? [];
     const score = new Map<string, number>();
     (workouts ?? []).slice(0, 60).forEach((w, i) => score.set(w.discipline, (score.get(w.discipline) ?? 0) + (60 - i)));
-    favouriteDisciplines().forEach((d) => score.set(d, (score.get(d) ?? 0) + 30));
+    (me.profile.favourite_disciplines ?? []).forEach((d) => score.set(d, (score.get(d) ?? 0) + 30));
     return [...all].sort((a, b) => (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0));
-  }, [lib, workouts]);
+  }, [lib, workouts, me.profile.favourite_disciplines]);
 
   const recentRoutines = (routines.data ?? [])
     .filter((r) => r.items.length)

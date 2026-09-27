@@ -6,7 +6,6 @@ import { Field, Segmented } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import { browserTimezone } from "../lib/dates";
 import { useLibrary } from "../lib/queries";
-import { setFavouriteDisciplines } from "../lib/prefs";
 import { useSession } from "../lib/session";
 import type { Me, Visibility } from "../lib/types";
 
@@ -86,7 +85,9 @@ export default function Welcome() {
           visibility: teen ? "private" : visibility,
         },
       });
-      setFavouriteDisciplines(disciplines);
+      if (disciplines.length) {
+        await api("/me/profile", { method: "PATCH", body: { favourite_disciplines: disciplines } }).catch(() => undefined);
+      }
       if (separate) {
         for (const d of disciplines.slice(0, 5)) {
           const disc = library?.discipline(d);

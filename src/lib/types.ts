@@ -20,6 +20,8 @@ export interface Profile {
   onboarded_at?: string | null;
   /** Days a week for the whole-life streak; null means it's off. */
   life_target?: number | null;
+  /** Picked at onboarding; biases the log sheet's suggestion ordering until history takes over. */
+  favourite_disciplines?: string[];
   birth_year: number | null;
   onboarded: boolean;
   visibility: Visibility;
