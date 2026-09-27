@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { addDays, fmtFullDay, parseDay, weekday, weekStart } from "../lib/dates";
 import { isDone, markerFor, orderForToday, partOfDay, setHabitDay } from "../lib/habits";
 import { haptic } from "../lib/prefs";
-import { useHabits } from "../lib/queries";
+import { useHabitCatalog, useHabits } from "../lib/queries";
 import { useMe } from "../lib/session";
 import type { Habit } from "../lib/types";
 import { AddHabit } from "./HabitForm";
@@ -23,6 +23,7 @@ const letter = new Intl.DateTimeFormat(undefined, { weekday: "narrow", timeZone:
 export function HabitsToday({ today }: { today: string }) {
   const me = useMe();
   const habits = useHabits();
+  const catalog = useHabitCatalog();
   const [adding, setAdding] = useState(false);
   const [sheet, setSheet] = useState<{ habit: Habit; day: string } | null>(null);
   const ordered = useMemo(() => orderForToday(habits.data ?? [], partOfDay(new Date().getHours())), [habits.data]);
@@ -31,6 +32,18 @@ export function HabitsToday({ today }: { today: string }) {
   const done = doing.filter((h) => h.today.done).length;
   const start = weekStart(today, me.profile.week_starts_on);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+
+  // Grouped by category when more than one is in use - one section per
+  // category, in the order each first appears - so a full board of "other"
+  // (the default) never grows a header nobody asked for.
+  const categoryNames = catalog.data?.categories ?? {};
+  const groups: { category: string; habits: Habit[] }[] = [];
+  for (const h of ordered) {
+    const group = groups.find((g) => g.category === h.category);
+    if (group) group.habits.push(h);
+    else groups.push({ category: h.category, habits: [h] });
+  }
+  const grouped = groups.length > 1;
 
   const tap = async (h: Habit, day: string, amount: number) => {
     if (day > today) return;
@@ -77,9 +90,20 @@ export function HabitsToday({ today }: { today: string }) {
                 <span className="num text-[0.8rem]">{Number(d.slice(8))}</span>
               </div>
             ))}
-            {ordered.map((h) => (
-              <BoardRow key={h.id} habit={h} days={days} today={today} onTap={tap} />
-            ))}
+            {grouped
+              ? groups.map((g) => (
+                  <div key={g.category} role="rowgroup" className="col-span-full [&:not(:first-child)]:border-t [&:not(:first-child)]:border-line">
+                    <p className="board-name px-3 pt-2 pb-1 text-xs font-bold tracking-wide text-dim uppercase">{categoryNames[g.category] ?? g.category}</p>
+                    <div className="board" role="grid" aria-label={`${categoryNames[g.category] ?? g.category} habits this week`}>
+                      {g.habits.map((h) => (
+                        <BoardRow key={h.id} habit={h} days={days} today={today} onTap={tap} />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              : ordered.map((h) => (
+                  <BoardRow key={h.id} habit={h} days={days} today={today} onTap={tap} />
+                ))}
           </div>
         </div>
       )}
