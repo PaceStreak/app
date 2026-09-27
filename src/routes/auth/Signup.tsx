@@ -15,7 +15,6 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [needsVerify, setNeedsVerify] = useState(false);
   const [captcha, setCaptcha] = useState<string | null>(null);
   const captchaRef = useRef<TurnstileHandle>(null);
   const short = password.length > 0 && password.length < 16;
@@ -44,7 +43,7 @@ export default function Signup() {
         // so the account exists (signup above succeeded) but this second
         // call is expected to fail here - not an error, just a fork in the
         // flow. Anything else re-throws to the outer catch.
-        if (err instanceof ApiError && err.status === 403) setNeedsVerify(true);
+        if (err instanceof ApiError && err.status === 403) navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
         else throw err;
       }
     } catch (err) {
@@ -54,16 +53,6 @@ export default function Signup() {
       setBusy(false);
     }
   };
-
-  if (needsVerify) {
-    return (
-      <AuthLayout
-        title={t("auth.signup.verifyTitle")}
-        subtitle={t("auth.signup.verifyBody", { email })}
-        footer={<Link to="/login" className="font-semibold text-accent-text">{t("common.signIn")}</Link>}
-      />
-    );
-  }
 
   return (
     <AuthLayout

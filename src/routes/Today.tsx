@@ -184,7 +184,7 @@ export default function Today() {
         }
         case "resend":
           await api("/auth/resend-verification", { body: { email: me.user.email } });
-          toast.success("Sent", { body: `Check ${me.user.email}.` });
+          navigate(`/verify-email?email=${encodeURIComponent(me.user.email)}`);
           break;
         case "timezone":
           await patchProfile({ timezone: action.timezone }, `Now on ${placeName(action.timezone)} time`);

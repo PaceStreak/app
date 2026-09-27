@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
+import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { AuthLayout } from "./AuthLayout";
@@ -8,33 +9,74 @@ import { t } from "../../lib/i18n";
 export default function VerifyEmail() {
   const [params] = useSearchParams();
   const { status, reloadMe } = useSession();
+  const [email, setEmail] = useState(params.get("email") ?? "");
+  const [code, setCode] = useState("");
   const [state, setState] = useState<"working" | "done" | "error">("working");
   const [error, setError] = useState<string | null>(null);
-  const ran = useRef(false);
-  useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
-    const token = params.get("token");
-    if (!token) {
+  const [busy, setBusy] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api("/auth/verify-email", { body: { email, code }, auth: false });
+      setState("done");
+      if (status === "ready") void reloadMe();
+    } catch (err) {
       setState("error");
-      setError(t("auth.verify.noToken"));
-      return;
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
     }
-    api("/auth/verify-email", { body: { token }, auth: false })
-      .then(() => {
-        setState("done");
-        if (status === "ready") void reloadMe();
-      })
-      .catch((err) => {
-        setState("error");
-        setError(errorText(err));
-      });
-  }, [params, status, reloadMe]);
+  };
+
+  const resend = async () => {
+    setBusy(true);
+    try {
+      await api("/auth/resend-verification", { body: { email }, auth: false });
+      setResent(true);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (state === "done") {
+    return (
+      <AuthLayout
+        title={t("auth.verify.doneTitle")}
+        subtitle={t("auth.verify.doneBody")}
+        footer={<Link to="/" className="font-semibold text-accent-text">{t("auth.verify.open")}</Link>}
+      />
+    );
+  }
+
   return (
     <AuthLayout
-      title={state === "working" ? t("auth.verify.working") : state === "done" ? t("auth.verify.doneTitle") : t("auth.verify.failTitle")}
-      subtitle={state === "done" ? t("auth.verify.doneBody") : state === "error" ? t("auth.verify.failBody", { error: error ?? "" }) : undefined}
-      footer={<Link to="/" className="font-semibold text-accent-text">{t("auth.verify.open")}</Link>}
-    />
+      title={t("auth.verify.title")}
+      subtitle={state === "error" ? t("auth.verify.failBody", { error: error ?? "" }) : t("auth.verify.subtitle", { email: email || "your address" })}
+    >
+      <form onSubmit={submit} className="space-y-5">
+        <Field label={t("auth.verify.email")} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus={!email} />
+        <Field
+          label={t("auth.verify.code")}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          required
+          autoFocus={!!email}
+        />
+        <button className="btn btn-primary w-full" disabled={busy || code.length !== 6 || !email}>
+          {busy ? t("auth.verify.working") : t("auth.verify.submit")}
+        </button>
+        <button type="button" className="btn btn-secondary w-full" onClick={resend} disabled={busy || !email}>
+          {resent ? t("auth.verify.resent") : t("auth.verify.resend")}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

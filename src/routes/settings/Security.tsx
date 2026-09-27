@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import QRCode from "qrcode";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { useConfirm } from "../../components/Confirm";
 import { DeviceMobile, EnvelopeSimple, ShieldCheck } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
@@ -45,6 +46,7 @@ function QR({ text }: { text: string }) {
 
 export function Security() {
   const me = useMe();
+  const navigate = useNavigate();
   const { reloadMe, signOut } = useSession();
   const [confirmSheet, ask] = useConfirm();
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api<SessionRow[]>("/auth/sessions") });
@@ -58,9 +60,10 @@ export function Security() {
   const startEmailChange = async () => {
     if (!emailChange) return;
     try {
-      const res = await api<{ detail: string }>("/auth/change-email", { body: { new_email: emailChange.email.trim(), password: emailChange.password } });
+      const newEmail = emailChange.email.trim();
+      await api<{ detail: string }>("/auth/change-email", { body: { new_email: newEmail, password: emailChange.password } });
       setEmailChange(null);
-      toast.success("Check the new inbox", { body: res.detail });
+      navigate(`/confirm-email?email=${encodeURIComponent(newEmail)}`);
     } catch (err) {
       toast.error(errorText(err));
     }
@@ -138,7 +141,15 @@ export function Security() {
         <Banner
           icon={<EnvelopeSimple size={18} />}
           action={
-            <button type="button" className="btn btn-sm btn-secondary" onClick={() => void api("/auth/resend-verification", { body: { email: me.user.email } }).then(() => toast.success("Sent"))}>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() =>
+                void api("/auth/resend-verification", { body: { email: me.user.email } }).then(() =>
+                  navigate(`/verify-email?email=${encodeURIComponent(me.user.email)}`),
+                )
+              }
+            >
               Resend
             </button>
           }
@@ -157,10 +168,10 @@ export function Security() {
             }}
           >
             <Field label="New email address" type="email" autoComplete="email" required value={emailChange.email} onChange={(e) => setEmailChange({ ...emailChange, email: e.target.value })} />
-            <Field label="Your password" type="password" autoComplete="current-password" required value={emailChange.password} onChange={(e) => setEmailChange({ ...emailChange, password: e.target.value })} hint="Nothing changes until you open the link we send to the new address. Your old address will be told." />
+            <Field label="Your password" type="password" autoComplete="current-password" required value={emailChange.password} onChange={(e) => setEmailChange({ ...emailChange, password: e.target.value })} hint="Nothing changes until you confirm the code we send to the new address. Your old address will be told." />
             <div className="flex gap-2">
               <button type="button" className="btn btn-secondary flex-1" onClick={() => setEmailChange(null)}>Cancel</button>
-              <button className="btn btn-primary flex-1" disabled={!emailChange.email.includes("@") || !emailChange.password}>Send link</button>
+              <button className="btn btn-primary flex-1" disabled={!emailChange.email.includes("@") || !emailChange.password}>Send code</button>
             </div>
           </form>
         ) : (
