@@ -1212,3 +1212,131 @@
     padding-top: 1rem;
   }
 }
+
+@layer components {
+  /* --- SaaS shell: sidebar, today layout, progress ---------------------- */
+  .sidebar {
+    border-right: 1px solid var(--line);
+    background: var(--bg-alt);
+  }
+  .nav-label {
+    padding: 0 0.75rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .side-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 40px;
+    padding: 0 0.75rem;
+    border-radius: 10px;
+    font-size: 0.94rem;
+    font-weight: 550;
+    color: var(--muted);
+    transition: background-color 140ms ease, color 140ms ease, transform 160ms var(--ease-out);
+  }
+  .side-link.is-active {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .side-link.is-active svg {
+    color: var(--accent-text);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .side-link:hover:not(.is-active) {
+      background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+      color: var(--ink);
+    }
+  }
+  .kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.3rem;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent-ink) 14%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .today-title {
+    margin-top: 0.15rem;
+    font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+    font-weight: 800;
+    font-stretch: 92%;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  .today-grid {
+    display: grid;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .today-main,
+  .today-side {
+    display: grid;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+  /* GettingStarted and friends carry their own bottom margin. */
+  .today-side > * {
+    margin-bottom: 0 !important;
+  }
+  @media (min-width: 1024px) {
+    .today-grid {
+      grid-template-columns: minmax(0, 1fr) 22rem;
+      gap: 1.75rem;
+    }
+    .today-side {
+      position: sticky;
+      top: 1.5rem;
+    }
+  }
+  @media (min-width: 1536px) {
+    .today-grid {
+      grid-template-columns: minmax(0, 1fr) 26rem;
+    }
+  }
+
+  .progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface-3);
+    overflow: hidden;
+  }
+  .progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 360ms var(--ease-out);
+  }
+
+  /* Cards sit a little higher off the page and answer a hover, so the
+     interface reads as a set of working surfaces. */
+  .card {
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset;
+  }
+  [data-theme="light"] .card {
+    box-shadow: 0 1px 2px rgb(17 18 20 / 0.04);
+  }
+}
+
+@layer components {
+  .auth-panel {
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem clamp(3rem, 6vw, 7rem);
+    border-left: 1px solid var(--line);
+    background:
+      radial-gradient(40rem 26rem at 20% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+      radial-gradient(30rem 20rem at 100% 100%, color-mix(in srgb, var(--flame) 10%, transparent), transparent 70%),
+      var(--bg-alt);
+  }
+}

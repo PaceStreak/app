@@ -57,6 +57,12 @@ const en = {
   "errors.unknown": "Something went wrong.",
   "errors.offline": "You're offline, or the server can't be reached.",
 
+  "auth.panel.line1": "Don't break",
+  "auth.panel.line2": "the",
+  "auth.panel.word": "chain",
+  "auth.panel.p1": "Keep each habit weekly. Days off never break the chain.",
+  "auth.panel.p2": "Your habits stay private. No board shows which one, or how much.",
+  "auth.panel.p3": "Works offline, installs to your home screen, exports everything.",
   "auth.login.title": "Welcome back.",
   "auth.login.subtitle": "Log in to keep the streak going.",
   "auth.login.newHere": "New here? <signup>Create an account</signup>",

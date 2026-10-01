@@ -4,18 +4,24 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import {
+  Barbell,
   Bell,
+  CalendarBlank,
+  CalendarCheck,
   ChartLineUp,
   CloudSlash,
   Gear,
   House,
+  ListBullets,
   Plus,
+  Sparkle,
   Trophy,
   UserCircle,
   UsersThree,
   Wrench,
   ShieldCheck,
 } from "../components/phosphor";
+import { Avatar } from "../components/ui";
 import { TermsGate } from "../components/TermsGate";
 import { toast } from "../components/toast";
 import { api } from "../lib/api";
@@ -27,12 +33,50 @@ import { haptic, prefs } from "../lib/prefs";
 import { weight as fmtWeight } from "../lib/units";
 import { LogProvider, useLog } from "./LogContext";
 
+/** Phone tab bar: the four places used daily. Everything else is one tap away
+ * under "You", and all of it is in the desktop sidebar. */
 const TABS = [
   { to: "/", label: t("nav.today"), icon: House, end: true },
+  { to: "/habits", label: "Habits", icon: Sparkle },
   { to: "/progress", label: t("nav.progress"), icon: ChartLineUp },
-  { to: "/feed", label: t("nav.social"), icon: UsersThree },
   { to: "/you", label: t("nav.you"), icon: UserCircle },
 ];
+
+type NavItem = { to: string; label: string; icon: typeof House; end?: boolean; badge?: number };
+
+/** Desktop sidebar, grouped the way people think about the product. */
+const NAV_GROUPS: { label?: string; items: NavItem[] }[] = [
+  {
+    items: [
+      { to: "/", label: t("nav.today"), icon: House, end: true },
+      { to: "/habits", label: "Habits", icon: Sparkle },
+      { to: "/progress", label: t("nav.progress"), icon: ChartLineUp },
+    ],
+  },
+  {
+    label: "Training",
+    items: [
+      { to: "/history", label: "Sessions", icon: CalendarBlank },
+      { to: "/plans", label: "Plans", icon: CalendarCheck },
+      { to: "/routines", label: "Routines", icon: ListBullets },
+      { to: "/exercises", label: "Exercises", icon: Barbell },
+      { to: "/tools", label: t("nav.tools"), icon: Wrench },
+    ],
+  },
+  {
+    label: "Community",
+    items: [
+      { to: "/feed", label: "Feed", icon: UsersThree },
+      { to: "/groups", label: "Groups", icon: UsersThree },
+      { to: "/challenges", label: "Challenges", icon: Trophy },
+      { to: "/leaderboards", label: t("nav.leaderboards"), icon: Trophy },
+    ],
+  },
+];
+
+/** Pages that use the full width on a big screen. Everything else keeps a
+ * readable single column. */
+const WIDE_ROUTES = new Set(["/"]);
 
 export function Shell() {
   return (
@@ -136,44 +180,51 @@ function ShellInner() {
   const staff = me?.user.role === "admin" || me?.user.role === "moderator";
 
   return (
-    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
+    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 btn btn-primary">
         Skip to content
       </a>
 
-      {/* Desktop rail */}
-      <aside className="sticky top-0 hidden h-[100dvh] flex-col border-r border-line px-4 py-6 lg:flex">
-        <NavLink to="/" className="mb-8 flex items-center gap-2.5 px-2 text-[1.05rem] font-semibold tracking-tight">
+      {/* Desktop sidebar */}
+      <aside className="sidebar sticky top-0 hidden h-[100dvh] flex-col px-3 py-5 lg:flex">
+        <NavLink to="/" className="mb-5 flex items-center gap-2.5 px-3 text-[1.05rem] font-semibold tracking-tight">
           <Logo className="size-7" />
           PaceStreak
         </NavLink>
-        <button type="button" className="btn btn-primary log-cap mb-6 w-full" onClick={() => openLog()}>
-          <Plus size={18} weight="bold" /> Log a session
+        <button type="button" className="btn btn-primary log-cap mx-1 mb-5 justify-between" onClick={() => openLog()}>
+          <span className="flex items-center gap-2">
+            <Plus size={18} weight="bold" /> Log a session
+          </span>
+          <kbd className="kbd" aria-hidden>N</kbd>
         </button>
-        <nav className="flex flex-col gap-1" aria-label="Main">
-          {[
-            ...TABS,
-            { to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: unread },
-            { to: "/leaderboards", label: t("nav.leaderboards"), icon: Trophy },
-            { to: "/tools", label: t("nav.tools"), icon: Wrench },
-            { to: "/settings", label: t("nav.settings"), icon: Gear },
-            ...(staff ? [{ to: "/admin", label: t("nav.moderation"), icon: ShieldCheck }] : []),
-          ].map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              end={"end" in t ? t.end : false}
-              className={({ isActive }) =>
-                `press flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium ${isActive ? "bg-surface-2 text-ink" : "text-muted hover:text-ink"}`
-              }
-            >
-              <t.icon size={20} />
-              <span className="flex-1">{t.label}</span>
-              {"badge" in t && t.badge ? <span className="num chip chip-accent h-5 px-1.5 text-xs">{t.badge}</span> : null}
-            </NavLink>
+        <nav className="-mx-1 flex-1 overflow-y-auto px-1" aria-label="Main">
+          {NAV_GROUPS.map((group, i) => (
+            <div key={group.label ?? i} className={i > 0 ? "mt-5" : ""}>
+              {group.label && <p className="nav-label">{group.label}</p>}
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map((item) => (
+                  <li key={item.to}>
+                    <SideLink item={item} />
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
         </nav>
-        <SyncFooter online={online && !offline} pending={sync.pending} />
+        <div className="mt-3 border-t border-line pt-3">
+          <ul className="flex flex-col gap-0.5">
+            <li><SideLink item={{ to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: unread }} /></li>
+            <li><SideLink item={{ to: "/settings", label: t("nav.settings"), icon: Gear }} /></li>
+            {staff && <li><SideLink item={{ to: "/admin", label: t("nav.moderation"), icon: ShieldCheck }} /></li>}
+          </ul>
+          <NavLink to="/you" className="press mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-surface-2">
+            <Avatar name={me?.profile.display_name || me?.profile.handle} hue={me?.profile.avatar_hue ?? 0} size={32} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{me?.profile.display_name || me?.profile.handle || "You"}</span>
+              <span className="block truncate text-xs text-dim">{online && !offline ? (sync.pending ? `Syncing ${sync.pending}` : "All synced") : "Offline"}</span>
+            </span>
+          </NavLink>
+        </div>
       </aside>
 
       <div className="min-w-0">
@@ -193,7 +244,10 @@ function ShellInner() {
           </div>
         </div>
 
-        <main id="main" className={`mx-auto w-full max-w-[720px] px-4 sm:px-6 ${hideTabs ? "pb-10" : "pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-16"}`}>
+        <main
+          id="main"
+          className={`mx-auto w-full px-4 sm:px-6 lg:px-10 ${WIDE_ROUTES.has(location.pathname) ? "max-w-[1240px] 2xl:max-w-[1400px]" : "max-w-[820px]"} ${hideTabs ? "pb-10" : "pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-16"}`}
+        >
           <div key={location.pathname} className="page-enter">
             <Outlet />
           </div>
@@ -230,6 +284,20 @@ function ShellInner() {
   );
 }
 
+function SideLink({ item }: { item: NavItem }) {
+  return (
+    <NavLink to={item.to} end={item.end ?? false} className={({ isActive }) => `side-link press ${isActive ? "is-active" : ""}`}>
+      {({ isActive }) => (
+        <>
+          <item.icon size={19} weight={isActive ? "fill" : "regular"} />
+          <span className="flex-1">{item.label}</span>
+          {item.badge ? <span className="num chip chip-accent h-5 px-1.5 text-xs">{item.badge}</span> : null}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
 function Tab({ to, label, icon: Icon, end }: (typeof TABS)[number]) {
   return (
     <NavLink
@@ -255,21 +323,5 @@ function OfflinePill({ online, pending }: { online: boolean; pending: number }) 
       {!online && <CloudSlash size={14} />}
       {online ? `Syncing ${pending}` : pending ? `Offline · ${pending} saved here` : "Offline"}
     </span>
-  );
-}
-
-function SyncFooter({ online, pending }: { online: boolean; pending: number }) {
-  return (
-    <p className="mt-auto flex items-center gap-2 px-3 text-sm text-dim" role="status">
-      {!online ? (
-        <>
-          <CloudSlash size={16} /> Offline{pending ? ` · ${pending} saved on this device` : ""}
-        </>
-      ) : pending ? (
-        <>Syncing {pending}…</>
-      ) : (
-        <>All synced</>
-      )}
-    </p>
   );
 }

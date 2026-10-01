@@ -6,6 +6,7 @@ import { QuestsCard, WagerCard } from "../components/Engagement";
 import { ReadinessCard } from "../components/Readiness";
 import { GettingStarted } from "../components/GettingStarted";
 import { HabitsToday } from "../components/HabitsToday";
+import { TodayChecklist } from "../components/TodayChecklist";
 import { Heatmap } from "../components/Heatmap";
 import {
   ArrowCounterClockwise,
@@ -32,7 +33,7 @@ import { WorkoutRow } from "../components/WorkoutRow";
 import { Skeleton } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import { buildCards, placeName, type CardAction, type CoachCard } from "../lib/coach";
-import { addDays, fmtFullDay, localToday, parseDay } from "../lib/dates";
+import { addDays, localToday, parseDay } from "../lib/dates";
 import { kvGet } from "../lib/db";
 import { haptic, prefs } from "../lib/prefs";
 import { canInstall, currentPushSubscription, enablePush, install, onInstallChange, pushSupported } from "../lib/pwa";
@@ -71,7 +72,7 @@ function deviceTimezone(): string | null {
 }
 
 const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "long", timeZone: "UTC" });
-const monthShort = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
+const monthDay = new Intl.DateTimeFormat(undefined, { month: "long", day: "numeric", timeZone: "UTC" });
 
 export default function Today() {
   const me = useMe();
@@ -210,100 +211,118 @@ export default function Today() {
   const recent = (workouts ?? []).slice(0, 4);
   const gamified = stats.data?.gamification_enabled ?? me.profile.gamification_enabled;
 
+  const lifeWeeks = stats.data?.life?.current ?? main?.current ?? 0;
+  const firstName = (me.profile.display_name || me.profile.handle || "").split(/\s+/)[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 5 ? "Still up" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const ready = stats.seeded && workouts;
+
   return (
-    <div className="pt-4 lg:pt-8">
-      {/* The tear-off page for today, beside the chain it extends. */}
-      <header className="flex items-stretch gap-4">
-        <div className="tearoff" aria-label={fmtFullDay(today)}>
-          <div className="tearoff-head">{weekdayShort.format(parseDay(today))}</div>
-          <div className="tearoff-day">{Number(today.slice(8))}</div>
-          <div className="tearoff-month">{monthShort.format(parseDay(today))}</div>
+    <div className="pt-5 lg:pt-10">
+      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-dim">
+            {weekdayShort.format(parseDay(today))}, {monthDay.format(parseDay(today))}
+          </p>
+          <h1 className="today-title">
+            {greeting}
+            {firstName ? `, ${firstName}` : ""}
+          </h1>
         </div>
-        <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
-          <div>
-            <p className="text-sm font-semibold text-dim">Whole-life chain</p>
-            <p className="mt-0.5 flex items-baseline gap-2">
-              <span className="num text-[2.6rem] leading-none font-extrabold tracking-tight text-flame-text">{stats.data?.life?.current ?? main?.current ?? 0}</span>
-              <span className="text-[0.95rem] font-semibold">{(stats.data?.life?.current ?? main?.current ?? 0) === 1 ? "week" : "weeks"} unbroken</span>
-            </p>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
-            <span className="flex items-center gap-1.5">
-              <WeekDots dots={week.dots} size="sm" />
-              <span className="num text-muted">
-                {Math.max(week.count, main?.this_week_days ?? 0)}/{main?.this_week_target ?? 3} training
-              </span>
-            </span>
-            {main && main.current > 0 && stats.data?.life && (
-              <span className="num flex items-center gap-1 text-muted">
-                <Fire size={14} weight="fill" className="text-flame" aria-hidden /> {main.current} wk training
-              </span>
-            )}
-            {gamified && stats.data && (
-              <Link to="/progress/xp" className="chip">
-                Lv {stats.data.level.level}
-              </Link>
-            )}
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="chip chip-flame h-8 px-3 text-sm">
+            <Fire size={15} weight="fill" aria-hidden /> <span className="num">{lifeWeeks}</span> {lifeWeeks === 1 ? "week" : "weeks"} unbroken
+          </span>
+          {gamified && stats.data && (
+            <Link to="/progress/xp" className="chip h-8 px-3 text-sm">
+              Level {stats.data.level.level}
+            </Link>
+          )}
+          <button type="button" className="btn btn-primary btn-sm hidden sm:inline-flex lg:hidden" onClick={() => openLog()}>
+            Log a session
+          </button>
         </div>
       </header>
 
-      <div className="mt-5">
-        {!stats.seeded || !workouts ? (
-          <Skeleton className="h-64" />
-        ) : (
-          <>
-            <HabitsToday today={today} />
-            <div className="mt-7">
+      <div className="today-grid mt-6">
+        <div className="today-main">
+          {!ready ? (
+            <>
+              <Skeleton className="h-64" />
+              <Skeleton className="h-40" />
+            </>
+          ) : (
+            <>
+              <TodayChecklist today={today} onLog={() => openLog()} />
               <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
-            </div>
-            <div className="mt-4" />
-            <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
-            {(stats.data?.totals.sessions ?? 0) > 0 && !stats.data?.paused_today && <ReadinessCard today={today} onAdjust={() => setAdjusting(true)} />}
-            {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
-            {gamified && stats.data?.quests && <QuestsCard quests={stats.data.quests} />}
-          </>
-        )}
+              <HabitsToday today={today} />
+              {recent.length > 0 && (
+                <section>
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <h2 className="text-[1.1rem] font-bold">Recent sessions</h2>
+                    <Link to="/history" className="text-sm font-semibold text-accent-text">
+                      All sessions
+                    </Link>
+                  </div>
+                  <div className="card divide-y divide-line overflow-hidden">
+                    {recent.map((w) => (
+                      <WorkoutRow key={w.id} w={w} lib={lib} profile={me.profile} today={today} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+
+        <aside className="today-side" aria-label="Your week">
+          {ready && (
+            <>
+              <section className="card p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-dim">Training this week</h2>
+                    <p className="num mt-1 text-3xl font-extrabold tracking-tight">
+                      {Math.max(week.count, main?.this_week_days ?? 0)}
+                      <span className="text-lg font-semibold text-dim"> / {main?.this_week_target ?? 3} days</span>
+                    </p>
+                  </div>
+                  <WeekDots dots={week.dots} />
+                </div>
+                <button type="button" className="btn btn-secondary mt-4 w-full" onClick={() => openLog()}>
+                  <Play size={16} weight="fill" /> Log a session
+                </button>
+              </section>
+              <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
+              {(stats.data?.totals.sessions ?? 0) > 0 && !stats.data?.paused_today && <ReadinessCard today={today} onAdjust={() => setAdjusting(true)} />}
+              {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
+              {gamified && stats.data?.quests && <QuestsCard quests={stats.data.quests} />}
+              {stats.data && stats.data.totals.sessions > 0 && (
+                <Link to="/progress" className="press card block p-4 sm:p-5">
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <h2 className="font-bold">The year so far</h2>
+                    <span className="num text-sm text-dim">
+                      {plural(stats.data.totals.active_days, "day")} · best {main?.longest ?? 0} wk
+                    </span>
+                  </div>
+                  <Heatmap
+                    days={stats.data.heatmap}
+                    weeks={main?.weeks}
+                    today={today}
+                    weekStartsOn={me.profile.week_starts_on}
+                    span={26}
+                    plannedDays={stats.data.training_days ?? me.profile.training_days}
+                    pauses={stats.data.pauses ?? []}
+                    restDays={restDays.data ?? []}
+                  />
+                </Link>
+              )}
+            </>
+          )}
+        </aside>
       </div>
 
       <AdjustToday open={adjusting} onClose={() => setAdjusting(false)} planned={plannedToday} />
-
-      {recent.length > 0 && (
-        <section className="mt-9">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[1.15rem] font-bold">Recent sessions</h2>
-            <Link to="/history" className="text-sm font-semibold text-accent-text">
-              All sessions
-            </Link>
-          </div>
-          <div className="card divide-y divide-line overflow-hidden">
-            {recent.map((w) => (
-              <WorkoutRow key={w.id} w={w} lib={lib} profile={me.profile} today={today} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {stats.data && stats.data.totals.sessions > 0 && (
-        <Link to="/progress" className="press card mt-6 block p-4 sm:p-5">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="font-bold">The year so far</h2>
-            <span className="num text-sm text-dim">
-              {plural(stats.data.totals.active_days, "day")} · longest {main?.longest ?? 0} wk
-            </span>
-          </div>
-          <Heatmap
-            days={stats.data.heatmap}
-            weeks={main?.weeks}
-            today={today}
-            weekStartsOn={me.profile.week_starts_on}
-            span={26}
-            plannedDays={stats.data.training_days ?? me.profile.training_days}
-            pauses={stats.data.pauses ?? []}
-            restDays={restDays.data ?? []}
-          />
-        </Link>
-      )}
     </div>
   );
 }
@@ -377,7 +396,7 @@ function LeadCard({ card, onAction, onDismiss }: { card: CoachCard; onAction: (a
       <div className="flex items-start gap-3">
         <span className="coach-icon grid size-10 shrink-0 place-items-center rounded-md text-[20px]">{ICONS[card.icon]}</span>
         <div className="min-w-0 flex-1">
-          <h1 className="text-[1.35rem] leading-[1.15] font-bold">{card.title}</h1>
+          <h2 className="text-[1.25rem] leading-[1.15] font-bold">{card.title}</h2>
           <p className="mt-1.5 max-w-[52ch] text-[0.95rem] text-muted">{card.body}</p>
         </div>
         {card.dismissible && (

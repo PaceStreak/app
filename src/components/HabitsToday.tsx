@@ -27,7 +27,7 @@ export function HabitsToday({ today }: { today: string }) {
   const [adding, setAdding] = useState(false);
   const [sheet, setSheet] = useState<{ habit: Habit; day: string } | null>(null);
   const ordered = useMemo(() => orderForToday(habits.data ?? [], partOfDay(new Date().getHours())), [habits.data]);
-  if (!habits.data) return null;
+  if (!habits.data || habits.data.length === 0) return null;
   const doing = ordered.filter((h) => h.kind !== "quit");
   const done = doing.filter((h) => h.today.done).length;
   const start = weekStart(today, me.profile.week_starts_on);

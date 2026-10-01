@@ -80,6 +80,8 @@ export default function You() {
       </Section>
       <Section title="Together">
         <List>
+          <RowLink to="/feed" icon={<UsersThree size={20} />} title="Feed" detail="Sessions and milestones from people you follow" />
+          <RowLink to="/people" icon={<UsersThree size={20} />} title="Find people" />
           <RowLink to="/groups" icon={<UsersThree size={20} />} title="Groups" />
           <RowLink to="/challenges" icon={<Trophy size={20} />} title="Challenges" />
           <RowLink to="/leaderboards" icon={<Medal size={20} />} title="Leaderboards" />

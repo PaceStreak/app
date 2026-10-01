@@ -103,7 +103,7 @@ export default function Welcome() {
   };
 
   return (
-    <main className="safe-top mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col px-5 pb-8">
+    <main className="safe-top mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col px-5 pb-8 lg:max-w-[560px] lg:justify-center">
       <div className="mt-6 flex items-center gap-2" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
         {STEPS.map((s, i) => (
           <span key={s} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= step ? "bg-accent" : "bg-surface-3"}`} />
