@@ -93,9 +93,25 @@ export default function Progress() {
             ))}
           </div>
 
+          <nav className="mt-4 flex flex-wrap gap-2" aria-label="Go to">
+            {[
+              ["/recap", "Weekly recap"],
+              ["/records", "Records"],
+              ["/achievements", "Achievements"],
+              ...(s.gamification_enabled ? [["/progress/xp", "Level and XP"]] : []),
+              ["/body", "Body"],
+            ].map(([to, label]) => (
+              <Link key={to} to={to} className="chip press h-9 px-4 text-sm hover:text-ink">
+                {label}
+              </Link>
+            ))}
+          </nav>
+
           <div className="mt-4">
             <MonthlyGoalCard />
           </div>
+
+          <div className="progress-cols">
 
           <Section title="Streaks" className="scroll-mt-20" action={<Link to="/settings/training" className="text-sm font-semibold text-accent-text">Manage</Link>}>
             <div id="streaks" className="space-y-3">
@@ -174,6 +190,7 @@ export default function Progress() {
           {progress.data && progress.data.muscles.some((m) => m.weekly_avg_4w > 0) && <Muscles muscles={progress.data.muscles} />}
           {s && <Recovery today={s.today} />}
           {s && <LoadCard today={s.today} />}
+          </div>
 
           <Section title="More">
             <List>

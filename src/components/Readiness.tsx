@@ -27,6 +27,7 @@ export function ReadinessCard({ today, onAdjust }: { today: string; onAdjust: ()
   const q = useQuery({ queryKey: ["readiness"], queryFn: () => api<ReadinessEntry[]>("/readiness?days=14") });
   const [answers, setAnswers] = useState<Partial<Record<(typeof QUESTIONS)[number]["key"], number>>>({});
   const [, bump] = useState(0);
+  const [open, setOpen] = useState(false);
   const dismissKey = `readiness:${today}`;
   const todays = q.data?.find((r) => r.date === today);
   if (!q.data || prefs.dismissed(dismissKey)) return null;
@@ -35,7 +36,7 @@ export function ReadinessCard({ today, onAdjust }: { today: string; onAdjust: ()
     const score = readinessScore(todays);
     const low = score <= 2.4;
     return (
-      <section className="card mt-3 flex items-start gap-3 p-4 text-sm" aria-label="How you're feeling today">
+      <section className="card flex items-start gap-3 p-4 text-sm" aria-label="How you're feeling today">
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{low ? "Running low today" : score >= 4 ? "Feeling good today" : "A normal day"}</p>
           <p className="text-muted">
@@ -54,6 +55,23 @@ export function ReadinessCard({ today, onAdjust }: { today: string; onAdjust: ()
     );
   }
 
+  if (!open) {
+    return (
+      <section className="card flex items-center gap-3 p-3.5 pl-4" aria-label="Morning check-in">
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">How are you today?</p>
+          <p className="text-sm text-dim">Three taps. Only you see it.</p>
+        </div>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setOpen(true)}>
+          Check in
+        </button>
+        <button type="button" aria-label="Not today" className="btn btn-ghost btn-icon btn-sm text-dim" onClick={() => { prefs.dismiss(dismissKey); bump((n) => n + 1); }}>
+          <X size={16} />
+        </button>
+      </section>
+    );
+  }
+
   const done = QUESTIONS.every((qq) => answers[qq.key] != null);
   const save = async () => {
     await sendOrQueue(`/readiness/${today}`, "PUT", answers);
@@ -61,7 +79,7 @@ export function ReadinessCard({ today, onAdjust }: { today: string; onAdjust: ()
   };
 
   return (
-    <section className="card mt-3 p-4" aria-label="Morning check-in">
+    <section className="card p-4" aria-label="Morning check-in">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold">How are you today?</p>

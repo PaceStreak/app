@@ -254,7 +254,7 @@ export default function Today() {
           ) : (
             <>
               <TodayChecklist today={today} onLog={() => openLog()} />
-              <CoachStack cards={cards} onAction={run} onDismiss={dismiss} />
+              <CoachStack cards={cards.slice(0, 1)} onAction={run} onDismiss={dismiss} />
               <HabitsToday today={today} />
               {recent.length > 0 && (
                 <section>
@@ -279,20 +279,26 @@ export default function Today() {
           {ready && (
             <>
               <section className="card p-4 sm:p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-semibold text-dim">Training this week</h2>
-                    <p className="num mt-1 text-3xl font-extrabold tracking-tight">
-                      {Math.max(week.count, main?.this_week_days ?? 0)}
-                      <span className="text-lg font-semibold text-dim"> / {main?.this_week_target ?? 3} days</span>
-                    </p>
-                  </div>
+                <h2 className="text-sm font-semibold text-dim">Training this week</h2>
+                <p className="num mt-1 text-3xl font-extrabold tracking-tight">
+                  {Math.max(week.count, main?.this_week_days ?? 0)}
+                  <span className="text-lg font-semibold text-dim"> / {main?.this_week_target ?? 3} days</span>
+                </p>
+                <div className="mt-3">
                   <WeekDots dots={week.dots} />
                 </div>
                 <button type="button" className="btn btn-secondary mt-4 w-full" onClick={() => openLog()}>
                   <Play size={16} weight="fill" /> Log a session
                 </button>
               </section>
+              {cards.length > 1 && (
+                <section aria-label="Suggestions" className="space-y-2">
+                  <h2 className="text-sm font-semibold text-dim">Suggestions</h2>
+                  {cards.slice(1, 3).map((c) => (
+                    <SmallCard key={c.id} card={c} onAction={run} onDismiss={dismiss} />
+                  ))}
+                </section>
+              )}
               <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
               {(stats.data?.totals.sessions ?? 0) > 0 && !stats.data?.paused_today && <ReadinessCard today={today} onAdjust={() => setAdjusting(true)} />}
               {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
@@ -396,8 +402,8 @@ function LeadCard({ card, onAction, onDismiss }: { card: CoachCard; onAction: (a
       <div className="flex items-start gap-3">
         <span className="coach-icon grid size-10 shrink-0 place-items-center rounded-md text-[20px]">{ICONS[card.icon]}</span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-[1.25rem] leading-[1.15] font-bold">{card.title}</h2>
-          <p className="mt-1.5 max-w-[52ch] text-[0.95rem] text-muted">{card.body}</p>
+          <h2 className="text-[1.1rem] leading-[1.2] font-bold sm:text-[1.25rem]">{card.title}</h2>
+          <p className="mt-1.5 line-clamp-3 max-w-[52ch] text-[0.95rem] text-muted sm:line-clamp-none">{card.body}</p>
         </div>
         {card.dismissible && (
           <button type="button" aria-label="Dismiss" className="btn btn-ghost btn-icon -mt-2 -mr-2 shrink-0 text-dim" onClick={() => onDismiss(card)}>
@@ -406,7 +412,7 @@ function LeadCard({ card, onAction, onDismiss }: { card: CoachCard; onAction: (a
         )}
       </div>
       {(card.primary || card.secondary) && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 pl-13">
+        <div className="mt-4 flex flex-wrap items-center gap-2 sm:pl-13">
           {card.primary && <ActionButton action={card.primary} onAction={onAction} primary />}
           {card.secondary && <ActionButton action={card.secondary} onAction={onAction} />}
         </div>

@@ -76,7 +76,7 @@ const NAV_GROUPS: { label?: string; items: NavItem[] }[] = [
 
 /** Pages that use the full width on a big screen. Everything else keeps a
  * readable single column. */
-const WIDE_ROUTES = new Set(["/"]);
+const WIDE_ROUTES = new Set(["/", "/progress"]);
 
 export function Shell() {
   return (
@@ -246,7 +246,7 @@ function ShellInner() {
 
         <main
           id="main"
-          className={`mx-auto w-full px-4 sm:px-6 lg:px-10 ${WIDE_ROUTES.has(location.pathname) ? "max-w-[1240px] 2xl:max-w-[1400px]" : "max-w-[820px]"} ${hideTabs ? "pb-10" : "pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-16"}`}
+          className={`mx-auto w-full px-4 sm:px-6 lg:px-10 ${WIDE_ROUTES.has(location.pathname) ? "max-w-[1240px] 2xl:max-w-[1400px]" : "max-w-[960px]"} ${hideTabs ? "pb-10" : "pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-16"}`}
         >
           <div key={location.pathname} className="page-enter">
             <Outlet />

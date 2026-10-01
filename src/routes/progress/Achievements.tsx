@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Lock, Medal } from "../../components/phosphor";
-import { ErrorState, Loading, PageHeader, Segmented } from "../../components/ui";
+import { Empty, ErrorState, Loading, PageHeader, Segmented } from "../../components/ui";
 import { api } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
 import type { Achievement } from "../../lib/types";
@@ -39,6 +39,12 @@ export default function Achievements() {
         <div className="mt-6">
           <Loading rows={4} />
         </div>
+      ) : groups.length === 0 ? (
+        <Empty
+          icon={<Medal size={26} />}
+          title={filter === "earned" ? "Nothing earned yet" : "Nothing here"}
+          body={filter === "earned" ? "Badges reward showing up. Keep your first week and the first one lands." : "Switch the filter to see every badge."}
+        />
       ) : (
         groups.map(([cat, items]) => (
           <section key={cat} className="mt-8">

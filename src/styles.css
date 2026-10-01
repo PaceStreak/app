@@ -1170,7 +1170,7 @@
     position: relative;
     display: grid;
     place-items: center;
-    height: 3rem;
+    height: 2.6rem;
     border-left: 1px solid var(--line);
     font-size: 0.85rem;
     font-weight: 600;
@@ -1275,18 +1275,31 @@
   }
   .today-grid {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;
     align-items: start;
   }
   .today-main,
   .today-side {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;
     min-width: 0;
   }
   /* GettingStarted and friends carry their own bottom margin. */
   .today-side > * {
     margin-bottom: 0 !important;
+  }
+  /* Tablets: the side cards pair up instead of forming one long strip. */
+  @media (min-width: 700px) and (max-width: 1023px) {
+    .today-side {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+    .today-side > a,
+    .today-side > section[aria-label="Suggestions"] {
+      grid-column: 1 / -1;
+    }
   }
   @media (min-width: 1024px) {
     .today-grid {
@@ -1338,5 +1351,21 @@
       radial-gradient(40rem 26rem at 20% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
       radial-gradient(30rem 20rem at 100% 100%, color-mix(in srgb, var(--flame) 10%, transparent), transparent 70%),
       var(--bg-alt);
+  }
+}
+
+@layer components {
+  /* Progress: the chart sections flow into two columns on a wide screen
+     instead of one very long strip. */
+  @media (min-width: 1100px) {
+    .progress-cols {
+      columns: 2;
+      column-gap: 2.5rem;
+    }
+    .progress-cols > * {
+      break-inside: avoid;
+      margin-top: 0 !important;
+      margin-bottom: 2.25rem;
+    }
   }
 }

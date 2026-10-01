@@ -45,7 +45,7 @@ export function PageHeader({
   subtitle?: ReactNode;
 }) {
   return (
-    <header className="flex items-start gap-2 pt-4 pb-4">
+    <header className="flex items-start gap-2 pt-4 pb-4 lg:pt-8 lg:pb-6">
       {back && (
         <Link
           to={typeof back === "string" ? back : ".."}
@@ -62,7 +62,7 @@ export function PageHeader({
         </Link>
       )}
       <div className="min-w-0 flex-1 pt-1.5">
-        <h1 className="text-[1.65rem] leading-tight font-semibold tracking-[-0.02em] text-balance">{title}</h1>
+        <h1 className="text-[1.65rem] leading-tight font-semibold tracking-[-0.02em] text-balance lg:text-[2rem]">{title}</h1>
         {subtitle && <p className="mt-1 text-[0.95rem] text-muted">{subtitle}</p>}
       </div>
       {action && <div className="shrink-0 pt-1">{action}</div>}

@@ -5,11 +5,11 @@ import { Check, Globe, Lock, UsersThree } from "../components/phosphor";
 import { Field, Segmented } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import { browserTimezone } from "../lib/dates";
-import { useLibrary } from "../lib/queries";
+import { useHabitCatalog, useLibrary } from "../lib/queries";
 import { useSession } from "../lib/session";
 import type { Me, Visibility } from "../lib/types";
 
-const STEPS = ["name", "age", "train", "privacy"] as const;
+const STEPS = ["name", "age", "train", "habits", "privacy"] as const;
 const year = new Date().getFullYear();
 
 function guessUnits(): { weight: "kg" | "lb"; distance: "km" | "mi" } {
@@ -20,6 +20,8 @@ function guessUnits(): { weight: "kg" | "lb"; distance: "km" | "mi" } {
 export default function Welcome() {
   const { me, setMe, signOut } = useSession();
   const library = useLibrary();
+  const catalog = useHabitCatalog();
+  const [habitIds, setHabitIds] = useState<string[]>([]);
   const navigate = useNavigate();
   const units = guessUnits();
   const [step, setStep] = useState(0);
@@ -65,6 +67,7 @@ export default function Welcome() {
     Boolean(age && !tooYoung && terms),
     true,
     true,
+    true,
   ][step];
 
   const finish = async () => {
@@ -93,6 +96,9 @@ export default function Welcome() {
           const disc = library?.discipline(d);
           await api("/chains", { body: { name: disc?.name ?? d, disciplines: [d], target: Math.max(1, Math.min(target, 3)) } }).catch(() => undefined);
         }
+      }
+      for (const template_id of habitIds) {
+        await api("/habits", { body: { template_id } }).catch(() => undefined);
       }
       setMe(await api<Me>("/me"));
       navigate("/", { replace: true });
@@ -211,6 +217,33 @@ export default function Welcome() {
         )}
 
         {step === 3 && (
+          <>
+            <h1 className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em]">Anything else you want to keep up?</h1>
+            <p className="mt-3 text-muted">Pick a few small habits and they&apos;ll be waiting on your Today page. Skip it if you like; you can add them any time.</p>
+            <div className="mt-6 grid grid-cols-2 gap-2">
+              {(catalog.data?.templates ?? []).slice(0, 12).map((t) => {
+                const on = habitIds.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setHabitIds(on ? habitIds.filter((x) => x !== t.id) : [...habitIds, t.id])}
+                    className={`press flex items-center gap-2.5 rounded-md border px-3 py-3 text-left text-sm font-medium ${on ? "border-transparent bg-accent text-accent-ink" : "border-line bg-surface text-muted"}`}
+                  >
+                    <span aria-hidden className="text-lg">{t.emoji}</span>
+                    <span className="min-w-0 flex-1 leading-tight">{t.name}</span>
+                    {on && <Check size={16} weight="bold" />}
+                  </button>
+                );
+              })}
+              {!catalog.data && <div className="skeleton col-span-2 h-40" />}
+            </div>
+            <p className="field-hint">{habitIds.length ? `${habitIds.length} picked.` : "Nothing picked yet. That's fine."}</p>
+          </>
+        )}
+
+        {step === 4 && (
           <>
             <h1 className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em]">Last thing.</h1>
             <p className="mt-3 text-muted">Units, and who gets to cheer you on.</p>

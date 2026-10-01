@@ -59,6 +59,7 @@ export default function You() {
         </div>
       )}
 
+      <div className="items-start lg:grid lg:grid-cols-2 lg:gap-x-6">
       <Section title="Training">
         <List>
           <RowLink to="/habits" icon={<Sparkle size={20} />} title="Habits" detail={stats?.habits?.count ? `${stats.habits.count} tracked` : "Reading, water, a skill…"} />
@@ -93,6 +94,7 @@ export default function You() {
           {staff && <RowLink to="/admin" icon={<ShieldCheck size={20} />} title="Moderation" />}
         </List>
       </Section>
+      </div>
     </div>
   );
 }
