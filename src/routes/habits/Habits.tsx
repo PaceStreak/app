@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";
 import { AddHabit } from "../../components/HabitForm";
+import { HabitImport, IMPORT_HINT } from "../../components/HabitImport";
+import { HabitRoutines } from "../../components/HabitRoutines";
 import { HabitRow } from "../../components/HabitRow";
 import { Fire, Plus, Sparkle } from "../../components/phosphor";
 import { Empty, ErrorState, Loading, PageHeader, Section } from "../../components/ui";
@@ -81,6 +83,7 @@ export default function Habits() {
               </Section>
             );
           })}
+          <HabitRoutines habits={list} today={today} />
           {breaking.length > 0 && (
             <Section title="Breaking">
               <div className="card divide-y divide-line">
@@ -97,6 +100,8 @@ export default function Habits() {
       <button type="button" className="btn btn-secondary mt-6 w-full" onClick={() => setAdding(true)}>
         <Plus size={18} /> Add a habit
       </button>
+      <HabitImport />
+      <p className="field-hint text-center">{IMPORT_HINT}</p>
       <button type="button" className="btn btn-ghost mt-2 w-full text-dim" onClick={() => setShowArchived(!showArchived)}>
         {showArchived ? "Hide archived habits" : "Show archived habits"}
       </button>

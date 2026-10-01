@@ -2,7 +2,7 @@
   "comment": "Every client-side route prefix. vite.config.ts turns this into public _redirects rules, so Cloudflare Pages serves index.html for these and a real 404 for everything else. The router imports it too; keep both in one place.",
   "prefixes": [
     "/", "/log", "/history", "/workouts", "/progress", "/recap", "/review", "/records", "/achievements",
-    "/exercises", "/routines", "/plans", "/body", "/habits", "/feed", "/people", "/u", "/groups", "/buddies", "/challenges",
+    "/exercises", "/routines", "/plans", "/body", "/food", "/journal", "/insights", "/habits", "/feed", "/people", "/u", "/groups", "/buddies", "/challenges",
     "/leaderboards", "/notifications", "/you", "/settings", "/tools", "/admin",
     "/login", "/signup", "/forgot-password", "/recover", "/confirm-email", "/reset-password", "/verify-email",
     "/welcome", "/unsubscribe", "/offline"

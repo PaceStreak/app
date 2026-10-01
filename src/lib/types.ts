@@ -723,3 +723,107 @@ export interface Reflection {
   went_well: string | null;
   change: string | null;
 }
+
+export type Meal = "breakfast" | "lunch" | "dinner" | "snack";
+
+export interface Macros {
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+}
+
+export interface Food extends Macros {
+  id: string;
+  name: string;
+  brand: string | null;
+  barcode: string | null;
+  serving_label: string | null;
+}
+
+export interface MealEntry extends Macros {
+  id: string;
+  date: string;
+  meal: Meal;
+  name: string;
+  food_id: string | null;
+  servings: number;
+}
+
+export type NutritionTarget = { [K in keyof Macros]: number | null };
+
+export interface NutritionDay {
+  date: string;
+  entries: MealEntry[];
+  totals: Macros;
+  target: NutritionTarget | null;
+}
+
+export interface RecentFood extends Macros {
+  name: string;
+  food_id: string | null;
+  times: number;
+}
+
+export interface CoachNote {
+  kind: string;
+  tone: "nudge" | "praise" | "rest" | "info";
+  title: string;
+  body: string;
+}
+
+export interface HabitRoutine {
+  id: string;
+  name: string;
+  emoji: string;
+  time_of_day: TimeOfDay;
+  habit_ids: string[];
+}
+
+export interface Recipe extends Macros {
+  id: string;
+  name: string;
+  serves: number;
+  items: { food_id: string; name: string; servings: number }[];
+}
+
+export interface Expenditure {
+  window_days: number;
+  status: "ok" | "not_enough" | "inconsistent";
+  food_days: number;
+  weigh_days: number;
+  tdee: number | null;
+  avg_intake: number | null;
+  trend_kg_per_week: number | null;
+  trend_kg: number | null;
+  confidence: "low" | "good" | null;
+  suggestion: { goal: "lose" | "gain" | "maintain"; kcal: number; rate_kg_per_week: number } | null;
+}
+
+export interface JournalDay {
+  date: string;
+  mood: number | null;
+  note: string | null;
+}
+
+export interface Insight {
+  driver: string;
+  outcome: string;
+  text: string;
+  high: number;
+  low: number;
+  days_high: number;
+  days_low: number;
+  strength: number;
+}
+
+export interface Insights {
+  window_days: number;
+  insights: Insight[];
+  coverage: Record<string, number>;
+}
+
+export interface HabitImportResult {
+  habits: { name: string; days: number; first: string | null; last: string | null; merge: boolean }[];
+  imported_days: number;
+}

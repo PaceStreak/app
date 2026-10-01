@@ -1,6 +1,6 @@
 import { WEEKDAYS_LONG, daysBetween, fmtMonthDay, weekday } from "./dates";
 import { conflictFor, trainingLoad } from "./load";
-import type { Challenge, Exercise, Me, Plan, Stats, Workout } from "./types";
+import type { Challenge, CoachNote, Exercise, Me, Plan, Stats, Workout } from "./types";
 import { e1rm } from "./units";
 
 export type CardTone = "flame" | "accent" | "neutral" | "danger";
@@ -48,6 +48,29 @@ export interface CoachContext {
   exercises?: Map<string, Exercise>;
   /** Whether a routine works the legs, for hybrid-training conflicts. */
   routineLegs?: (routineId: string) => boolean;
+  /** Notes from the server's rule-based coach (GET /coach/today). */
+  serverNotes?: CoachNote[];
+}
+
+/**
+ * The server coach also covers streaks and readiness, which the cards above
+ * already handle with richer actions. Only what this file can't see - the
+ * food log - is taken from it, so nothing is said twice.
+ */
+const FOOD_NOTES = new Set(["protein_low", "kcal_low", "kcal_high", "food_on_target"]);
+
+export function foodCards(notes: CoachNote[], today: string): CoachCard[] {
+  return notes
+    .filter((n) => FOOD_NOTES.has(n.kind))
+    .map((n) => ({
+      id: `food:${n.kind}:${today}`,
+      tone: n.tone === "praise" ? "accent" : "neutral",
+      icon: n.tone === "praise" ? "check" : "chart",
+      title: n.title,
+      body: n.body,
+      primary: { kind: "link", label: "Open food log", to: "/food" },
+      dismissible: true,
+    }));
 }
 
 /**
@@ -478,6 +501,7 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
     });
   }
 
+  cards.push(...foodCards(ctx.serverNotes ?? [], today));
   return cards.filter((c) => !(c.dismissible && ctx.dismissed(c.id)));
 }
 

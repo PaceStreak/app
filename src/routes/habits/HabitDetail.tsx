@@ -9,6 +9,7 @@ import { HabitTrend } from "../../components/HabitTrend";
 import { Archive, CaretLeft, CaretRight, PencilSimple, Trash } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
+import { FocusTimer } from "../../components/FocusTimer";
 import { ErrorState, Loading, PageHeader, Section, Stat } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { WEEKDAYS, addDays, weekday, fmtFullDay, fmtMonthDay, fmtMonthYear, fmtProjected, localToday, weekStart } from "../../lib/dates";
@@ -122,6 +123,7 @@ export default function HabitDetail() {
           <HabitRow habit={h} today={today} strip={false} />
         </div>
       )}
+      {!h.archived && h.kind === "duration" && <FocusTimer habit={h} today={today} />}
       {h.why && <p className="mt-3 rounded-md bg-surface-2 px-4 py-3 text-sm text-muted">Why: {h.why}</p>}
 
       <div className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-line [&>*]:px-3 [&>*]:py-3 [&>*:first-child]:pl-0">

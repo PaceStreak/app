@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCards, consistencyGain, stalledLift, type CoachContext } from "./coach";
+import { buildCards, consistencyGain, foodCards, stalledLift, type CoachContext } from "./coach";
 import type { Chain, Me, Stats } from "./types";
 
 const week = (week_start: string, status: Chain["weeks"][number]["status"]) => ({ week_start, days: status === "kept" ? 3 : 0, target: 3, status, score: status === "kept" ? 100 : 0 });
@@ -109,5 +109,21 @@ describe("stalledLift and consistencyGain", () => {
     expect(gain.exerciseId).toBe("bench-press");
     expect(gain.pct).toBeCloseTo(9.4, 1);
     expect(consistencyGain(rows.slice(0, 3), "2026-07-27", "2026-09-01")).toBeNull();
+  });
+});
+
+describe("foodCards", () => {
+  it("takes only the food notes from the server coach, dismissible per day", () => {
+    const cards = foodCards(
+      [
+        { kind: "at_risk", tone: "nudge", title: "Main needs you today", body: "" },
+        { kind: "protein_low", tone: "nudge", title: "Protein ran short yesterday", body: "40 g of 150 g." },
+        { kind: "food_on_target", tone: "praise", title: "Food on target yesterday", body: "" },
+      ],
+      "2026-10-01",
+    );
+    expect(cards.map((c) => c.id)).toEqual(["food:protein_low:2026-10-01", "food:food_on_target:2026-10-01"]);
+    expect(cards.every((c) => c.dismissible && c.primary?.kind === "link")).toBe(true);
+    expect(cards[1].tone).toBe("accent");
   });
 });

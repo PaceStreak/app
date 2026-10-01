@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { AdjustToday } from "../components/AdjustToday";
 import { QuestsCard, WagerCard } from "../components/Engagement";
+import { MoodToday } from "../components/Mood";
 import { ReadinessCard } from "../components/Readiness";
 import { GettingStarted } from "../components/GettingStarted";
 import { HabitsToday } from "../components/HabitsToday";
@@ -40,7 +41,7 @@ import { canInstall, currentPushSubscription, enablePush, install, onInstallChan
 import { queryClient, useLibrary, useRestDays, useRoutines, useStats, useSyncState, useWorkouts } from "../lib/queries";
 import { useMe, useSession } from "../lib/session";
 import { localWeek } from "../lib/training";
-import type { Challenge, Plan } from "../lib/types";
+import type { Challenge, CoachNote, Plan } from "../lib/types";
 import { useProfilePatch } from "./settings/useProfilePatch";
 import { useLog } from "../shell/LogContext";
 import { plural } from "../lib/units";
@@ -99,6 +100,7 @@ export default function Today() {
   const plan = useQuery({ queryKey: ["plan-active"], queryFn: () => api<Plan | null>("/plans/active") });
   const routines = useRoutines();
   const [adjusting, setAdjusting] = useState(false);
+  const coach = useQuery({ queryKey: ["coach"], queryFn: () => api<{ notes: CoachNote[] }>("/coach/today"), staleTime: 10 * 60_000 });
   const firstFortnight = useMemo(() => {
     const from = me.profile.onboarded_at?.slice(0, 10);
     if (!from) return undefined;
@@ -138,6 +140,7 @@ export default function Today() {
         canInstall: installable && Date.now() - prefs.installDismissed() > 14 * 86_400_000,
         pushOffer,
         dismissed: prefs.dismissed,
+        serverNotes: coach.data?.notes,
         deviceTimezone: deviceTimezone(),
         exerciseName: (id) => lib?.byId.get(id)?.name,
         exercises: lib?.byId,
@@ -148,7 +151,7 @@ export default function Today() {
       }),
     // bump re-renders after a dismissal
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [me, stats.data, workouts, today, week, challenges.data, plan.data, sync.failed.length, active, installable, pushOffer, bump, lib, routines.data],
+    [me, stats.data, workouts, today, week, challenges.data, plan.data, sync.failed.length, active, installable, pushOffer, bump, lib, routines.data, coach.data],
   );
 
   const run = async (action: CardAction) => {
@@ -301,6 +304,7 @@ export default function Today() {
               )}
               <GettingStarted sessions={Math.max(stats.data?.totals.sessions ?? 0, workouts.length)} onLog={() => openLog()} firstFortnight={firstFortnight} />
               {(stats.data?.totals.sessions ?? 0) > 0 && !stats.data?.paused_today && <ReadinessCard today={today} onAdjust={() => setAdjusting(true)} />}
+              <MoodToday today={today} />
               {stats.data?.wager && (stats.data.totals.sessions > 0 || workouts.length > 0) && !stats.data.paused_today && <WagerCard wager={stats.data.wager} />}
               {gamified && stats.data?.quests && <QuestsCard quests={stats.data.quests} />}
               {stats.data && stats.data.totals.sessions > 0 && (
