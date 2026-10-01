@@ -1,3 +1,5 @@
+# no-transform on pages stops the edge injecting a Web Analytics beacon the
+# CSP then blocks (a console error on every page). /assets/* overrides it.
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
@@ -5,7 +7,7 @@
   X-Robots-Tag: noindex, nofollow
   Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
   Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.pacestreak.com https://challenges.cloudflare.com https://fef2509f0377fba1f3201a655090ec0a.r2.cloudflarestorage.com; frame-src https://challenges.cloudflare.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
-  Cache-Control: no-cache
+  Cache-Control: no-cache, no-transform
 
 # Content-hashed by Vite: a changed file gets a new URL, so these can never
 # serve stale bytes.
