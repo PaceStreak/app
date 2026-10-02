@@ -322,6 +322,12 @@ export interface Habit {
   why: string | null;
   total_goal: number | null;
   remind_hour: number | null;
+  /** Planned weekdays, Monday = bit 0; null = any day. */
+  days_mask?: number | null;
+  scheduled_today?: boolean;
+  paused?: boolean;
+  paused_from?: string | null;
+  paused_until?: string | null;
   /** A snoozed reminder comes back at this time, if still not done. */
   snoozed_until?: string | null;
   template_id: string | null;

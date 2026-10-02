@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
-import { HabitFields, draftFrom, payloadFrom, type HabitDraft } from "../../components/HabitForm";
+import { HabitFields, draftFrom, payloadFrom, scheduleLabel, type HabitDraft } from "../../components/HabitForm";
 import { HabitDaySheet } from "../../components/HabitDaySheet";
 import { HabitRow } from "../../components/HabitRow";
 import { HabitTrend } from "../../components/HabitTrend";
-import { Archive, CaretLeft, CaretRight, PencilSimple, Trash } from "../../components/phosphor";
+import { Archive, CaretLeft, CaretRight, PauseCircle, PencilSimple, PlayCircle, Trash } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { FocusTimer } from "../../components/FocusTimer";
@@ -44,6 +44,8 @@ export default function HabitDetail() {
   // Several days at once: select them on the calendar, then mark or clear.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [pausing, setPausing] = useState(false);
+  const [pauseUntil, setPauseUntil] = useState("");
 
   if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   const h = q.data;
@@ -63,6 +65,26 @@ export default function HabitDetail() {
       await api(`/habits/${h.id}`, { method: "PATCH", body });
       setEditing(null);
       await refresh();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const pause = async () => {
+    try {
+      await api(`/habits/${h.id}/pause`, { body: { until: pauseUntil || null } });
+      setPausing(false);
+      setPauseUntil("");
+      await refresh();
+      toast.success(pauseUntil ? `Paused until ${fmtMonthDay(pauseUntil)}` : "Paused. Its streak waits for you.");
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const resume = async () => {
+    try {
+      await api(`/habits/${h.id}/resume`, { method: "POST" });
+      await refresh();
+      toast.success("Back on");
     } catch (err) {
       toast.error(errorText(err));
     }
@@ -331,7 +353,38 @@ export default function HabitDetail() {
         Strength ({h.strength}%) is a slow average of how much of each week's target you met: a missed week dents it; it doesn't erase months.
       </p>
 
-      <div className="mt-8 flex gap-2">
+      {!h.archived && (
+        <div className="card mt-8 p-4">
+          {h.paused ? (
+            <>
+              <p className="font-semibold">Paused{h.paused_until ? ` until ${fmtMonthDay(h.paused_until)}` : ""}</p>
+              <p className="mt-1 text-sm text-dim">Its streak neither breaks nor grows, and it sends no reminders. Everything else carries on.</p>
+              <button type="button" className="btn btn-secondary mt-3 w-full" onClick={() => void resume()}>
+                <PlayCircle size={18} /> Resume now
+              </button>
+            </>
+          ) : pausing ? (
+            <>
+              <label className="field-label" htmlFor="pause-until">Pause until (leave empty to resume yourself)</label>
+              <input id="pause-until" type="date" className="input" min={today} max={addDays(today, 180)} value={pauseUntil} onChange={(e) => setPauseUntil(e.target.value)} />
+              <div className="mt-3 flex gap-2">
+                <button type="button" className="btn btn-primary flex-1" onClick={() => void pause()}>Pause</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setPausing(false)}>Cancel</button>
+              </div>
+            </>
+          ) : (
+            <>
+              {scheduleLabel(h.days_mask) && <p className="mb-2 text-sm text-dim">Planned for {scheduleLabel(h.days_mask)}.</p>}
+              <button type="button" className="btn btn-secondary w-full" onClick={() => setPausing(true)}>
+                <PauseCircle size={18} /> Pause this habit
+              </button>
+              <p className="field-hint">For travel, illness or a busy stretch. Only this habit pauses; the rest carry on.</p>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="mt-4 flex gap-2">
         <button type="button" className="btn btn-secondary flex-1" onClick={() => void archive()}>
           <Archive size={18} /> {h.archived ? "Unarchive" : "Archive"}
         </button>

@@ -28,7 +28,9 @@ export function HabitsToday({ today }: { today: string }) {
   const [sheet, setSheet] = useState<{ habit: Habit; day: string } | null>(null);
   const ordered = useMemo(() => orderForToday(habits.data ?? [], partOfDay(new Date().getHours())), [habits.data]);
   if (!habits.data || habits.data.length === 0) return null;
-  const doing = ordered.filter((h) => h.kind !== "quit");
+  // "Today" means habits planned for today and not paused; the board still
+  // shows the whole week for every habit.
+  const doing = ordered.filter((h) => h.kind !== "quit" && h.scheduled_today !== false && !h.paused);
   const done = doing.filter((h) => h.today.done).length;
   const start = weekStart(today, me.profile.week_starts_on);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -124,7 +126,7 @@ function BoardRow({ habit: h, days, today, onTap }: { habit: Habit; days: string
         <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
           <span className="truncate text-[0.95rem] font-semibold">{h.name}</span>
           <span className="num shrink-0 text-xs text-dim">
-            {h.kind === "quit" ? `${h.clean_run ?? 0} clean` : `${h.streak.this_week_days}/${h.streak.this_week_target}${h.streak.current ? ` · ${h.streak.current} wk` : ""}`}
+            {h.paused ? "paused" : h.kind === "quit" ? `${h.clean_run ?? 0} clean` : `${h.streak.this_week_days}/${h.streak.this_week_target}${h.streak.current ? ` · ${h.streak.current} wk` : ""}`}
           </span>
         </span>
       </Link>

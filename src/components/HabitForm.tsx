@@ -29,6 +29,21 @@ export interface HabitDraft {
   why: string;
   total_goal: string;
   remind_hour: number | null;
+  /** Planned weekdays, Monday = bit 0; null = any day. */
+  days_mask: number | null;
+}
+
+/** Monday-first, matching days_mask's bit order. */
+const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
+const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+export const countDays = (mask: number | null) => (mask == null ? 7 : mask.toString(2).split("1").length - 1);
+
+/** "Mon, Wed, Fri" for a schedule, or null for any day. */
+export function scheduleLabel(mask: number | null | undefined): string | null {
+  if (mask == null) return null;
+  return WEEKDAY_NAMES.filter((_, i) => mask & (1 << i))
+    .map((n) => n.slice(0, 3))
+    .join(", ");
 }
 
 export function draftFrom(h?: Partial<Habit> | HabitTemplate): HabitDraft {
@@ -47,6 +62,7 @@ export function draftFrom(h?: Partial<Habit> | HabitTemplate): HabitDraft {
     // Long goals are stored in the habit's unit; minutes are shown as hours.
     total_goal: goal != null ? String(h?.kind === "duration" ? goal / 60 : goal) : "",
     remind_hour: h && "remind_hour" in h ? ((h as Habit).remind_hour ?? null) : null,
+    days_mask: h && "days_mask" in h ? ((h as Habit).days_mask ?? null) : null,
   };
 }
 
@@ -68,6 +84,7 @@ export function payloadFrom(d: HabitDraft) {
     why: d.why.trim() || null,
     total_goal: d.kind === "count" || d.kind === "duration" ? (total != null ? (d.kind === "duration" ? total * 60 : total) : null) : null,
     remind_hour: d.kind === "quit" ? null : d.remind_hour,
+    days_mask: d.kind === "quit" ? null : d.days_mask,
   };
 }
 
@@ -99,13 +116,56 @@ export function HabitFields({ draft, onChange, categories, editing }: { draft: H
         <legend className="field-label">{draft.kind === "quit" ? "Clean days a week to keep the week" : "Days a week"}</legend>
         <div className="grid grid-cols-7 gap-1.5">
           {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-            <button key={n} type="button" aria-pressed={draft.weekly_target === n} className={`chip num h-10 justify-center px-0 ${draft.weekly_target === n ? "chip-accent" : ""}`} onClick={() => set({ weekly_target: n })}>
+            <button
+              key={n}
+              type="button"
+              aria-pressed={draft.weekly_target === n}
+              disabled={n > countDays(draft.days_mask)}
+              className={`chip num h-10 justify-center px-0 ${draft.weekly_target === n ? "chip-accent" : ""}`}
+              onClick={() => set({ weekly_target: n })}
+            >
               {n}
             </button>
           ))}
         </div>
         <p className="field-hint">Start smaller than you think. You can raise it once it's easy.</p>
       </fieldset>
+      {draft.kind !== "quit" && (
+        <fieldset>
+          <legend className="field-label">Which days</legend>
+          <div className="grid grid-cols-7 gap-1.5">
+            {WEEKDAY_LETTERS.map((letter, i) => {
+              const on = draft.days_mask == null || (draft.days_mask & (1 << i)) !== 0;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  aria-pressed={draft.days_mask != null && on}
+                  aria-label={WEEKDAY_NAMES[i]}
+                  className={`chip h-10 justify-center px-0 ${draft.days_mask != null && on ? "chip-accent" : ""}`}
+                  onClick={() => {
+                    const current = draft.days_mask ?? 0;
+                    const next = current ^ (1 << i);
+                    // All days off means "any day", not "never".
+                    const mask = next === 0 ? null : next;
+                    // A target that matched the old day count follows the new
+                    // one; a deliberately smaller target is only capped.
+                    const following = draft.weekly_target === countDays(draft.days_mask);
+                    set({ days_mask: mask, weekly_target: following ? countDays(mask) : Math.min(draft.weekly_target, countDays(mask)) });
+                  }}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+          <p className="field-hint">
+            {draft.days_mask == null
+              ? "Any day. Pick days to plan it for those only: reminders and Today follow them, and a day done off-plan still counts."
+              : `Planned for ${scheduleLabel(draft.days_mask)}. Reminders and Today follow these days; a day done off-plan still counts.`}
+          </p>
+        </fieldset>
+      )}
       {draft.kind !== "quit" && (
         <>
           <fieldset>
