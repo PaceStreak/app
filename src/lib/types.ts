@@ -493,6 +493,8 @@ export interface Person {
   [extra: string]: unknown;
 }
 
+export type Reaction = "kudos" | "fire" | "strong" | "star" | "heart";
+
 export interface FeedEvent {
   id: string;
   kind: "workout" | "pr" | "streak" | "achievement" | "level" | "challenge";
@@ -505,6 +507,9 @@ export interface FeedEvent {
   kudoed: boolean;
   mine: boolean;
   kudos_by?: Person[];
+  /** How many of each preset reaction; every one also counts as kudos. */
+  reactions?: Partial<Record<Reaction, number>>;
+  my_reaction?: Reaction | null;
 }
 
 export interface Notification {

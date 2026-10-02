@@ -5,10 +5,10 @@ import { timeAgo } from "../lib/dates";
 import { haptic } from "../lib/prefs";
 import { queryClient } from "../lib/queries";
 import { useMe } from "../lib/session";
-import type { FeedEvent, Person } from "../lib/types";
+import type { FeedEvent, Person, Reaction } from "../lib/types";
 import { compact, distance, duration, weight, plural } from "../lib/units";
 import { DisciplineIcon } from "./icons";
-import { ChatCircle, Fire, HandsClapping, Medal, SealCheck, Sparkle, Trophy } from "./phosphor";
+import { ChatCircle, Fire, HandsClapping, Medal, SealCheck, Smiley, Sparkle, Trophy } from "./phosphor";
 import { Sheet } from "./Sheet";
 import { toast } from "./toast";
 import { Avatar } from "./ui";
@@ -127,23 +127,47 @@ function EventIcon({ e }: { e: FeedEvent }) {
   return <Sparkle size={20} weight="fill" />;
 }
 
+/** The preset reactions, in the order they're offered. Emoji are text, so
+ * nothing loads from anywhere. */
+export const REACTIONS: { id: Reaction; emoji: string; label: string }[] = [
+  { id: "kudos", emoji: "👏", label: "Kudos" },
+  { id: "fire", emoji: "🔥", label: "On fire" },
+  { id: "strong", emoji: "💪", label: "Strong" },
+  { id: "star", emoji: "⭐", label: "Star" },
+  { id: "heart", emoji: "❤️", label: "Love it" },
+];
+
+interface KudosState {
+  count: number;
+  mine: Reaction | null;
+  reactions: Partial<Record<Reaction, number>>;
+}
+
 export function FeedCard({ e, link = true }: { e: FeedEvent; link?: boolean }) {
   const me = useMe();
-  const [kudos, setKudos] = useState({ count: e.kudos, mine: e.kudoed });
+  const [kudos, setKudos] = useState<KudosState>({
+    count: e.kudos,
+    mine: e.my_reaction ?? (e.kudoed ? "kudos" : null),
+    reactions: e.reactions ?? (e.kudos ? { kudos: e.kudos } : {}),
+  });
+  const [picking, setPicking] = useState(false);
   const units = { weight: me.profile.weight_unit, distance: me.profile.distance_unit };
   const { title, detail } = eventHeadline(e, units);
-  const toggle = async () => {
-    const next = !kudos.mine;
-    setKudos({ count: kudos.count + (next ? 1 : -1), mine: next });
-    if (next) haptic(10);
+  /** null removes the reaction; anything else gives (or switches to) it. */
+  const react = async (reaction: Reaction | null) => {
+    const before = kudos;
+    setPicking(false);
+    if (reaction) haptic(10);
     try {
-      const res = await api<{ kudos: number; kudoed: boolean }>(`/events/${e.id}/kudos`, { method: next ? "POST" : "DELETE" });
-      setKudos({ count: res.kudos, mine: res.kudoed });
+      const res = await api<{ kudos: number; reactions?: KudosState["reactions"]; my_reaction?: Reaction | null }>(`/events/${e.id}/kudos`, reaction ? { body: { reaction } } : { method: "DELETE" });
+      setKudos({ count: res.kudos, mine: res.my_reaction ?? null, reactions: res.reactions ?? {} });
     } catch (err) {
-      setKudos({ count: kudos.count, mine: kudos.mine });
+      setKudos(before);
       toast.error(errorText(err));
     }
   };
+  const mine = REACTIONS.find((x) => x.id === kudos.mine);
+  const shown = REACTIONS.filter((x) => (kudos.reactions[x.id] ?? 0) > 0);
   const body = (
     <>
       <div className="flex items-center gap-3">
@@ -175,17 +199,53 @@ export function FeedCard({ e, link = true }: { e: FeedEvent; link?: boolean }) {
         body
       )}
       <div className="mt-3 flex items-center gap-1 border-t border-line pt-2">
-        <button type="button" className={`btn btn-ghost btn-sm ${kudos.mine ? "text-accent-text" : "text-muted"}`} aria-pressed={kudos.mine} onClick={toggle}>
-          <HandsClapping size={18} weight={kudos.mine ? "fill" : "regular"} /> <span className="num">{kudos.count || ""}</span>
-          <span className="sr-only">kudos</span>
+        <button
+          type="button"
+          className={`btn btn-ghost btn-sm ${kudos.mine ? "text-accent-text" : "text-muted"}`}
+          aria-pressed={!!kudos.mine}
+          aria-label={kudos.mine ? `Remove your ${mine?.label.toLowerCase() ?? "kudos"}` : "Give kudos"}
+          onClick={() => void react(kudos.mine ? null : "kudos")}
+        >
+          {mine && mine.id !== "kudos" ? <span aria-hidden className="text-base leading-none">{mine.emoji}</span> : <HandsClapping size={18} weight={kudos.mine ? "fill" : "regular"} />}
+          <span className="num">{kudos.count || ""}</span>
         </button>
+        <button type="button" className="btn btn-ghost btn-sm text-muted" aria-expanded={picking} aria-label="Choose a reaction" onClick={() => setPicking(!picking)}>
+          <Smiley size={18} />
+        </button>
+        {shown.length > 0 && (
+          <span className="ml-1 text-sm" aria-label={shown.map((x) => `${kudos.reactions[x.id]} ${x.label}`).join(", ")}>
+            {shown.map((x) => (
+              <span key={x.id} aria-hidden className="mr-1.5">
+                {x.emoji}
+                <span className="num text-xs text-dim">{(kudos.reactions[x.id] ?? 0) > 1 ? kudos.reactions[x.id] : ""}</span>
+              </span>
+            ))}
+          </span>
+        )}
         {link && (
-          <Link to={`/feed/${e.id}`} className="btn btn-ghost btn-sm text-muted">
+          <Link to={`/feed/${e.id}`} className="btn btn-ghost btn-sm ml-auto text-muted">
             <ChatCircle size={18} /> <span className="num">{e.comments || ""}</span>
             <span className="sr-only">comments</span>
           </Link>
         )}
       </div>
+      {picking && (
+        <div className="mt-2 flex gap-1.5" role="group" aria-label="Reactions">
+          {REACTIONS.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              aria-pressed={kudos.mine === x.id}
+              aria-label={x.label}
+              title={x.label}
+              className={`chip h-10 flex-1 justify-center px-0 text-lg ${kudos.mine === x.id ? "chip-accent" : ""}`}
+              onClick={() => void react(x.id)}
+            >
+              {x.emoji}
+            </button>
+          ))}
+        </div>
+      )}
     </article>
   );
 }

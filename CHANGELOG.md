@@ -9,6 +9,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- React to a post with one of five preset reactions.
 - Quiet days for reminders; the backup email can be weekly.
 - Plans have a whole-plan calendar: every week and day at once, coloured
   by how each session went.
