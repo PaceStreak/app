@@ -9,6 +9,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Sign-up and the updated-terms dialog name the health information a person
+  consents to storing (weight, food, mood, habits).
 - `AGENTS.md` with this repository's commands and rules for coding agents; the
   README and architecture notes now describe the live deployment, not a plan.
 - Terms gate, /recover, email change in Security, crash reporting with a

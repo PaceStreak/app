@@ -82,7 +82,7 @@ const en = {
   "auth.signup.hint": "At least 16 characters. A short sentence is easier to remember than symbols.",
   "auth.signup.submit": "Create account",
   "auth.signup.busy": "Creating…",
-  "auth.signup.agree": "By continuing you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>.",
+  "auth.signup.agree": "By continuing you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>, including PaceStreak storing any health information you choose to log, such as weight, food, mood or habits.",
 
   "auth.forgot.title": "Reset your password.",
   "auth.forgot.subtitle": "We'll email you a 6-digit code. It works once and expires in 30 minutes.",
@@ -141,7 +141,7 @@ const en = {
   "auth.confirmEmail.failBody": "{error} Start the change again from Settings, Security.",
 
   "terms.title": "We've updated the terms",
-  "terms.body": "Please read what changed in the <terms>terms</terms> and the <privacy>privacy policy</privacy>. Everything you've logged stays yours either way.",
+  "terms.body": "Please read what changed in the <terms>terms</terms> and the <privacy>privacy policy</privacy>. Agreeing includes PaceStreak storing any health information you choose to log, such as weight, food, mood or habits. Everything you've logged stays yours either way.",
   "terms.accept": "I agree",
   "terms.busy": "Saving…",
   "terms.export": "Export my data first",

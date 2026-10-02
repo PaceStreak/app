@@ -22,7 +22,7 @@ describe("rich", () => {
   it("wraps tagged text and keeps the rest", () => {
     const out = rich("auth.signup.agree", { terms: (x) => `[${x}]`, privacy: (x) => `(${x})` }) as unknown[];
     const text = out.map((n) => (isValidElement(n) ? (n.props as { children: string }).children : n)).join("");
-    expect(text).toBe("By continuing you agree to the [terms] and (privacy policy).");
+    expect(text).toBe("By continuing you agree to the [terms] and (privacy policy), including PaceStreak storing any health information you choose to log, such as weight, food, mood or habits.");
   });
   it("leaves unknown tags as plain text", () => {
     const out = rich("auth.login.newHere", {}) as unknown[];
