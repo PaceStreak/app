@@ -331,7 +331,7 @@ function Details({ discipline, when, prefill, onBack, onDone }: { discipline: st
                 }}
                 className={`chip num h-9 px-3.5 ${minutes === m && !durationText ? "chip-accent" : ""}`}
               >
-                {m < 60 ? `${m} min` : `${m / 60}${m % 60 ? ".5" : ""} h`}
+                {m < 60 ? `${m} min` : `${m / 60} h`}
               </button>
             ))}
             <input

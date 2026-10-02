@@ -32,8 +32,13 @@ export function registerServiceWorker() {
     }
   });
   let reloaded = false;
+  // Reload only when an update replaces a worker that was already in
+  // charge. On a first visit the new worker claiming the page also fires
+  // controllerchange, and reloading then wiped whatever the person (or their
+  // password manager) had just typed into the sign-in form.
+  const hadController = navigator.serviceWorker.controller !== null;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (reloaded) return;
+    if (reloaded || !hadController) return;
     reloaded = true;
     window.location.reload();
   });

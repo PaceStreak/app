@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { NetworkError, api, clearSession, hasSession, refresh, setTokens } from "./api";
 import { kvGet, kvSet, unpark, wipe } from "./db";
-import { queryClient } from "./queries";
+import { queryClient, warmOfflineCache } from "./queries";
 import { push, schedulePush, startSync } from "./sync";
 import type { Me } from "./types";
 
@@ -47,6 +47,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
     setMe(fresh);
     setOffline(false);
+    void warmOfflineCache();
     return fresh;
   }, [setMe]);
 

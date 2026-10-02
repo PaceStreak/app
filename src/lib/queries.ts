@@ -33,6 +33,37 @@ if (typeof window !== "undefined") {
  * A query whose last good result is kept on the device, so the screen
  * renders immediately (and offline) and then refreshes in place.
  */
+/**
+ * What logging needs with no signal: the library (disciplines and
+ * exercises), routines, gyms, gear and habits. Fetched once as soon as
+ * someone is signed in, into the same on-device cache useCachedQuery reads,
+ * so the first time a screen opens offline it isn't empty. Failures are
+ * ignored: this is a head start, not a requirement.
+ */
+const OFFLINE_ESSENTIALS: [string, string][] = [
+  ["library", "/library"],
+  ["custom-exercises", "/exercises/custom"],
+  ["routines", "/routines"],
+  ["gyms", "/gyms"],
+  ["gear", "/gear"],
+  ["habits", "/habits"],
+  ["exercise-notes", "/exercise-notes"],
+];
+
+export async function warmOfflineCache() {
+  await Promise.all(
+    OFFLINE_ESSENTIALS.map(async ([name, path]) => {
+      try {
+        const data = await api<unknown>(path);
+        await kvSet(`q:${JSON.stringify([name])}`, data);
+        queryClient.setQueryData([name], data);
+      } catch {
+        /* offline or failing: the screens fetch on their own later */
+      }
+    }),
+  );
+}
+
 export function useCachedQuery<T>(key: QueryKey, path: string, opts: { enabled?: boolean } = {}) {
   const storeKey = `q:${JSON.stringify(key)}`;
   const [seed, setSeed] = useState<T | undefined>(undefined);

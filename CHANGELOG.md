@@ -9,6 +9,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- End-to-end tests (Playwright) against the real stack, in CI.
+- Fixed: the first visit reloaded the page when the service worker took
+  over, wiping a half-typed sign-in. The 90-minute chip read "1.5.5 h".
+  Logging offline before the library had ever loaded showed no activities.
 - Import from Strong, Hevy and FitNotes, with a unit choice for Strong.
 - Plan filters (strength, endurance, no equipment, fits my gym).
 - Unsent changes are parked on sign-out, not deleted.
