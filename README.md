@@ -10,7 +10,8 @@ training logs (quick, set-level and live) with plans, race plans and blocks;
 week-based streaks with freezes, repairs and pauses; progress, records, weigh-ins
 and body trends; XP, badges and quests; social, groups and challenges;
 notifications, weekly and monthly recaps, file import, calendar subscription,
-export and admin. It works offline through an IndexedDB outbox.
+export and admin. It works offline through an IndexedDB outbox, and installs
+to the home screen.
 
 Copyright (c) 2026 PaceStreak. Licensed under [AGPL-3.0](./LICENSE) — anyone
 running a modified version of this over a network must offer its source to
@@ -39,7 +40,7 @@ the extra hostname.
 | Hostname | `app.pacestreak.com`, attached as a Pages custom domain |
 | Depends on | [`PaceStreak/api`](https://github.com/PaceStreak/api) at `api.pacestreak.com` |
 | Hosting | Cloudflare Pages, Git-connected, like every other site here |
-| Tests | ~100 Vitest tests, including the outbox against a real IndexedDB |
+| Tests | ~120 Vitest tests, including the outbox and parking against a real IndexedDB; Playwright end-to-end tests against the real API in `e2e/` (see [e2e/README.md](./e2e/README.md)) |
 | Bot check | Cloudflare Turnstile on sign-up, sign-in and recovery (the one CSP exception) |
 
 ## Constraints already settled
@@ -112,6 +113,7 @@ CSV and ICS export, JSON import, GPX/FIT/CSV import, and the calendar feed.
 npm ci
 npm run dev      # http://localhost:5173, talks to the API on http://localhost:8000
 npm test         # vitest
+npx playwright test  # end-to-end, against a running API; see e2e/README.md
 npm run build    # typecheck + production build into dist/
 ```
 

@@ -9,6 +9,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- The app offers to install itself at three moments (first visit after
+  sign-in, first visit on a later day, after the first logged session),
+  once each per device; iOS gets the Share > Add to Home Screen steps.
+  Settings > App still installs it any time.
+- Fixed: the habits-left icon badge counted habits paused or not planned
+  for today. The You page's sections no longer leave a gap on wide
+  screens.
 - A Coaching overview for people who coach, across all their groups.
 - React to a post with one of five preset reactions.
 - Quiet days for reminders; the backup email can be weekly.

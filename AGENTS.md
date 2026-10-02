@@ -14,6 +14,7 @@ Read it first; this file only adds what is specific to this repository.
 npm ci
 npm run dev       # :5173, talks to the API on :8000 (start api first: make dev)
 npm test          # vitest
+npx playwright test  # end-to-end; needs the API up, see e2e/README.md
 npm run build     # tsc -b + vite build; CI also checks dist for 404, noindex
                   # and inline scripts
 ```

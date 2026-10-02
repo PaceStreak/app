@@ -64,6 +64,14 @@ because it determines what the Pages project is allowed to run.
   outbox keyed by workout id (`src/lib/sync.ts`); the UI reads from IndexedDB.
   Sync pushes to `/workouts/batch` (idempotent, last-write-wins) and pulls
   `/workouts/changes?since=N`, deletions included.
+- **Sign-out never loses unsynced work.** `wipe()` first parks the owner's
+  outbox, queued edits and photos in the `parked` store under their user id;
+  `unpark()` restores them when that person signs in again. Nobody else ever
+  gets them.
+- **Install offer** (`src/components/InstallBanner.tsx`,
+  `src/lib/installMoments.ts`): the browser's `beforeinstallprompt` is held
+  in `src/lib/pwa.ts` and offered at three moments, once each per device.
+  Settings > App installs at any time.
 - **Auth.** The access token lives in memory only; the refresh token is an
   HttpOnly cookie; the CSRF token is kept in localStorage (useless without the
   cookie). See `src/lib/api.ts`.
