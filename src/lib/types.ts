@@ -35,6 +35,8 @@ export interface Profile {
   learned_reminder_hour?: number | null;
   quiet_start: number;
   quiet_end: number;
+  /** Whole days without nudges, Monday = bit 0. */
+  quiet_days?: number | null;
 }
 
 export interface Me {

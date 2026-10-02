@@ -5,7 +5,7 @@ import { useConfirm } from "../../components/Confirm";
 import { DownloadSimple, Trash, UploadSimple, Warning } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Banner, Field, Section, Switch } from "../../components/ui";
+import { Banner, Field, Section, Segmented, Switch } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { syncNow } from "../../lib/sync";
 import { queryClient } from "../../lib/queries";
@@ -143,6 +143,7 @@ export function Data() {
 
 interface BackupPrefs {
   backup_attachment: boolean;
+  backup_frequency?: "monthly" | "weekly";
   categories: { id: string; push: boolean; email: boolean }[];
 }
 
@@ -157,8 +158,8 @@ function BackupEmail() {
     if (
       next &&
       !(await ask({
-        title: "Email your data every month?",
-        body: "On the 1st, a zip of everything you've logged is emailed to you: habits (including any you're breaking), body measurements, food and your journal. Anyone who can read that inbox can read it, and it stays in your email until you delete it. You can turn this off at any time.",
+        title: `Email your data every ${weekly ? "week" : "month"}?`,
+        body: "A zip of everything you've logged is emailed to you: habits (including any you're breaking), body measurements, food and your journal. Anyone who can read that inbox can read it, and it stays in your email until you delete it. You can turn this off at any time.",
         confirm: "Email it to me",
       }))
     )
@@ -175,17 +176,41 @@ function BackupEmail() {
     }
   };
 
+  const weekly = q.data?.backup_frequency === "weekly";
+  const setFrequency = async (frequency: "monthly" | "weekly") => {
+    try {
+      await api("/notifications/preferences", { method: "PUT", body: { backup_frequency: frequency } });
+      await q.refetch();
+      toast.success(frequency === "weekly" ? "Weekly, on the first day of your week" : "Monthly, on the 1st");
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
   if (!q.data) return null;
   return (
-    <Section title="Monthly backup">
+    <Section title="Backup by email">
       <div className="card">
         <Switch
           checked={on}
           onChange={(v) => void set(v)}
-          label="Email me my data every month"
-          description={on ? "A zip of your export arrives on the 1st. It imports straight back here." : "Off. You can still download an export any time, above."}
+          label={`Email me my data every ${weekly ? "week" : "month"}`}
+          description={on ? `A zip of your export arrives ${weekly ? "on the first day of your week" : "on the 1st"}. It imports straight back here.` : "Off. You can still download an export any time, above."}
         />
       </div>
+      {on && (
+        <div className="mt-3 max-w-xs">
+          <Segmented
+            label="How often"
+            value={weekly ? "weekly" : "monthly"}
+            onChange={(v) => void setFrequency(v)}
+            options={[
+              { value: "monthly", label: "Monthly" },
+              { value: "weekly", label: "Weekly" },
+            ]}
+          />
+        </div>
+      )}
       {confirmSheet}
     </Section>
   );

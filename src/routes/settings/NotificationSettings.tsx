@@ -156,6 +156,28 @@ export function NotificationSettings() {
               </select>
             </span>
           </div>
+          <div>
+            <span className="font-medium">Quiet days</span>
+            <div className="mt-2 grid grid-cols-7 gap-1.5" role="group" aria-label="Quiet days">
+              {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, i) => {
+                const mask = me.profile.quiet_days ?? 0;
+                const on = (mask & (1 << i)) !== 0;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-pressed={on}
+                    aria-label={day}
+                    className={`chip h-10 justify-center px-0 ${on ? "chip-accent" : ""}`}
+                    onClick={() => void save({ quiet_days: (mask ^ (1 << i)) || null })}
+                  >
+                    {day.slice(0, 1)}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="field-hint">No reminder pushes or emails at all on these days, such as weekends off. They still wait in your inbox. Security alerts always come through.</p>
+          </div>
           <div className="-mx-4 border-t border-line">
             <Switch
               checked={q.data?.habit_summary_hour != null}
