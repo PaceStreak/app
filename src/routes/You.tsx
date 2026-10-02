@@ -68,7 +68,10 @@ export default function You() {
         </div>
       )}
 
-      <div className="items-start lg:grid lg:grid-cols-2 lg:gap-x-6">
+      {/* Two independent columns on a wide screen, not grid rows: a row is as
+          tall as its tallest section, which left a hole under Training. */}
+      <div className="lg:flex lg:items-start lg:gap-6">
+      <div className="min-w-0 lg:flex-1">
       <Section title="Training">
         <List>
           <RowLink to="/habits" icon={<Sparkle size={20} />} title="Habits" detail={stats?.habits?.count ? `${stats.habits.count} tracked` : "Reading, water, a skill…"} />
@@ -79,6 +82,18 @@ export default function You() {
           <RowLink to="/tools" icon={<Wrench size={20} />} title="Tools" detail="Rest and interval timers, plates, 1RM, pace" />
         </List>
       </Section>
+      <Section title="Together">
+        <List>
+          <RowLink to="/feed" icon={<UsersThree size={20} />} title="Feed" detail="Sessions and milestones from people you follow" />
+          <RowLink to="/people" icon={<UsersThree size={20} />} title="Find people" />
+          <RowLink to="/groups" icon={<UsersThree size={20} />} title="Groups" />
+          {coaching.data && coaching.data.groups.length > 0 && <RowLink to="/coaching" icon={<UsersThree size={20} />} title="Coaching" detail="Everyone sharing their training with you" />}
+          <RowLink to="/challenges" icon={<Trophy size={20} />} title="Challenges" />
+          <RowLink to="/leaderboards" icon={<Medal size={20} />} title="Leaderboards" />
+        </List>
+      </Section>
+      </div>
+      <div className="min-w-0 lg:flex-1">
       <Section title="Progress">
         <List>
           <RowLink to="/progress" icon={<ChartLineUp size={20} />} title="Progress and streaks" />
@@ -92,23 +107,14 @@ export default function You() {
           <RowLink to="/food" icon={<ForkKnife size={20} />} title="Food" detail="Calories and macros · private" />
         </List>
       </Section>
-      <Section title="Together">
-        <List>
-          <RowLink to="/feed" icon={<UsersThree size={20} />} title="Feed" detail="Sessions and milestones from people you follow" />
-          <RowLink to="/people" icon={<UsersThree size={20} />} title="Find people" />
-          <RowLink to="/groups" icon={<UsersThree size={20} />} title="Groups" />
-          {coaching.data && coaching.data.groups.length > 0 && <RowLink to="/coaching" icon={<UsersThree size={20} />} title="Coaching" detail="Everyone sharing their training with you" />}
-          <RowLink to="/challenges" icon={<Trophy size={20} />} title="Challenges" />
-          <RowLink to="/leaderboards" icon={<Medal size={20} />} title="Leaderboards" />
-        </List>
-      </Section>
-      <Section>
+      <Section title="Account">
         <List>
           <RowLink to="/settings" icon={<Gear size={20} />} title="Settings" />
           <RowLink to="/trash" icon={<Trash size={20} />} title="Trash" detail="Restore anything deleted in the last 30 days" />
           {staff && <RowLink to="/admin" icon={<ShieldCheck size={20} />} title="Moderation" />}
         </List>
       </Section>
+      </div>
       </div>
     </div>
   );
