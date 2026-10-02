@@ -9,6 +9,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Select several sessions to tag, set the gym or delete together, with Undo;
+  Undo after editing a session.
+- Fixed: a session saved while another was uploading waited up to 90
+  seconds for the next periodic sync.
 - Pick which weekdays a habit is for; pause or resume a single habit.
 - End-to-end tests (Playwright) against the real stack, in CI.
 - Fixed: the first visit reloaded the page when the service worker took

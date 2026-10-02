@@ -48,7 +48,8 @@ export function QuickEdit({ workout }: { workout: Workout }) {
       tags,
       gear_id: gearId,
     });
-    toast.success("Saved");
+    // The version from before this edit, so a slip of the thumb is one tap back.
+    toast.success("Saved", { action: { label: "Undo", onClick: () => void saveWorkout(workout).then(() => toast("Edit undone")) } });
     navigate(`/workouts/${workout.id}`, { replace: true });
   };
 

@@ -82,7 +82,43 @@ export async function deleteWorkout(id: string) {
   schedulePush(0);
 }
 
+/**
+ * Change several sessions at once. Each goes through saveWorkout, so it is
+ * offline-safe and syncs like any edit. Returns the sessions as they were,
+ * for undo (restoreWorkouts).
+ */
+export async function updateWorkouts(ids: string[], change: (w: Workout) => Workout): Promise<Workout[]> {
+  const d = await db();
+  const before: Workout[] = [];
+  for (const id of ids) {
+    const w = await d.get("workouts", id);
+    if (!w || w.deleted_at) continue;
+    before.push(w);
+    await saveWorkout(change(w));
+  }
+  return before;
+}
+
+/** Delete several sessions. Returns them, for undo. */
+export async function deleteWorkouts(ids: string[]): Promise<Workout[]> {
+  const d = await db();
+  const before: Workout[] = [];
+  for (const id of ids) {
+    const w = await d.get("workouts", id);
+    if (!w || w.deleted_at) continue;
+    before.push(w);
+    await deleteWorkout(id);
+  }
+  return before;
+}
+
+/** Put sessions back exactly as they were; a newer save wins everywhere. */
+export async function restoreWorkouts(previous: Workout[]) {
+  for (const w of previous) await saveWorkout({ ...w, deleted_at: null });
+}
+
 let pushTimer: ReturnType<typeof setTimeout> | undefined;
+let pushAgain = false;
 export function schedulePush(delay = 400) {
   clearTimeout(pushTimer);
   pushTimer = setTimeout(() => void push(), delay);
@@ -96,8 +132,15 @@ function strip(w: Workout) {
 
 let pushing = false;
 export async function push(): Promise<void> {
-  if (pushing || !isAuthenticated() || !navigator.onLine) return;
+  if (pushing) {
+    // A save landed while a push was in flight: go again once it finishes,
+    // rather than leaving it for the next periodic sync.
+    pushAgain = true;
+    return;
+  }
+  if (!isAuthenticated() || !navigator.onLine) return;
   pushing = true;
+  pushAgain = false;
   set({ syncing: true });
   try {
     const d = await db();
@@ -146,7 +189,9 @@ export async function push(): Promise<void> {
     set({ lastError: null, lastSyncedAt: Date.now() });
     if (res.outcome) outcomeListeners.forEach((l) => l(res.outcome!));
     window.dispatchEvent(new Event("ps:synced"));
-    if ((await d.count("outbox")) > ops.length) schedulePush(0);
+    // Anything still sendable (queued during this push, or past the batch
+    // size) goes straight away. Parked errors wait for the person.
+    if ((await d.getAll("outbox")).some((o) => !o.error)) pushAgain = true;
   } catch (err) {
     set({ lastError: err instanceof NetworkError ? null : err instanceof ApiError ? err.message : "Sync failed" });
     if (!(err instanceof ApiError && err.status < 500)) schedulePush(15_000);
@@ -154,6 +199,10 @@ export async function push(): Promise<void> {
     pushing = false;
     set({ syncing: false });
     await refreshPending();
+    if (pushAgain) {
+      pushAgain = false;
+      schedulePush(0);
+    }
   }
 }
 

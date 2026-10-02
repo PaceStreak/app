@@ -145,6 +145,29 @@ describe("an edit made while a push is in flight", () => {
   });
 });
 
+describe("a different session saved while a push is in flight", () => {
+  it("is sent as soon as that push finishes, not at the next periodic sync", async () => {
+    const releases: (() => void)[] = [];
+    net.batch.mockImplementation(
+      (body: { ops: { id: string; workout?: Workout }[] }) =>
+        new Promise((resolve) => {
+          releases.push(() => resolve({ results: body.ops.map((o) => ({ id: o.id, ok: true, workout: o.workout })), outcome: null }));
+        }),
+    );
+    await saveWorkout(workout("a"));
+    const inFlight = push();
+    await vi.waitFor(() => expect(net.batch).toHaveBeenCalledTimes(1));
+    await saveWorkout(workout("b"));
+    await push(); // returns at once: one push at a time
+    releases[0]();
+    await inFlight;
+    await vi.waitFor(() => expect(net.batch).toHaveBeenCalledTimes(2), { timeout: 2000 });
+    expect(net.batch.mock.calls[1][0].ops.map((o: { id: string }) => o.id)).toEqual(["b"]);
+    releases[1]();
+    await vi.waitFor(async () => expect(await outbox()).toHaveLength(0));
+  });
+});
+
 describe("rejections", () => {
   it("park the write with its reason instead of retrying forever", async () => {
     net.batch.mockResolvedValue({ results: [{ id: "a", ok: false, detail: "Unknown exercise" }], outcome: null });

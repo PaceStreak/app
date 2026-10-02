@@ -434,8 +434,10 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
   const finish = async () => {
     if (!draft) return;
     const workout = toWorkout(draft);
+    const previous = draft.editing ? await getWorkout(draft.id) : undefined;
     await saveWorkout(workout);
     await kvSet(storeKey, undefined);
+    if (previous) toast.success("Saved", { action: { label: "Undo", onClick: () => void saveWorkout(previous).then(() => toast("Edit undone")) } });
     haptic([12, 30, 18]);
     navigate(`/workouts/${draft.id}${draft.editing ? "" : "?done=1"}`, { replace: true });
   };
