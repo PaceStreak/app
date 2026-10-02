@@ -1,14 +1,16 @@
 # PaceStreak App
 
 The product itself — the signed-in frontend of
-[PaceStreak](https://www.pacestreak.com), a workout streak tracker. Will be
-served from **`app.pacestreak.com`**.
+[PaceStreak](https://www.pacestreak.com), a habit and streak tracker. **Live
+at [`app.pacestreak.com`](https://app.pacestreak.com).**
 
-**Built, not deployed.** A React 19 + Vite + TypeScript PWA covering the whole
-product: logging (quick, set-level and live), week-based streaks with pauses,
-progress and records, XP and badges, social, groups, challenges,
-notifications, weekly recap, file import, calendar subscription, export and
-admin. It works offline through an IndexedDB outbox.
+A React 19 + Vite + TypeScript PWA covering the whole product: habits (check,
+duration, count and quit) with their own streaks and a whole-life streak;
+training logs (quick, set-level and live) with plans, race plans and blocks;
+week-based streaks with freezes, repairs and pauses; progress, records, weigh-ins
+and body trends; XP, badges and quests; social, groups and challenges;
+notifications, weekly and monthly recaps, file import, calendar subscription,
+export and admin. It works offline through an IndexedDB outbox.
 
 Copyright (c) 2026 PaceStreak. Licensed under [AGPL-3.0](./LICENSE) — anyone
 running a modified version of this over a network must offer its source to
@@ -34,24 +36,23 @@ the extra hostname.
 | --- | --- |
 | Stack | React 19, React Router, TanStack Query, Tailwind v4, Vite, `idb`, Phosphor icons |
 | Rendering | Static SPA shell (decided; see [ARCHITECTURE.md](./ARCHITECTURE.md)) |
-| Hostname | `app.pacestreak.com`, **no DNS record yet, deliberately** |
-| Depends on | `PaceStreak/api`, built, not deployed |
+| Hostname | `app.pacestreak.com`, attached as a Pages custom domain |
+| Depends on | [`PaceStreak/api`](https://github.com/PaceStreak/api) at `api.pacestreak.com` |
 | Hosting | Cloudflare Pages, Git-connected, like every other site here |
+| Tests | ~100 Vitest tests, including the outbox against a real IndexedDB |
+| Bot check | Cloudflare Turnstile on sign-up, sign-in and recovery (the one CSP exception) |
 
 ## Constraints already settled
 
 These are not suggestions. Each one is either load-bearing for another
 repository or was learned by breaking something.
 
-### Do not create the DNS record before there is a deployment
+### DNS records come from deployments, never by hand
 
 A proxied Cloudflare record with nothing behind it returns **`522`**, which is
-strictly worse than the hostname not existing. Before, `app.pacestreak.com`
-does not resolve; after, it serves a Cloudflare error page that reads to a
-visitor as "this product is broken".
-
-Attach the custom domain to the Pages project **first**, and let Cloudflare
-create the record. Do not hand-write it in the DNS tab.
+strictly worse than the hostname not existing. `app.pacestreak.com` got its
+record by attaching the custom domain to the Pages project; keep it that way
+for any future host. Do not hand-write records in the DNS tab.
 
 ### The session cookie is shared with every other subdomain
 
@@ -67,15 +68,14 @@ status page all sit inside one trust boundary.
   registrable domain) even though they are cross-origin. Reaching for
   `SameSite=None` would widen exposure for nothing.
 
-### The CSP will block the first call to the API
+### The CSP names the API, and Turnstile is the only exception
 
-Every site in this organization ships `default-src 'self'`. The first `fetch()`
-to `api.pacestreak.com` will be blocked by the browser, and the page sees only
-a failed request — no visible error, no console entry a user would report.
-
-**Done:** `public/_headers` already allows `connect-src 'self'
-https://api.pacestreak.com`. If the API ever moves, change that line in the
-same commit as `PUBLIC_API_BASE_URL`, or every request fails silently.
+Every site in this organization ships `default-src 'self'`. `public/_headers`
+allows `connect-src 'self' https://api.pacestreak.com`; if the API ever moves,
+change that line in the same commit as `PUBLIC_API_BASE_URL`, or every request
+fails silently with no error a user would report. The only third-party origin
+is `challenges.cloudflare.com` for Turnstile, in `script-src`, `connect-src`
+and `frame-src`. Do not widen it further.
 
 ### This app must not be indexed
 
@@ -101,7 +101,7 @@ every path legitimately renders the shell. **Handled in `vite.config.ts`:**
 `src/routes.json`, and `404.html` is emitted for everything else. A new
 top-level route must be added to `routes.json`.
 
-### Export is a launch requirement
+### Export is a product promise
 
 The marketing site promises full export. It has UI in Settings → Data: JSON,
 CSV and ICS export, JSON import, GPX/FIT/CSV import, and the calendar feed.

@@ -27,7 +27,7 @@ trade, and it is accepted.
 ```text
 browser
   ├── app.pacestreak.com   Cloudflare Pages  →  static build of this repo
-  └── api.pacestreak.com   (built, not deployed) →  data, sessions
+  └── api.pacestreak.com   GCP VM via Cloudflare Tunnel  →  data, sessions
 ```
 
 The app talks only to the API. It has no server of its own; anything that needs
@@ -100,5 +100,5 @@ because it determines what the Pages project is allowed to run.
 - DNS and Cloudflare configuration — those are
   [`infra`](https://github.com/PaceStreak/infra)'s.
 - Uptime checks — those are
-  [`status`](https://github.com/PaceStreak/status)'s, and this host should be
-  added there once it responds.
+  [`status`](https://github.com/PaceStreak/status)'s, which monitors this
+  host and its certificate.

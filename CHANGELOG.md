@@ -9,6 +9,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- `AGENTS.md` with this repository's commands and rules for coding agents; the
+  README and architecture notes now describe the live deployment, not a plan.
 - Terms gate, /recover, email change in Security, crash reporting with a
   proper error screen, an admin Ops tab, and a getting-started checklist.
 - Smart reminders, a monthly goal, rest days on the grid, comeback and
