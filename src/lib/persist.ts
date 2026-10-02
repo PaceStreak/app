@@ -35,3 +35,26 @@ export function usePersistentState<T extends string | number>(key: string, initi
   );
   return [value, set];
 }
+
+/**
+ * The rest someone last chose for an exercise, on this device. A routine's
+ * own rest still wins; this only replaces the library default when an
+ * exercise is added by hand or swapped in.
+ */
+export function rememberedRest(exerciseId: string, fallback: number): number {
+  try {
+    const raw = localStorage.getItem(`ps.rest.${exerciseId}`);
+    const n = raw == null ? NaN : Number(raw);
+    return Number.isFinite(n) && n >= 0 && n <= 1800 ? n : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function rememberRest(exerciseId: string, seconds: number) {
+  try {
+    localStorage.setItem(`ps.rest.${exerciseId}`, String(seconds));
+  } catch {
+    /* not remembered; fine */
+  }
+}

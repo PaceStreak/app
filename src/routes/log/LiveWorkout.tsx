@@ -1,3 +1,4 @@
+import { rememberRest, rememberedRest } from "../../lib/persist";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -41,6 +42,15 @@ import { clock, e1rm, fromKg, parseDuration, parseNumber, toKg, weight as fmtWei
 import { FeelIcon } from "./FeelIcon";
 
 const DRAFT_KEY = "active-workout";
+
+const SET_ORDER: SetKind[] = ["work", "warmup", "drop", "failure"];
+/** Spelled out when the kind changes, since a lone letter is easy to misread. */
+const KIND_NAMES: Record<SetKind, string> = {
+  work: "Working set",
+  warmup: "Warm-up set (doesn't count toward records)",
+  drop: "Drop set",
+  failure: "To failure / AMRAP: as many reps as possible",
+};
 
 interface DraftSet {
   key: string;
@@ -372,7 +382,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
       ...d,
       exercises: [
         ...d.exercises,
-        { key: uuid(), exercise_id: e.id, rest_sec: e.rest_sec, reps_min: null, reps_max: null, target_rpe: null, note: null, sets: [blankSet()] },
+        { key: uuid(), exercise_id: e.id, rest_sec: rememberedRest(e.id, e.rest_sec), reps_min: null, reps_max: null, target_rpe: null, note: null, sets: [blankSet()] },
       ],
     }));
     setPicker(null);
@@ -537,7 +547,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
         onClose={() => setPicker(null)}
         onPick={(e) => {
           if (picker?.mode === "swap") {
-            updateExercise(picker.key, (x) => ({ ...x, exercise_id: e.id, rest_sec: e.rest_sec }));
+            updateExercise(picker.key, (x) => ({ ...x, exercise_id: e.id, rest_sec: rememberedRest(e.id, e.rest_sec) }));
             setPicker(null);
           } else addExercise(e);
         }}
@@ -589,6 +599,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
                   updateExercise(menu, (e) => {
                     const steps = [45, 60, 90, 120, 150, 180, 240];
                     const next = steps[(steps.indexOf(e.rest_sec) + 1) % steps.length] ?? 90;
+                    rememberRest(e.exercise_id, next);
                     return { ...e, rest_sec: next };
                   }),
                 keep: true,
@@ -855,8 +866,9 @@ function ExerciseBlock({
   };
 
   const cycleKind = (s: DraftSet) => {
-    const order: SetKind[] = ["work", "warmup", "drop", "failure"];
-    setSet(s.key, { kind: order[(order.indexOf(s.kind) + 1) % order.length] });
+    const next = SET_ORDER[(SET_ORDER.indexOf(s.kind) + 1) % SET_ORDER.length];
+    toast(KIND_NAMES[next], { duration: 1500 });
+    setSet(s.key, { kind: next });
   };
 
   let workNumber = 0;
@@ -956,7 +968,7 @@ function ExerciseBlock({
           return (
             <div key={s.key}>
               <div className={`set-grid set-row items-center rounded-md px-2 py-1 ${s.done ? "is-done" : ""}`}>
-                <button type="button" onClick={() => cycleKind(s)} className="set-kind" data-kind={s.kind} aria-label={`Set type: ${s.kind}. Tap to change.`}>
+                <button type="button" onClick={() => cycleKind(s)} className="set-kind" data-kind={s.kind} aria-label={`Set type: ${KIND_NAMES[s.kind]}. Tap to change.`} title={KIND_NAMES[s.kind]}>
                   {s.kind === "work" ? workNumber : s.kind === "warmup" ? "W" : s.kind === "drop" ? "D" : "F"}
                 </button>
                 {loadType === "bodyweight" || loadType === "time" ? (
