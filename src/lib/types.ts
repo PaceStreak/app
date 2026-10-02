@@ -235,10 +235,13 @@ export interface Recap {
 }
 
 export interface FileImportResult {
-  format: "gpx" | "fit" | "csv";
+  format: "gpx" | "fit" | "csv" | "strong" | "hevy" | "fitnotes";
   found: number;
   imported: number;
   duplicates: number;
+  /** Lifting-app imports: sets brought in, and names that became custom exercises. */
+  sets?: number;
+  new_exercises?: string[];
   problems: string[];
   more_problems: number;
 }

@@ -7,15 +7,22 @@ import { toast } from "../../components/toast";
 import { Section } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { queryClient, useLibrary } from "../../lib/queries";
+import { useMe } from "../../lib/session";
 import { syncNow } from "../../lib/sync";
 import type { FileImportResult } from "../../lib/types";
 
-/** GPX, FIT and CSV files from a watch or another app. Nothing here talks to
-    a third party: people export a file from wherever it lives and upload it. */
+const LIFTING_APPS: Record<string, string> = { strong: "Strong", hevy: "Hevy", fitnotes: "FitNotes" };
+
+/** GPX, FIT and CSV files from a watch or another app, and set-by-set
+    exports from Strong, Hevy and FitNotes. Nothing here talks to a third
+    party: people export a file from wherever it lives and upload it. */
 export function ActivityImport() {
   const lib = useLibrary();
   const fileRef = useRef<HTMLInputElement>(null);
+  const me = useMe();
   const [discipline, setDiscipline] = useState("");
+  // Strong's export doesn't say which unit its weights are in.
+  const [unit, setUnit] = useState<"kg" | "lb">(me?.profile.weight_unit === "lb" ? "lb" : "kg");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<FileImportResult | null>(null);
 
@@ -25,6 +32,7 @@ export function ActivityImport() {
       const form = new FormData();
       form.append("file", file);
       if (discipline) form.append("discipline", discipline);
+      form.append("unit", unit);
       const res = await api<FileImportResult>("/workouts/import", { method: "POST", form });
       await syncNow();
       void queryClient.invalidateQueries();
@@ -50,12 +58,19 @@ export function ActivityImport() {
           ))}
         </select>
       </label>
+      <label className="mt-3 block">
+        <span className="field-label">Weights in a Strong export are in</span>
+        <select className="input" value={unit} onChange={(e) => setUnit(e.target.value as "kg" | "lb")}>
+          <option value="kg">Kilograms</option>
+          <option value="lb">Pounds</option>
+        </select>
+      </label>
       <button type="button" className="btn btn-secondary mt-3 w-full" disabled={busy} onClick={() => fileRef.current?.click()}>
         <FileArrowUp size={18} /> {busy ? "Importing…" : "Choose a GPX, FIT or CSV file"}
       </button>
       <input ref={fileRef} type="file" accept=".gpx,.fit,.csv,application/gpx+xml,text/csv" className="hidden" onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
       <p className="field-hint">
-        Up to 15 MB. Uploading the same file twice is safe, and a run already logged here is skipped. CSV needs a <code>date</code> column; <code>type</code>, <code>duration</code>, <code>distance</code> (km) and <code>title</code> are read if present. Imported sessions count for your streak but not for challenges or records.
+        Up to 15 MB. Uploading the same file twice is safe, and a session already logged here is skipped. <strong>From Strong, Hevy or FitNotes:</strong> export your workouts as CSV in that app and upload the file as it is; every set comes across, and exercises we don't have become your own custom exercises. Any other CSV needs a <code>date</code> column; <code>type</code>, <code>duration</code>, <code>distance</code> (km) and <code>title</code> are read if present. Imported sessions count for your streak but not for challenges or records.
       </p>
       <Sheet open={result !== null} onClose={() => setResult(null)} title="Import finished">
         {result && (
@@ -63,7 +78,18 @@ export function ActivityImport() {
             <p className="text-lg">
               {result.imported} of {result.found} session{result.found === 1 ? "" : "s"} imported.
             </p>
+            {LIFTING_APPS[result.format] && (
+              <p className="text-dim">
+                From {LIFTING_APPS[result.format]}: {result.sets ?? 0} set{result.sets === 1 ? "" : "s"}.
+              </p>
+            )}
             {result.duplicates > 0 && <p className="text-dim">{result.duplicates} were already here.</p>}
+            {(result.new_exercises?.length ?? 0) > 0 && (
+              <div>
+                <p className="text-sm">Added as your own exercises (edit them under Exercises to set muscles and cues):</p>
+                <p className="mt-1 text-sm text-dim">{result.new_exercises!.join(", ")}</p>
+              </div>
+            )}
             {result.problems.length > 0 && (
               <ul className="list-disc space-y-1 pl-5 text-sm text-dim">
                 {result.problems.map((p) => (

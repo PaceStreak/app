@@ -9,6 +9,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Import from Strong, Hevy and FitNotes, with a unit choice for Strong.
+- Plan filters (strength, endurance, no equipment, fits my gym).
+- Unsent changes are parked on sign-out, not deleted.
 - Plate calculator "Load the bar" mode: pick the bar (presets, the gym's
   bar or any custom weight, remembered per exercise), tap plates for one side,
   read the total, and "Use" fills the next unfinished set.
