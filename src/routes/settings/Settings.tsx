@@ -1,3 +1,5 @@
+import { useConfirm } from "../../components/Confirm";
+import { unsentCount } from "../../lib/db";
 import { Link, useParams } from "react-router";
 import {
   Bell,
@@ -42,6 +44,7 @@ const SECTIONS = {
 export default function Settings() {
   const { section } = useParams();
   const { signOut, me } = useSession();
+  const [confirmSheet, ask] = useConfirm();
   const current = section ? SECTIONS[section as keyof typeof SECTIONS] : null;
   if (current) {
     return (
@@ -59,12 +62,29 @@ export default function Settings() {
           <RowLink key={id} to={`/settings/${id}`} icon={<s.icon size={20} />} title={s.title} />
         ))}
       </List>
-      <button type="button" className="btn btn-secondary mt-6 w-full" onClick={() => void signOut()}>
+      <button
+        type="button"
+        className="btn btn-secondary mt-6 w-full"
+        onClick={async () => {
+          const unsent = await unsentCount();
+          if (
+            unsent &&
+            !(await ask({
+              title: "Some changes haven't synced",
+              body: `${unsent} change${unsent === 1 ? "" : "s"} will stay on this device and upload the next time you sign in here. Sign in on another device first and they won't be there yet.`,
+              confirm: "Sign out",
+            }))
+          )
+            return;
+          await signOut();
+        }}
+      >
         <SignOut size={18} /> Sign out
       </button>
       <p className="mt-6 text-center text-xs text-dim">
         <Link to="/settings/about" className="underline">PaceStreak</Link> · open source, AGPL-3.0
       </p>
+      {confirmSheet}
     </div>
   );
 }

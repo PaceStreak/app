@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { NetworkError, api, clearSession, hasSession, refresh, setTokens } from "./api";
-import { kvGet, kvSet, wipe } from "./db";
+import { kvGet, kvSet, unpark, wipe } from "./db";
 import { queryClient } from "./queries";
-import { startSync } from "./sync";
+import { push, schedulePush, startSync } from "./sync";
 import type { Me } from "./types";
 
 type Status = "loading" | "anon" | "ready";
@@ -34,9 +34,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const fresh = await api<Me>("/me");
     const cached = await kvGet<Me>("me");
     // Another person signed in on this device: their data must not mingle.
+    // The previous person's unsent writes are parked, not deleted.
     if (cached && cached.user.id !== fresh.user.id) {
-      await wipe();
+      await wipe(cached.user.id);
       queryClient.clear();
+    }
+    // Anything this person left unsent when they last signed out comes back.
+    try {
+      if ((await unpark(fresh.user.id)) > 0) schedulePush(0);
+    } catch {
+      /* storage unavailable; nothing to restore */
     }
     setMe(fresh);
     setOffline(false);
@@ -107,6 +114,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async (everywhere = false) => {
+    // Last chance to send anything still queued while the session is valid.
+    try {
+      await push();
+    } catch {
+      /* offline: what's left is parked below */
+    }
     try {
       if (everywhere) await api("/auth/logout-all", { method: "POST" });
       else await api("/auth/logout", { method: "POST", csrf: true, auth: false });
@@ -114,7 +127,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       /* sign out locally regardless */
     }
     clearSession();
-    await wipe();
+    // Unsent writes are parked under this person, never thrown away.
+    await wipe((await kvGet<Me>("me"))?.user.id);
     queryClient.clear();
     setMeState(null);
     setStatus("anon");
