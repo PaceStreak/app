@@ -6,7 +6,8 @@ import { DisciplineIcon } from "../../components/icons";
 import { CalendarCheck, CheckCircle, Circle, ShareNetwork, Copy, MinusCircle, PencilSimple, Plus, Trash, XCircle } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Empty, ErrorState, Field, Loading, PageHeader, Section, Switch } from "../../components/ui";
+import { Empty, ErrorState, Field, Loading, PageHeader, Section, Segmented, Switch } from "../../components/ui";
+import { usePersistentState } from "../../lib/persist";
 import { ApiError, api, errorText } from "../../lib/api";
 import { WEEKDAYS_LONG, fmtMonthDay } from "../../lib/dates";
 import { queryClient, useLibrary, useRoutines } from "../../lib/queries";
@@ -23,6 +24,76 @@ const STATUS: Record<NonNullable<PlanSession["status"]>, { label: string; Icon: 
   upcoming: { label: "Coming up", Icon: Circle, className: "text-dim" },
   skipped: { label: "Skipped", Icon: MinusCircle, className: "text-dim" },
 };
+
+/**
+ * The whole plan at a glance: a row per week, a column per day of the
+ * person's week, each session as its activity icon coloured by how it went.
+ * Tapping a week opens it in the list below.
+ */
+function PlanCalendar({ plan, weekStartsOn, shown, onPick }: { plan: Plan; weekStartsOn: number; shown: number; onPick: (week: number) => void }) {
+  const heads = Array.from({ length: 7 }, (_, d) => WEEKDAYS_LONG[(weekStartsOn + d) % 7]);
+  return (
+    <div className="card mt-3 overflow-x-auto p-3">
+      <table className="w-full border-separate border-spacing-1 text-center" aria-label="Plan calendar">
+        <thead>
+          <tr>
+            <th scope="col" className="w-14 text-left text-xs font-semibold text-dim">
+              <span className="sr-only">Week</span>
+            </th>
+            {heads.map((h) => (
+              <th key={h} scope="col" className="text-xs font-semibold text-dim" abbr={h}>
+                {h.slice(0, 1)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {plan.weeks.map((w, wi) => (
+            <tr key={wi}>
+              <th scope="row" className="text-left">
+                <button
+                  type="button"
+                  className={`num text-xs font-semibold ${wi === shown ? "text-accent-text" : "text-dim"} ${wi === plan.current_week ? "underline" : ""}`}
+                  aria-label={`Open week ${wi + 1}${wi === plan.current_week ? ", this week" : ""}`}
+                  onClick={() => onPick(wi)}
+                >
+                  Wk {wi + 1}
+                </button>
+              </th>
+              {heads.map((h, d) => {
+                const here = w.filter((x) => x.day === d);
+                const label = here.length
+                  ? `Week ${wi + 1}, ${h}: ${here.map((x) => `${x.title}${x.status ? `, ${STATUS[x.status].label.toLowerCase()}` : ""}`).join("; ")}`
+                  : `Week ${wi + 1}, ${h}: rest`;
+                return (
+                  <td key={d} className="p-0">
+                    <button
+                      type="button"
+                      className={`grid h-9 w-full place-items-center rounded-md ${here.length ? "bg-surface-2" : ""} ${wi === shown ? "ring-1 ring-line-lit" : ""}`}
+                      aria-label={label}
+                      title={label}
+                      onClick={() => onPick(wi)}
+                    >
+                      {here.slice(0, 1).map((x, k) => (
+                        <span key={k} className={x.status ? STATUS[x.status].className : "text-muted"}>
+                          <DisciplineIcon id={x.discipline} size={16} />
+                        </span>
+                      ))}
+                      {here.length > 1 && <span className="num text-[0.6rem] text-dim">+{here.length - 1}</span>}
+                    </button>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-xs text-dim">
+        <span className="text-accent-text">Green</span> done · <span className="text-flame-text">orange</span> today · grey to come or skipped. Tap a week to open it.
+      </p>
+    </div>
+  );
+}
 
 /** Strip the server's per-session status before sending a plan back. */
 function clean(weeks: PlanSession[][]): PlanSession[][] {
@@ -56,6 +127,7 @@ export default function PlanDetail() {
     description: string;
   } | null>(null);
   const [shownWeek, setShownWeek] = useState<number | null>(null);
+  const [view, setView] = usePersistentState<"list" | "calendar">("plan.view", "list", ["list", "calendar"]);
 
   const refresh = async (plan?: Plan) => {
     if (plan) queryClient.setQueryData(["plan", id], plan);
@@ -250,7 +322,19 @@ export default function PlanDetail() {
       </div>
 
       <Section title="Weeks">
-        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6" role="tablist" aria-label="Plan weeks">
+        <div className="mb-3 max-w-xs">
+          <Segmented
+            label="Plan view"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "list", label: "Week by week" },
+              { value: "calendar", label: "Whole plan" },
+            ]}
+          />
+        </div>
+        {view === "calendar" && <PlanCalendar plan={plan} weekStartsOn={me.profile.week_starts_on} shown={week} onPick={(i) => { setShownWeek(i); setView("list"); }} />}
+        <div className={`-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 ${view === "calendar" ? "hidden" : ""}`} role="tablist" aria-label="Plan weeks">
           {plan.weeks.map((w, i) => {
             const allDone = w.length > 0 && w.every((s) => s.status === "done");
             return (
