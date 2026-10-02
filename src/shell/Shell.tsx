@@ -128,8 +128,11 @@ function useAppBadge(unread: number) {
   const main = stats.data?.chains[0];
   const needed = main && !main.paused_now ? main.needed : 0;
   // Habits still open today, not counting ones being broken (nothing to
-  // "do" there) and none while paused.
-  const open = stats.data?.paused_today ? 0 : (habits.data ?? []).filter((h) => h.kind !== "quit" && !h.archived && !h.today.done).length;
+  // "do" there), ones not planned for today or paused on their own, and none
+  // while everything is paused - the same list Today shows.
+  const open = stats.data?.paused_today
+    ? 0
+    : (habits.data ?? []).filter((h) => h.kind !== "quit" && !h.archived && h.scheduled_today !== false && !h.paused && !h.today.done).length;
   const count = mode === "unread" ? unread : mode === "needed" ? needed : mode === "habits" ? open : 0;
   useEffect(() => setBadge(count), [count]);
 }
