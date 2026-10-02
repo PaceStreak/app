@@ -33,7 +33,11 @@ export default function GroupDetail() {
   const { id = "" } = useParams();
   const me = useMe();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("members");
+  // ?tab=coach opens straight on a tab, e.g. from the coaching overview.
+  const [tab, setTab] = useState<Tab>(() => {
+    const wanted = new URLSearchParams(window.location.search).get("tab");
+    return wanted === "coach" || wanted === "activity" || wanted === "challenges" ? wanted : "members";
+  });
   const [menu, setMenu] = useState(false);
   const [report, setReport] = useState(false);
   const [newChallenge, setNewChallenge] = useState(false);

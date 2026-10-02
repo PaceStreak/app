@@ -121,6 +121,7 @@ const router = createBrowserRouter([
           { path: "/u/:handle", element: page(() => import("./routes/social/Profile")) },
           { path: "/u/:handle/:list", element: page(() => import("./routes/social/FollowList")) },
           { path: "/groups", element: page(() => import("./routes/social/Groups")) },
+          { path: "/coaching", element: page(() => import("./routes/social/Coaching")) },
           { path: "/buddies", element: page(() => import("./routes/social/Buddies")) },
           { path: "/groups/:id", element: page(() => import("./routes/social/GroupDetail")) },
           { path: "/challenges", element: page(() => import("./routes/social/Challenges")) },

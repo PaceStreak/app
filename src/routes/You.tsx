@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import {
   Barbell,
@@ -22,11 +23,14 @@ import {
 import { personName } from "../components/social";
 import { Avatar, List, RowLink, Section } from "../components/ui";
 import { useStats } from "../lib/queries";
+import { api } from "../lib/api";
 import { useMe } from "../lib/session";
 
 export default function You() {
   const me = useMe();
   const stats = useStats().data;
+  // Only coaches see the Coaching row; for everyone else this is an empty list.
+  const coaching = useQuery({ queryKey: ["coaching"], queryFn: () => api<{ groups: unknown[] }>("/coaching"), staleTime: 300_000 });
   const main = stats?.chains[0];
   const staff = me.user.role !== "user";
   const name = me.profile.display_name || me.profile.handle || "You";
@@ -93,6 +97,7 @@ export default function You() {
           <RowLink to="/feed" icon={<UsersThree size={20} />} title="Feed" detail="Sessions and milestones from people you follow" />
           <RowLink to="/people" icon={<UsersThree size={20} />} title="Find people" />
           <RowLink to="/groups" icon={<UsersThree size={20} />} title="Groups" />
+          {coaching.data && coaching.data.groups.length > 0 && <RowLink to="/coaching" icon={<UsersThree size={20} />} title="Coaching" detail="Everyone sharing their training with you" />}
           <RowLink to="/challenges" icon={<Trophy size={20} />} title="Challenges" />
           <RowLink to="/leaderboards" icon={<Medal size={20} />} title="Leaderboards" />
         </List>
