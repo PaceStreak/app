@@ -9,7 +9,7 @@ printed email, then run the tests:
 
 ```bash
 cd ../api && TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA \
-  RATE_LIMIT_SIGNUP=100/minute RATE_LIMIT_LOGIN=100/minute \
+  RATE_LIMIT_SIGNUP=100/minute RATE_LIMIT_LOGIN=100/minute RATE_LIMIT_MFA_VERIFY=100/minute \
   EMAIL_BACKEND=console docker compose up -d api
 cd ../app && npx playwright install chromium && npx playwright test
 ```

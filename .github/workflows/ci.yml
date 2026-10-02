@@ -70,6 +70,7 @@ jobs:
       PUBLIC_API_URL: http://localhost:8000
       RATE_LIMIT_SIGNUP: 100/minute
       RATE_LIMIT_LOGIN: 100/minute
+      RATE_LIMIT_MFA_VERIFY: 100/minute
       E2E_API_LOG: ${{ github.workspace }}/api.log
     steps:
       - uses: actions/checkout@v5
