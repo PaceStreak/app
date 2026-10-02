@@ -208,6 +208,46 @@ export function loadedTotal(bar: number, perSide: number[]): number {
   return Math.round((bar + 2 * perSide.reduce((sum, p) => sum + p, 0)) * 100) / 100;
 }
 
+/**
+ * What to do instead of `from`: the same movement pattern working at least
+ * one of the same primary muscles, closest first. Other equipment ranks
+ * above the same equipment (the usual reason to swap is that it's taken),
+ * then shared muscles, then shared words in the name. `allowed` limits it to
+ * the equipment at this gym; custom exercises always pass.
+ */
+export function substitutes(from: Exercise, all: Exercise[], allowed: Set<string> | null = null, limit = 8): Exercise[] {
+  const overlap = (e: Exercise) => e.primary.filter((m) => from.primary.includes(m)).length;
+  const words = new Set(from.name.toLowerCase().split(/\W+/));
+  const named = (e: Exercise) => e.name.toLowerCase().split(/\W+/).filter((w) => words.has(w)).length;
+  const other = (e: Exercise) => (e.equipment !== from.equipment ? 1 : 0);
+  return all
+    .filter((e) => !e.archived && e.id !== from.id && e.pattern === from.pattern && overlap(e) > 0)
+    .filter((e) => !allowed || e.custom || allowed.has(e.equipment))
+    .sort((a, b) => other(b) - other(a) || overlap(b) - overlap(a) || named(b) - named(a) || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
+
+export type PlanFilter = "all" | "strength" | "endurance" | "none" | "gym";
+const ENDURANCE_DISCIPLINES = new Set(["run", "ride", "swim", "row", "walk"]);
+
+/** Whether a built-in plan belongs under a filter chip. `gymEquipment` is
+ * the default gym's kit; without one, "gym" lets everything through. */
+export function planMatches(t: { disciplines: string[]; equipment?: string[] }, filter: PlanFilter, gymEquipment: string[] | null): boolean {
+  const kit = t.equipment ?? [];
+  switch (filter) {
+    case "strength":
+      return t.disciplines.some((d) => d === "strength" || d === "hiit");
+    case "endurance":
+      return t.disciplines.some((d) => ENDURANCE_DISCIPLINES.has(d));
+    case "none":
+      return kit.length === 0;
+    case "gym":
+      return !gymEquipment?.length || kit.every((k) => gymEquipment.includes(k));
+    default:
+      return true;
+  }
+}
+
 /** The gear new sessions of this discipline use by default, if any. */
 export function defaultGear(gear: Gear[] | undefined, discipline: string): string | null {
   return gear?.find((g) => !g.retired && g.default_for.includes(discipline))?.id ?? null;

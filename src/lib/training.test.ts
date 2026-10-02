@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adjustRoutineItems, fuzzyMatch, localWeek, muscleRecovery, parseShorthand, loadedTotal, platesFor, suggestNext, volumeNudge } from "./training";
+import { adjustRoutineItems, fuzzyMatch, localWeek, muscleRecovery, parseShorthand, loadedTotal, planMatches, platesFor, substitutes, suggestNext, volumeNudge } from "./training";
 import type { Exercise, Workout } from "./types";
 
 const w = (date: string, discipline = "run") => ({ id: date + discipline, local_date: date, discipline, deleted_at: null }) as Workout;
@@ -224,5 +224,45 @@ describe("volumeNudge and adjustRoutineItems", () => {
       { sets: 1, weight_kg: 18, target_rpe: 6 },
     ]);
     expect(adjustRoutineItems(items, { short: true })).toHaveLength(2);
+  });
+});
+
+
+describe("substitutes", () => {
+  const ex = (id: string, equipment: string, primary: string[], pattern = "pull_v") =>
+    ({ id, name: id.replace(/-/g, " "), pattern, equipment, primary, secondary: [], load_type: "weight", rest_sec: 90, cue: "", unilateral: false, aliases: [], custom: false }) as Exercise;
+  const lat = ex("lat-pulldown", "cable", ["lats"]);
+  const all = [lat, ex("v-handle-pulldown", "cable", ["lats"]), ex("pull-up", "bodyweight", ["lats"]), ex("machine-pulldown", "machine", ["lats"]), ex("barbell-row", "barbell", ["lats"], "pull_h"), ex("curl", "cable", ["biceps"])];
+
+  it("keeps the pattern and a shared muscle, other equipment first", () => {
+    const ids = substitutes(lat, all).map((e) => e.id);
+    expect(ids).not.toContain("lat-pulldown");
+    expect(ids).not.toContain("barbell-row");
+    expect(ids).not.toContain("curl");
+    expect(ids.indexOf("v-handle-pulldown")).toBe(ids.length - 1);
+  });
+
+  it("respects the gym's equipment", () => {
+    expect(substitutes(lat, all, new Set(["cable"])).map((e) => e.id)).toEqual(["v-handle-pulldown"]);
+  });
+});
+
+
+describe("planMatches", () => {
+  const fiveByFive = { disciplines: ["strength"], equipment: ["barbell"] };
+  const run = { disciplines: ["run"], equipment: [] };
+  const hybrid = { disciplines: ["run", "strength"], equipment: ["barbell", "dumbbell"] };
+  it("sorts plans into strength, endurance and no-equipment", () => {
+    expect(planMatches(fiveByFive, "strength", null)).toBe(true);
+    expect(planMatches(run, "strength", null)).toBe(false);
+    expect(planMatches(hybrid, "endurance", null)).toBe(true);
+    expect(planMatches(run, "none", null)).toBe(true);
+    expect(planMatches(fiveByFive, "none", null)).toBe(false);
+  });
+  it("fits a gym only when every kind of equipment is there", () => {
+    expect(planMatches(hybrid, "gym", ["barbell"])).toBe(false);
+    expect(planMatches(hybrid, "gym", ["barbell", "dumbbell", "cable"])).toBe(true);
+    expect(planMatches(run, "gym", ["dumbbell"])).toBe(true);
+    expect(planMatches(hybrid, "gym", null)).toBe(true);
   });
 });

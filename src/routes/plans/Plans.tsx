@@ -8,9 +8,11 @@ import { toast } from "../../components/toast";
 import { Empty, ErrorState, Loading, PageHeader, Section } from "../../components/ui";
 import { ApiError, api, errorText } from "../../lib/api";
 import { fmtMonthDay } from "../../lib/dates";
-import { queryClient } from "../../lib/queries";
+import { queryClient, useGyms, useLibrary } from "../../lib/queries";
 import type { Plan, PlanSummary, PlanTemplate } from "../../lib/types";
 import { plural } from "../../lib/units";
+import { planMatches, type PlanFilter } from "../../lib/training";
+import { usePersistentState } from "../../lib/persist";
 
 export default function Plans() {
   const navigate = useNavigate();
@@ -24,6 +26,11 @@ export default function Plans() {
     staleTime: Infinity,
   });
   const [busy, setBusy] = useState<string | null>(null);
+  const gyms = useGyms();
+  const lib = useLibrary();
+  const gym = gyms.data?.find((g) => g.is_default) ?? gyms.data?.[0];
+  const [filter, setFilter] = usePersistentState<PlanFilter>("plans.filter", "all", ["all", "strength", "endurance", "none", "gym"]);
+  const shown = (templates.data ?? []).filter((t) => planMatches(t, filter, gym?.equipment ?? null));
   const fileRef = useRef<HTMLInputElement>(null);
 
   const importFile = async (file: File | undefined) => {
@@ -97,8 +104,24 @@ export default function Plans() {
       <BlockCard />
 
       <Section title="Start from a template">
+        <div className="-mx-1 mb-3 flex flex-wrap gap-2" role="group" aria-label="Filter plans">
+          {(
+            [
+              ["all", "All"],
+              ["strength", "Strength"],
+              ["endurance", "Endurance"],
+              ["none", "No equipment"],
+              ...(gym ? [["gym", `Fits ${gym.name}`]] : []),
+            ] as [PlanFilter, string][]
+          ).map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={filter === value} className={`chip h-8 ${filter === value ? "chip-accent" : ""}`} onClick={() => setFilter(value)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {templates.data && shown.length === 0 && <p className="text-sm text-muted">No built-in plan fits that. Try another filter, or build your own below.</p>}
         <ul className="space-y-2">
-          {(templates.data ?? []).map((t) => (
+          {shown.map((t) => (
             <li key={t.id} className="card p-4">
               <div className="flex items-start gap-3">
                 <span className="flex shrink-0 gap-1 text-accent-text" aria-hidden>
@@ -111,6 +134,8 @@ export default function Plans() {
                   <p className="mt-0.5 text-sm text-muted">{t.summary}</p>
                   <p className="mt-1 text-xs text-dim">
                     {t.weeks_count} weeks · {t.per_week} a week
+                    {" · "}
+                    {t.equipment?.length ? t.equipment.map((k) => lib?.lib.equipment[k] ?? k).join(", ") : "no equipment"}
                   </p>
                 </div>
               </div>

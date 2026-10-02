@@ -693,6 +693,8 @@ export interface PlanTemplate {
   weeks_count: number;
   per_week: number;
   disciplines: string[];
+  /** Equipment kinds the plan's routines use; empty when none is needed. */
+  equipment?: string[];
 }
 
 export interface BlockWeek {

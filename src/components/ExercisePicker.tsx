@@ -3,7 +3,7 @@ import { MagnifyingGlass, Plus } from "./phosphor";
 import { Sheet } from "./Sheet";
 import { CustomExerciseForm } from "./CustomExerciseForm";
 import { useGyms, useLibrary, useWorkouts } from "../lib/queries";
-import { fuzzyMatch } from "../lib/training";
+import { fuzzyMatch, substitutes } from "../lib/training";
 import type { Exercise } from "../lib/types";
 
 export function ExercisePicker({
@@ -69,16 +69,8 @@ export function ExercisePicker({
   // muscles first, then the closest names.
   const similar = useMemo(() => {
     const from = similarTo ? lib?.byId.get(similarTo) : undefined;
-    if (!lib || !from) return [];
-    const overlap = (e: Exercise) => e.primary.filter((m) => from.primary.includes(m)).length;
-    // "Dumbbell bench press" is closer to "Bench press" than a dip is.
-    const words = new Set(from.name.toLowerCase().split(/\W+/));
-    const named = (e: Exercise) => e.name.toLowerCase().split(/\W+/).filter((w) => words.has(w)).length;
-    return lib.exercises
-      .filter((e) => !e.archived && e.id !== from.id && e.pattern === from.pattern && overlap(e) > 0)
-      .sort((a, b) => overlap(b) - overlap(a) || named(b) - named(a) || a.name.localeCompare(b.name))
-      .slice(0, 6);
-  }, [lib, similarTo]);
+    return lib && from ? substitutes(from, lib.exercises, gymFilter) : [];
+  }, [lib, similarTo, gymFilter]);
   const showSimilar = similar.length > 0 && !q.trim() && !pattern;
 
   const row = (e: Exercise) => (
