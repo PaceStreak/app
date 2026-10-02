@@ -86,7 +86,9 @@ jobs:
           uv sync --locked
           make keys vapid
           uv run alembic upgrade head
-          nohup uv run uvicorn app.main:app --port 8000 > "$E2E_API_LOG" 2>&1 &
+          # The venv directly, not `uv run`: a long-lived uv process holds the
+          # cache lock and fails setup-uv's clean-up step.
+          nohup .venv/bin/uvicorn app.main:app --port 8000 > "$E2E_API_LOG" 2>&1 &
           for i in $(seq 60); do curl -sf localhost:8000/health && break; sleep 1; done
       - uses: actions/setup-node@v5
         with:
