@@ -26,6 +26,7 @@ import { Avatar } from "../components/ui";
 import { CommandPalette } from "../components/CommandPalette";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { TermsGate } from "../components/TermsGate";
+import { InstallBanner } from "../components/InstallBanner";
 import { toast } from "../components/toast";
 import { api } from "../lib/api";
 import { useHabits, useOnline, useStats, useSyncState } from "../lib/queries";
@@ -89,6 +90,7 @@ export function Shell() {
       <CommandPalette />
       <PullToRefresh />
       <TermsGate />
+      <InstallBanner />
     </LogProvider>
   );
 }
