@@ -37,7 +37,10 @@ function pagesArtifacts(): Plugin {
 
       const rules = routes.prefixes
         .filter((p) => p !== "/")
-        .flatMap((p) => [`${p} /index.html 200`, `${p}/* /index.html 200`]);
+        // Rewrite to "/", not "/index.html": Pages answers a request for
+        // /index.html with a 308 to /, and applies that to rewrite targets
+        // too, so every deep link (a reload, a shared URL) landed on Today.
+        .flatMap((p) => [`${p} / 200`, `${p}/* / 200`]);
       this.emitFile({
         type: "asset",
         fileName: "_redirects",
