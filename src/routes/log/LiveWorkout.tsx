@@ -242,7 +242,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [picker, setPicker] = useState<{ mode: "add" } | { mode: "swap"; key: string } | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
-  const [plates, setPlates] = useState<number | null>(null);
+  const [plates, setPlates] = useState<{ key: string; exerciseId: string; weight: number } | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [now, setNow] = useState(Date.now());
   const rest = useRestTimer();
@@ -501,7 +501,7 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
             workoutId={draft.id}
             onChange={(fn) => updateExercise(ex.key, fn)}
             onMenu={() => setMenu(ex.key)}
-            onPlates={(w) => setPlates(w)}
+            onPlates={(w) => setPlates({ key: ex.key, exerciseId: ex.exercise_id, weight: w })}
             pinned={notes.data?.[ex.exercise_id] ?? null}
             blockWeek={blockWeek}
             onSetDone={(restSec) => {
@@ -617,7 +617,17 @@ export default function LiveWorkout({ editId }: { editId?: string }) {
           return (
             <PlateCalculator
               unit={unit}
-              initial={plates || undefined}
+              initial={plates.weight || undefined}
+              barKey={plates.exerciseId}
+              onUse={(total) => {
+                // The next set not ticked yet; a finished exercise gets its last set corrected.
+                updateExercise(plates.key, (e) => {
+                  const i = e.sets.findIndex((st) => !st.done);
+                  const at = i === -1 ? e.sets.length - 1 : i;
+                  return at < 0 ? e : { ...e, sets: e.sets.map((st, j) => (j === at ? { ...st, weight: String(total) } : st)) };
+                });
+                setPlates(null);
+              }}
               gymName={gym?.name}
               plates={gym?.plates_kg.map((p) => Math.round(fromKg(p, unit) * 100) / 100)}
               bar={gym ? Math.round(fromKg(gym.bar_kg, unit) * 100) / 100 : undefined}
@@ -918,7 +928,11 @@ function ExerciseBlock({
             type="button"
             className="btn btn-ghost btn-icon btn-sm text-dim"
             aria-label="Plate calculator"
-            onClick={() => onPlates(parseNumber(ex.sets.find((s) => s.weight)?.weight ?? "") ?? 0)}
+            onClick={() => {
+              // Open on the set about to be done, so the bar shows what's on it now.
+              const next = ex.sets.find((s) => !s.done) ?? ex.sets[ex.sets.length - 1];
+              onPlates(parseNumber(next?.weight || ex.sets.find((s) => s.weight)?.weight || "") ?? 0);
+            }}
           >
             <Barbell size={18} />
           </button>

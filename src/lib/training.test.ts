@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adjustRoutineItems, fuzzyMatch, localWeek, muscleRecovery, parseShorthand, platesFor, suggestNext, volumeNudge } from "./training";
+import { adjustRoutineItems, fuzzyMatch, localWeek, muscleRecovery, parseShorthand, loadedTotal, platesFor, suggestNext, volumeNudge } from "./training";
 import type { Exercise, Workout } from "./types";
 
 const w = (date: string, discipline = "run") => ({ id: date + discipline, local_date: date, discipline, deleted_at: null }) as Workout;
@@ -37,6 +37,18 @@ describe("suggestNext", () => {
   it("auto-regulates from RPE", () => {
     const s = suggestNext([{ weight_kg: 100, reps: 5, rpe: 6 }], { targetRpe: 8, unit: "kg" });
     expect(s?.weight_kg).toBeCloseTo(106.25);
+  });
+});
+
+describe("loadedTotal", () => {
+  it("adds both sides to the bar", () => {
+    expect(loadedTotal(20, [20, 1.25])).toBe(62.5);
+    expect(loadedTotal(45, [45, 45])).toBe(225);
+    expect(loadedTotal(7, [])).toBe(7);
+  });
+  it("round-trips with platesFor", () => {
+    const { plates } = platesFor(97.5, 20, [25, 20, 15, 10, 5, 2.5, 1.25]);
+    expect(loadedTotal(20, plates)).toBe(97.5);
   });
 });
 

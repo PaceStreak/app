@@ -9,6 +9,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Plate calculator "Load the bar" mode: pick the bar (presets, the gym's
+  bar or any custom weight, remembered per exercise), tap plates for one side,
+  read the total, and "Use" fills the next unfinished set.
 - Sign-up and the updated-terms dialog name the health information a person
   consents to storing (weight, food, mood, habits).
 - `AGENTS.md` with this repository's commands and rules for coding agents; the

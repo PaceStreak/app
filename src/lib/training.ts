@@ -202,6 +202,12 @@ export function platesFor(target: number, bar: number, available: number[]): { p
   return { plates, remainder: Math.round(perSide * 2 * 100) / 100 };
 }
 
+/** What a loaded bar weighs: the bar plus each plate on one side, twice.
+ * Rounded to 0.01 so 1.25s and lb conversions don't print 62.49999. */
+export function loadedTotal(bar: number, perSide: number[]): number {
+  return Math.round((bar + 2 * perSide.reduce((sum, p) => sum + p, 0)) * 100) / 100;
+}
+
 /** The gear new sessions of this discipline use by default, if any. */
 export function defaultGear(gear: Gear[] | undefined, discipline: string): string | null {
   return gear?.find((g) => !g.retired && g.default_for.includes(discipline))?.id ?? null;
