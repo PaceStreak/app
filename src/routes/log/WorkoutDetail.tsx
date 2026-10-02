@@ -8,11 +8,11 @@ import { toast } from "../../components/toast";
 import { Banner, PageHeader } from "../../components/ui";
 import { workoutTitle } from "../../components/WorkoutRow";
 import { api } from "../../lib/api";
-import { fmtFullDay, localToday, timeOfDay, uuid } from "../../lib/dates";
+import { fmtFullDay, localToday, timeOfDay } from "../../lib/dates";
 import { getWorkout, onWorkoutsChanged } from "../../lib/db";
 import { useGear, useLibrary, useStats, useWorkouts } from "../../lib/queries";
 import { useMe } from "../../lib/session";
-import { deleteWorkout, discardFailed, saveWorkout } from "../../lib/sync";
+import { deleteWorkout, discardFailed, repeatWorkout, saveWorkout } from "../../lib/sync";
 import { EFFORT, FEEL, exerciseOrder, localWeek, volumeKg } from "../../lib/training";
 import type { RecordRow, Workout } from "../../lib/types";
 import { clock, distance, duration, pace, speed, weight as fmtWeight, compact } from "../../lib/units";
@@ -71,21 +71,14 @@ export default function WorkoutDetail() {
   const remove = async () => {
     if (!(await ask({ title: "Delete this session?", body: "It comes off your streak and grid on every device.", confirm: "Delete", danger: true }))) return;
     await deleteWorkout(w.id);
-    toast("Session deleted");
+    // Undo re-saves it: a newer save un-deletes it everywhere, offline or not,
+    // and clears its trash entry on the server.
+    toast("Session deleted", { duration: 7000, action: { label: "Undo", onClick: () => void saveWorkout(w).then(() => toast.success("Session restored")) } });
     navigate("/history", { replace: true });
   };
 
   const again = async () => {
-    const copy: Workout = {
-      ...w,
-      id: uuid(),
-      started_at: new Date().toISOString(),
-      local_date: today,
-      sets: w.sets.map((s) => ({ ...s, completed: true })),
-      seq: undefined,
-      source: "app",
-    };
-    await saveWorkout(copy);
+    const copy = await repeatWorkout(w, today);
     toast.success("Logged again", { body: "Same session, today.", action: { label: "Undo", onClick: () => void deleteWorkout(copy.id) } });
     navigate(`/workouts/${copy.id}`, { replace: true });
   };
@@ -103,7 +96,14 @@ export default function WorkoutDetail() {
       <PageHeader
         back="/history"
         title={workoutTitle(w, lib)}
-        subtitle={`${fmtFullDay(w.local_date)} · ${timeOfDay(w.started_at)}`}
+        subtitle={
+          <>
+            <Link to={`/day/${w.local_date}`} className="underline decoration-dotted underline-offset-4 hover:text-ink">
+              {fmtFullDay(w.local_date)}
+            </Link>
+            {` · ${timeOfDay(w.started_at)}`}
+          </>
+        }
         action={
           <Link to={`/workouts/${w.id}/edit`} className="btn btn-secondary btn-sm">
             <PencilSimple size={16} /> Edit

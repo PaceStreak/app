@@ -1369,3 +1369,32 @@
     }
   }
 }
+
+
+/* --- display settings (Settings > App) ------------------------------------
+   Set on <html> by applyDisplay() in lib/prefs.ts. Text size scales the root,
+   so everything sized in rem follows. Density shrinks Tailwind's one
+   --spacing unit, so every p-/gap-/m- utility tightens together. High
+   contrast strengthens the secondary text and lines in both themes; every
+   pair still measures against its own background (see CLAUDE.md, contrast). */
+html[data-text="large"] {
+  font-size: 112.5%;
+}
+html[data-text="larger"] {
+  font-size: 125%;
+}
+html[data-density="compact"] {
+  --spacing: 0.2rem;
+}
+html[data-contrast="high"] {
+  --muted: #d4d4d8;
+  --dim: #b4b4bc;
+  --line: #45454f;
+  --line-lit: #5a5a66;
+}
+html[data-contrast="high"][data-theme="light"] {
+  --muted: #2e3138;
+  --dim: #3d4048;
+  --line: #a9adb4;
+  --line-lit: #8d929a;
+}

@@ -36,8 +36,30 @@ self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
+// Web Share Target: the phone's share sheet POSTs a photo or text here. The
+// file stays on this device - kept in its own cache, never uploaded - and
+// /share lets the person decide what it is (a barcode, a progress photo).
+const SHARE_CACHE = "pacestreak-share";
+async function receiveShare(request) {
+  const form = await request.formData();
+  const cache = await caches.open(SHARE_CACHE);
+  await Promise.all((await cache.keys()).map((k) => cache.delete(k)));
+  const file = form.get("image");
+  if (file && typeof file !== "string") {
+    await cache.put("/share-target/image", new Response(file, { headers: { "Content-Type": file.type || "image/jpeg" } }));
+  }
+  const text = [form.get("title"), form.get("text"), form.get("url")].filter((v) => typeof v === "string" && v.trim()).join("\n");
+  if (text) await cache.put("/share-target/text", new Response(text.slice(0, 2000), { headers: { "Content-Type": "text/plain" } }));
+  return Response.redirect("/share", 303);
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
+  const shareUrl = new URL(request.url);
+  if (request.method === "POST" && shareUrl.origin === self.location.origin && shareUrl.pathname === "/share-target") {
+    event.respondWith(receiveShare(request).catch(() => Response.redirect("/share?error=1", 303)));
+    return;
+  }
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
@@ -80,7 +102,10 @@ self.addEventListener("push", (event) => {
         icon: "/icons/icon-192.png",
         badge: "/icons/icon-192.png",
         tag: data.tag || undefined,
-        data: { url: data.url || "/" },
+        // Buttons (a habit reminder's Done and Snooze), each with a signed
+        // API URL: this worker has no session to call the API with.
+        actions: (data.actions || []).slice(0, 2).map((a) => ({ action: a.action, title: a.title })),
+        data: { url: data.url || "/", actions: data.actions || [] },
       });
       // Tell open tabs so the bell count updates without a refresh.
       const windows = await self.clients.matchAll({ type: "window" });
@@ -91,6 +116,31 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const chosen = event.action && ((event.notification.data && event.notification.data.actions) || []).find((a) => a.action === event.action);
+  if (chosen) {
+    event.waitUntil(
+      (async () => {
+        let ok = false;
+        try {
+          ok = (await fetch(chosen.url, { method: "POST", mode: "cors", credentials: "omit" })).ok;
+        } catch {
+          ok = false;
+        }
+        const windows = await self.clients.matchAll({ type: "window" });
+        windows.forEach((w) => w.postMessage({ type: "notification-action", action: chosen.action, ok }));
+        if (!ok) {
+          // An expired link or no signal: say so rather than fail silently.
+          await self.registration.showNotification("Couldn't do that from the notification", {
+            body: "Open PaceStreak to finish it.",
+            icon: "/icons/icon-192.png",
+            tag: "action-failed",
+            data: { url: (event.notification.data && event.notification.data.url) || "/" },
+          });
+        }
+      })(),
+    );
+    return;
+  }
   const target = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
   event.waitUntil(
     (async () => {

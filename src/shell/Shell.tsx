@@ -13,6 +13,7 @@ import {
   Gear,
   House,
   ListBullets,
+  MagnifyingGlass,
   Plus,
   Sparkle,
   Trophy,
@@ -22,11 +23,14 @@ import {
   ShieldCheck,
 } from "../components/phosphor";
 import { Avatar } from "../components/ui";
+import { CommandPalette } from "../components/CommandPalette";
+import { PullToRefresh } from "../components/PullToRefresh";
 import { TermsGate } from "../components/TermsGate";
 import { toast } from "../components/toast";
 import { api } from "../lib/api";
-import { useOnline, useStats, useSyncState } from "../lib/queries";
+import { useHabits, useOnline, useStats, useSyncState } from "../lib/queries";
 import { useSession } from "../lib/session";
+import { onQueueChange } from "../lib/requests";
 import { onOutcome } from "../lib/sync";
 import { setBadge } from "../lib/pwa";
 import { haptic, prefs } from "../lib/prefs";
@@ -82,6 +86,8 @@ export function Shell() {
   return (
     <LogProvider>
       <ShellInner />
+      <CommandPalette />
+      <PullToRefresh />
       <TermsGate />
     </LogProvider>
   );
@@ -110,6 +116,7 @@ function useUnread() {
  * should be looking at a number telling them to train. */
 function useAppBadge(unread: number) {
   const stats = useStats();
+  const habits = useHabits();
   const [mode, setMode] = useState(prefs.badge());
   useEffect(() => {
     const onChange = () => setMode(prefs.badge());
@@ -118,8 +125,19 @@ function useAppBadge(unread: number) {
   }, []);
   const main = stats.data?.chains[0];
   const needed = main && !main.paused_now ? main.needed : 0;
-  const count = mode === "unread" ? unread : mode === "needed" ? needed : 0;
+  // Habits still open today, not counting ones being broken (nothing to
+  // "do" there) and none while paused.
+  const open = stats.data?.paused_today ? 0 : (habits.data ?? []).filter((h) => h.kind !== "quit" && !h.archived && !h.today.done).length;
+  const count = mode === "unread" ? unread : mode === "needed" ? needed : mode === "habits" ? open : 0;
   useEffect(() => setBadge(count), [count]);
+}
+
+/** Everything saved on this device and not yet on the server: workouts in
+ * the sync outbox plus queued edits (food, journal, habits, body). */
+function usePending(workoutsPending: number): number {
+  const [queued, setQueued] = useState(0);
+  useEffect(() => onQueueChange((q) => setQueued(q.length)), []);
+  return workoutsPending + queued;
 }
 
 function ShellInner() {
@@ -127,6 +145,7 @@ function ShellInner() {
   const { openLog } = useLog();
   const online = useOnline();
   const sync = useSyncState();
+  const pending = usePending(sync.pending);
   const unread = useUnread();
   useAppBadge(unread);
   const location = useLocation();
@@ -162,19 +181,6 @@ function ShellInner() {
     [me, navigate],
   );
 
-  // "n" logs from anywhere on a keyboard. No animation on keyboard actions.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(target.tagName) || target.isContentEditable) return;
-      if (e.key === "n") {
-        e.preventDefault();
-        openLog();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [openLog]);
 
   const hideTabs = location.pathname.startsWith("/workouts/live");
   const staff = me?.user.role === "admin" || me?.user.role === "moderator";
@@ -196,6 +202,12 @@ function ShellInner() {
             <Plus size={18} weight="bold" /> Log a session
           </span>
           <kbd className="kbd" aria-hidden>N</kbd>
+        </button>
+        <button type="button" className="side-link press mx-0 mb-3 w-full justify-between text-dim" onClick={() => window.dispatchEvent(new Event("ps:palette"))}>
+          <span className="flex items-center gap-3">
+            <MagnifyingGlass size={19} /> Search
+          </span>
+          <kbd className="kbd" aria-hidden>⌘K</kbd>
         </button>
         <nav className="-mx-1 flex-1 overflow-y-auto px-1" aria-label="Main">
           {NAV_GROUPS.map((group, i) => (
@@ -221,7 +233,7 @@ function ShellInner() {
             <Avatar name={me?.profile.display_name || me?.profile.handle} hue={me?.profile.avatar_hue ?? 0} size={32} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold">{me?.profile.display_name || me?.profile.handle || "You"}</span>
-              <span className="block truncate text-xs text-dim">{online && !offline ? (sync.pending ? `Syncing ${sync.pending}` : "All synced") : "Offline"}</span>
+              <span className="block truncate text-xs text-dim">{online && !offline ? (pending ? `Syncing ${pending}` : "All synced") : pending ? `Offline · ${pending} waiting` : "Offline"}</span>
             </span>
           </NavLink>
         </div>
@@ -235,7 +247,10 @@ function ShellInner() {
               <Logo className="size-6" />
             </NavLink>
             <div className="flex items-center gap-1">
-              {(!online || offline || sync.pending > 0) && <OfflinePill online={online && !offline} pending={sync.pending} />}
+              <button type="button" className="btn btn-ghost btn-icon" aria-label="Search and commands" onClick={() => window.dispatchEvent(new Event("ps:palette"))}>
+                <MagnifyingGlass size={22} />
+              </button>
+              {(!online || offline || pending > 0) && <OfflinePill online={online && !offline} pending={pending} />}
               <NavLink to="/notifications" className="btn btn-ghost btn-icon relative" aria-label={`${t("nav.notifications")}${unread ? `, ${t("nav.unread", { count: unread })}` : ""}`}>
                 <Bell size={22} />
                 {unread > 0 && <span className="absolute top-2 right-2 size-2.5 rounded-full bg-flame ring-2 ring-bg" />}
@@ -321,7 +336,7 @@ function OfflinePill({ online, pending }: { online: boolean; pending: number }) 
   return (
     <span className="chip" role="status">
       {!online && <CloudSlash size={14} />}
-      {online ? `Syncing ${pending}` : pending ? `Offline · ${pending} saved here` : "Offline"}
+      {online ? `Syncing ${pending}` : pending ? `Offline · ${pending} waiting to sync` : "Offline"}
     </span>
   );
 }

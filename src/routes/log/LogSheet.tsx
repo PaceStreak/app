@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { DisciplineIcon } from "../../components/icons";
-import { ArrowLeft, Barbell, CaretDown, ListBullets, Moon, Play } from "../../components/phosphor";
+import { ArrowCounterClockwise, ArrowLeft, Barbell, CaretDown, ListBullets, Moon, Play } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Segmented } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
-import { localDateOf, localToday, toLocalInput, uuid } from "../../lib/dates";
+import { fmtMonthDay, localDateOf, localToday, toLocalInput, uuid } from "../../lib/dates";
 import { haptic } from "../../lib/prefs";
 import { queryClient, useGear, useLibrary, useRoutines, useWorkouts } from "../../lib/queries";
 import { useMe } from "../../lib/session";
-import { deleteWorkout, saveWorkout } from "../../lib/sync";
+import { deleteWorkout, repeatWorkout, saveWorkout } from "../../lib/sync";
 import { EFFORT, FEEL, blankWorkout, defaultGear, localWeek } from "../../lib/training";
 import { GearPicker, TagInput } from "../../components/TagsGear";
 import { parseDuration, parseNumber, pace, toMetres, type DistanceUnit } from "../../lib/units";
@@ -68,6 +68,16 @@ function Chooser({ onPick, onClose }: { onPick: (d: string) => void; onClose: ()
     navigate(to);
   };
 
+  // The most recent session, repeatable in one tap.
+  const today = localToday(me.profile.timezone);
+  const last = (workouts ?? []).find((w) => !w.deleted_at);
+  const again = async () => {
+    if (!last) return;
+    onClose();
+    const copy = await repeatWorkout(last, today);
+    toast.success("Logged again", { body: "Same session, today.", action: { label: "Undo", onClick: () => void deleteWorkout(copy.id) } });
+  };
+
   return (
     <div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -88,6 +98,17 @@ function Chooser({ onPick, onClose }: { onPick: (d: string) => void; onClose: ()
       </div>
 
       <div className="mt-5 space-y-2">
+        {last && (
+          <button type="button" onClick={() => void again()} className="press flex w-full items-center gap-3 rounded-md border border-line px-4 py-3 text-left">
+            <span className="grid size-10 place-items-center rounded-md bg-surface-2">
+              <ArrowCounterClockwise size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-semibold">Log again: {last.title || lib?.discipline(last.discipline)?.name || last.discipline}</span>
+              <span className="block text-sm text-dim">Same as {last.local_date === today ? "earlier today" : fmtMonthDay(last.local_date)}, logged for today</span>
+            </span>
+          </button>
+        )}
         <button type="button" onClick={() => go("/workouts/live")} className="press flex w-full items-center gap-3 rounded-md bg-accent-soft px-4 py-3.5 text-left">
           <span className="grid size-10 place-items-center rounded-md bg-accent text-accent-ink">
             <Play size={20} weight="fill" />

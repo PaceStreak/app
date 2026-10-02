@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { fmtFullDay, parseDay } from "../lib/dates";
+import { useRowGestures } from "../lib/gestures";
 import { haptic } from "../lib/prefs";
 import { isDone, markerFor, progressText, setHabitDay, stepFor } from "../lib/habits";
 import { MarkerRing, MarkerSlash, MarkerX } from "./Marker";
@@ -61,6 +62,18 @@ export function HabitRow({ habit, today, strip = true }: { habit: Habit; today: 
     setSheetDay(day);
   };
 
+  // Swipe right to complete, left or long-press for the exact amount (or a
+  // note). Not for a habit being broken: a slip is never one stray swipe.
+  const goal = habit.kind === "check" ? 1 : (habit.daily_goal ?? 1);
+  const gestures = useRowGestures({
+    disabled: busy || habit.kind === "quit",
+    onSwipeRight: () => {
+      if (!done) void set(today, Math.max(goal, amount), amount);
+    },
+    onSwipeLeft: () => setSheetDay(today),
+    onLongPress: () => setSheetDay(today),
+  });
+
   const progress = progressText(habit, amount);
   const streakText =
     habit.kind === "quit"
@@ -69,7 +82,13 @@ export function HabitRow({ habit, today, strip = true }: { habit: Habit; today: 
   const recent = (habit.recent ?? []).filter((d) => d.date >= habit.started_on);
 
   return (
-    <div className="px-4 py-3">
+    <div className="relative overflow-hidden">
+      {gestures.dx !== 0 && (
+        <div aria-hidden className={`absolute inset-0 flex items-center px-5 text-sm font-semibold ${gestures.dx > 0 ? "justify-start bg-accent text-accent-ink" : "justify-end bg-surface-3 text-ink"} ${gestures.armed ? "" : "opacity-70"}`}>
+          {gestures.dx > 0 ? (done ? "Already done" : "Done") : "Set amount"}
+        </div>
+      )}
+    <div className={`relative bg-surface px-4 py-3 ${gestures.dx === 0 ? "transition-transform duration-200 motion-reduce:transition-none" : ""}`} style={{ transform: gestures.dx ? `translateX(${gestures.dx}px)` : undefined, touchAction: "pan-y" }} {...gestures.handlers}>
       <div className="flex items-center gap-3">
         <Link to={`/habits/${habit.id}`} className="grid size-10 shrink-0 place-items-center text-xl" aria-hidden tabIndex={-1}>
           {habit.emoji}
@@ -144,6 +163,7 @@ export function HabitRow({ habit, today, strip = true }: { habit: Habit; today: 
           })}
         </div>
       )}
+    </div>
       <HabitDaySheet habit={habit} day={sheetDay} today={today} onClose={() => setSheetDay(null)} />
       {confirmSheet}
     </div>

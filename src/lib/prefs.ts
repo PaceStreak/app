@@ -4,7 +4,9 @@
 
 export type Theme = "system" | "dark" | "light";
 /** What the number on the home-screen icon means. */
-export type BadgeMode = "unread" | "needed" | "off";
+export type BadgeMode = "unread" | "needed" | "habits" | "off";
+export type TextSize = "default" | "large" | "larger";
+export type Density = "comfortable" | "compact";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -51,6 +53,21 @@ export const prefs = {
   /** Back progress photos up to the account from this device. */
   photoBackup: () => read<boolean>("photoBackup", false),
   setPhotoBackup: (on: boolean) => write("photoBackup", on),
+  textSize: () => read<TextSize>("textSize", "default"),
+  setTextSize: (v: TextSize) => {
+    write("textSize", v);
+    applyDisplay();
+  },
+  density: () => read<Density>("density", "comfortable"),
+  setDensity: (v: Density) => {
+    write("density", v);
+    applyDisplay();
+  },
+  highContrast: () => read<boolean>("highContrast", false),
+  setHighContrast: (on: boolean) => {
+    write("highContrast", on);
+    applyDisplay();
+  },
   installDismissed: () => read<number>("installDismissed", 0),
   dismissInstall: () => write("installDismissed", Date.now()),
   dismissed: (key: string) => read<string[]>("dismissed", []).includes(key),
@@ -74,6 +91,14 @@ export function applyTheme() {
 }
 
 media?.addEventListener("change", applyTheme);
+
+/** Text size, density and contrast, as attributes styles.css keys off. */
+export function applyDisplay() {
+  const root = document.documentElement;
+  root.dataset.text = prefs.textSize();
+  root.dataset.density = prefs.density();
+  root.dataset.contrast = prefs.highContrast() ? "high" : "standard";
+}
 
 export function haptic(pattern: number | number[] = 10) {
   if (!prefs.haptics()) return;

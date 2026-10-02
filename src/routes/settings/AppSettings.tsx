@@ -4,7 +4,7 @@ import { DownloadSimple, Moon, Sun, CircleHalf } from "../../components/phosphor
 import { toast } from "../../components/toast";
 import { Section, Segmented, Switch } from "../../components/ui";
 import { wipe } from "../../lib/db";
-import { prefs, type BadgeMode, type Theme } from "../../lib/prefs";
+import { prefs, type BadgeMode, type Density, type TextSize, type Theme } from "../../lib/prefs";
 import { canInstall, install, isStandalone, onInstallChange } from "../../lib/pwa";
 import { syncNow } from "../../lib/sync";
 import { useSyncState } from "../../lib/queries";
@@ -43,6 +43,7 @@ export function Appearance() {
         </div>
         <p className="field-hint">Light is easier to read in bright sun at a trailhead.</p>
       </Section>
+      <DisplaySettings />
       <BadgeSetting />
       <Section title="During workouts">
         <div className="card divide-y divide-line">
@@ -155,12 +156,69 @@ function BadgeSetting() {
         options={[
           { value: "unread", label: "Unread" },
           { value: "needed", label: "Days to go" },
+          { value: "habits", label: "Habits left" },
           { value: "off", label: "Off" },
         ]}
       />
       <p className="field-hint">
-        {mode === "needed" ? "How many more days this week keep your main streak. Hidden while you're paused." : mode === "unread" ? "Unread notifications." : "No number on the icon."}
+        {mode === "needed" ? "How many more days this week keep your main streak. Hidden while you're paused." : mode === "habits" ? "How many habits are still open today. Hidden while you're paused." : mode === "unread" ? "Unread notifications." : "No number on the icon."}
       </p>
+    </Section>
+  );
+}
+
+/** Per device: a phone and a laptop often want different sizes. */
+function DisplaySettings() {
+  const [text, setText] = useState(prefs.textSize());
+  const [density, setDensity] = useState(prefs.density());
+  const [contrast, setContrast] = useState(prefs.highContrast());
+  return (
+    <Section title="Display">
+      <div className="card space-y-4 p-4">
+        <div>
+          <p className="field-label">Text size</p>
+          <Segmented
+            label="Text size"
+            value={text}
+            onChange={(v: TextSize) => {
+              prefs.setTextSize(v);
+              setText(v);
+            }}
+            options={[
+              { value: "default", label: "Default" },
+              { value: "large", label: "Large" },
+              { value: "larger", label: "Larger" },
+            ]}
+          />
+        </div>
+        <div>
+          <p className="field-label">Layout</p>
+          <Segmented
+            label="Layout density"
+            value={density}
+            onChange={(v: Density) => {
+              prefs.setDensity(v);
+              setDensity(v);
+            }}
+            options={[
+              { value: "comfortable", label: "Comfortable" },
+              { value: "compact", label: "Compact" },
+            ]}
+          />
+          <p className="field-hint">Compact fits more on screen with tighter spacing.</p>
+        </div>
+        <div className="-mx-4 -mb-4 border-t border-line">
+          <Switch
+            checked={contrast}
+            onChange={(v) => {
+              prefs.setHighContrast(v);
+              setContrast(v);
+            }}
+            label="High contrast"
+            description="Stronger secondary text and borders."
+          />
+        </div>
+      </div>
     </Section>
   );
 }

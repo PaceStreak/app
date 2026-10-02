@@ -62,7 +62,14 @@ export default function Journal() {
         }
       />
 
-      <Section title={day === today ? "Today" : fmtMonthDay(day)}>
+      <Section
+        title={day === today ? "Today" : fmtMonthDay(day)}
+        action={
+          <Link to={`/day/${day}`} className="text-sm font-semibold text-accent-text">
+            Everything that day
+          </Link>
+        }
+      >
         <div className="card space-y-4 p-4">
           <MoodPicker
             day={day}

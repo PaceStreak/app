@@ -1,3 +1,4 @@
+import { uuid } from "./dates";
 /**
  * Offline-first sync for workouts.
  *
@@ -217,4 +218,24 @@ export function startSync() {
     if (document.visibilityState === "visible") void syncNow();
   });
   setInterval(() => void syncNow(), 90_000);
+}
+
+/**
+ * The same session again, today: a new id, every set marked done. Used by
+ * "Log again" on a session and in the log sheet. Returns the copy so the
+ * caller can offer Undo (deleteWorkout(copy.id)).
+ */
+export async function repeatWorkout(w: Workout, today: string): Promise<Workout> {
+  const copy: Workout = {
+    ...w,
+    id: uuid(),
+    started_at: new Date().toISOString(),
+    local_date: today,
+    sets: w.sets.map((set) => ({ ...set, completed: true })),
+    seq: undefined,
+    source: "app",
+    deleted_at: null,
+  };
+  await saveWorkout(copy);
+  return copy;
 }

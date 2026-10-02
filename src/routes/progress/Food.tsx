@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import { BarChart } from "../../components/BarChart";
 import { Barcode, CaretLeft, CaretRight, Copy, Lock, Plus, Trash } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Empty, ErrorState, Field, Loading, PageHeader, Section, Segmented } from "../../components/ui";
-import { ApiError, api, del, errorText, post, put } from "../../lib/api";
+import { ApiError, api, errorText, post, put } from "../../lib/api";
 import { addDays, fmtMonthDay, localToday, uuid } from "../../lib/dates";
 import { queryClient } from "../../lib/queries";
 import { sendOrQueue } from "../../lib/requests";
+import { canDetectBarcodes, detectBarcode } from "../../lib/barcode";
 import { useMe } from "../../lib/session";
+import { deleteWithUndo } from "../../lib/undo";
 import type { Expenditure, Food as SavedFood, Macros, Meal, NutritionDay, NutritionTarget, RecentFood, Recipe } from "../../lib/types";
 import { parseNumber } from "../../lib/units";
 
@@ -33,9 +36,6 @@ function guessMeal(hour: number): Meal {
 
 const round = (n: number) => Math.round(n * 10) / 10;
 
-// The Shape Detection API is Chromium-only and not in TypeScript's DOM lib yet.
-type Detector = { detect: (img: ImageBitmapSource) => Promise<{ rawValue: string }[]> };
-const BarcodeDetectorCtor = (globalThis as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detector }).BarcodeDetector;
 
 type Draft = { name: string; servings: string; food_id: string | null } & Record<keyof Macros, string>;
 const EMPTY: Draft = { name: "", servings: "1", food_id: null, kcal: "", protein_g: "", carbs_g: "", fat_g: "" };
@@ -50,6 +50,17 @@ export default function Food() {
   const recipes = useQuery({ queryKey: ["recipes"], queryFn: () => api<Recipe[]>("/nutrition/recipes") });
   const burn = useQuery({ queryKey: ["expenditure"], queryFn: () => api<Expenditure>("/nutrition/expenditure"), staleTime: 10 * 60_000 });
   const [adding, setAdding] = useState<Meal | null>(null);
+  // /food?barcode=… (from a shared photo): open the add sheet already looking it up.
+  const [params, setParams] = useSearchParams();
+  const [initialCode, setInitialCode] = useState<string | null>(null);
+  useEffect(() => {
+    const code = params.get("barcode");
+    if (code && /^\d{8,14}$/.test(code)) {
+      setInitialCode(code);
+      setAdding(guessMeal(new Date().getHours()));
+      setParams({}, { replace: true });
+    }
+  }, [params, setParams]);
   const [recipeOpen, setRecipeOpen] = useState<Recipe | "new" | null>(null);
   const [targetOpen, setTargetOpen] = useState(false);
 
@@ -57,12 +68,11 @@ export default function Food() {
     for (const key of ["nutrition", "nutrition-history", "nutrition-recent", "coach", "expenditure", "recipes", "foods"]) void queryClient.invalidateQueries({ queryKey: [key] });
   };
 
-  const remove = async (id: string) => {
-    await sendOrQueue(`/nutrition/entries/${id}`, "DELETE");
-    refresh();
+  const remove = async (id: string, name: string) => {
+    await deleteWithUndo({ path: `/nutrition/entries/${id}`, label: name, queue: true, refresh: ["nutrition", "nutrition-history", "nutrition-recent", "coach", "expenditure"] });
   };
 
-  const copyYesterday = async (meal: Meal) => {
+  const copyYesterday = async (meal: Meal | null) => {
     try {
       const copied = await post<unknown[]>("/nutrition/copy", { from_date: addDays(day, -1), to_date: day, meal });
       toast.success(copied.length ? `Copied ${copied.length} from the day before` : "Nothing logged for it the day before");
@@ -108,6 +118,11 @@ export default function Food() {
       ) : (
         data && (
           <>
+            {data.entries.length === 0 && (
+              <button type="button" className="btn btn-ghost mt-3 w-full border border-line" onClick={() => void copyYesterday(null)}>
+                <Copy size={16} /> Same as the day before
+              </button>
+            )}
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {MACROS.map((m) => {
                 const goal = target?.[m.key];
@@ -163,7 +178,7 @@ export default function Food() {
                             </p>
                           </div>
                           <span className="num shrink-0">{Math.round(e.kcal)}</span>
-                          <button type="button" className="btn btn-ghost btn-icon" aria-label={`Remove ${e.name}`} onClick={() => void remove(e.id)}>
+                          <button type="button" className="btn btn-ghost btn-icon" aria-label={`Remove ${e.name}`} onClick={() => void remove(e.id, e.name)}>
                             <Trash size={18} />
                           </button>
                         </li>
@@ -227,13 +242,18 @@ export default function Food() {
       {recipeOpen && <RecipeSheet recipe={recipeOpen === "new" ? null : recipeOpen} onClose={() => setRecipeOpen(null)} onSaved={refresh} />}
       {adding && (
         <AddSheet
+          initialCode={initialCode}
           meal={adding}
           day={day}
           recipes={recipes.data ?? []}
           recent={recent.data ?? []}
-          onClose={() => setAdding(null)}
+          onClose={() => {
+            setAdding(null);
+            setInitialCode(null);
+          }}
           onSaved={() => {
             setAdding(null);
+            setInitialCode(null);
             refresh();
           }}
         />
@@ -243,10 +263,10 @@ export default function Food() {
   );
 }
 
-function AddSheet({ meal, day, recipes, recent, onClose, onSaved }: { meal: Meal; day: string; recipes: Recipe[]; recent: RecentFood[]; onClose: () => void; onSaved: () => void }) {
+function AddSheet({ meal, day, recipes, recent, onClose, onSaved, initialCode = null }: { meal: Meal; day: string; recipes: Recipe[]; recent: RecentFood[]; onClose: () => void; onSaved: () => void; initialCode?: string | null }) {
   const [mealNow, setMeal] = useState<Meal>(meal ?? guessMeal(new Date().getHours()));
   const [draft, setDraft] = useState<Draft>(EMPTY);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode ?? "");
   const [found, setFound] = useState<(Omit<SavedFood, "id"> & { id?: string }) | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -271,18 +291,29 @@ function AddSheet({ meal, day, recipes, recent, onClose, onSaved }: { meal: Meal
     }
   };
 
+  // A barcode handed over from a shared photo: look it up straight away.
+  const looked = useRef(false);
+  useEffect(() => {
+    if (initialCode && !looked.current) {
+      looked.current = true;
+      void lookup(initialCode);
+    }
+    // Once, on open; lookup is stable enough for that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCode]);
+
   // A photo of the barcode rather than a live camera: the app's
   // Permissions-Policy keeps camera=(), and the file picker needs no permission.
   const scan = async (file: File) => {
-    if (!BarcodeDetectorCtor) return;
+    if (!canDetectBarcodes) return;
     try {
-      const codes = await new BarcodeDetectorCtor({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] }).detect(await createImageBitmap(file));
-      if (!codes.length) {
+      const found = await detectBarcode(file);
+      if (!found) {
         toast.error("No barcode found in that photo. Try closer, or type the number.");
         return;
       }
-      setCode(codes[0].rawValue);
-      await lookup(codes[0].rawValue);
+      setCode(found);
+      await lookup(found);
     } catch {
       toast.error("Couldn't read that photo. Type the number instead.");
     }
@@ -344,7 +375,7 @@ function AddSheet({ meal, day, recipes, recent, onClose, onSaved }: { meal: Meal
           <button type="button" className="btn" disabled={busy || !code} onClick={() => void lookup(code)}>
             Look up
           </button>
-          {BarcodeDetectorCtor && (
+          {canDetectBarcodes && (
             <>
               <button type="button" className="btn btn-icon" aria-label="Scan a barcode with the camera" onClick={() => fileRef.current?.click()}>
                 <Barcode size={20} />
@@ -524,9 +555,7 @@ function RecipeSheet({ recipe, onClose, onSaved }: { recipe: Recipe | null; onCl
   };
   const remove = async () => {
     if (!recipe) return;
-    await del(`/nutrition/recipes/${recipe.id}`);
-    onSaved();
-    onClose();
+    if (await deleteWithUndo({ path: `/nutrition/recipes/${recipe.id}`, label: recipe.name, refresh: ["recipes"] })) onClose();
   };
 
   return (

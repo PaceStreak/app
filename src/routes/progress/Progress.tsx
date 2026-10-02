@@ -17,6 +17,7 @@ import { queryClient, useLibrary, useRestDays, useStats } from "../../lib/querie
 import { useMe } from "../../lib/session";
 import type { Chain } from "../../lib/types";
 import { compact, fromKg, fromMetres, plural } from "../../lib/units";
+import { usePersistentState } from "../../lib/persist";
 
 interface ProgressData {
   weeks: {
@@ -40,8 +41,8 @@ export default function Progress() {
   const me = useMe();
   const stats = useStats();
   const restDays = useRestDays();
-  const [range, setRange] = useState(12);
-  const [metric, setMetric] = useState<Metric>("days");
+  const [range, setRange] = usePersistentState<number>("progress.range", 12);
+  const [metric, setMetric] = usePersistentState<Metric>("progress.metric", "days", ["days", "minutes", "distance", "volume"]);
   const progress = useQuery({
     queryKey: ["progress", range],
     queryFn: () => api<ProgressData>(`/me/progress?weeks=${range}`),

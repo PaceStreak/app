@@ -15,6 +15,7 @@ import { onQueueChange, sendOrQueue } from "../../lib/requests";
 import type { BodyMetric, WeighIn, WeighInMoment, WeightGoal } from "../../lib/types";
 import { fromCm, fromKg, parseNumber, toCm, toKg, type LengthUnit } from "../../lib/units";
 import { MOMENTS, changeOver, dailySeries, daySwing, goalView, guessMoment, momentLabel, signed } from "../../lib/weight";
+import { usePersistentState } from "../../lib/persist";
 
 type Tape = "neck_cm" | "shoulders_cm" | "chest_cm" | "waist_cm" | "arm_cm" | "forearm_cm" | "hips_cm" | "thigh_cm" | "calf_cm";
 type Field = "body_fat_pct" | "resting_hr" | "sleep_hours" | Tape;
@@ -56,9 +57,9 @@ export default function Body() {
   const [moment, setMoment] = useState<WeighInMoment>(() => guessMoment(new Date().getHours()));
   const [when, setWhen] = useState<string | null>(null);
   const [filter, setFilter] = useState<WeighInMoment | "all">("all");
-  const [range, setRange] = useState<30 | 90 | 365>(90);
+  const [range, setRange] = usePersistentState<30 | 90 | 365>("body.range", 90, [30, 90, 365]);
   const [form, setForm] = useState<Partial<Record<Field, string>>>({});
-  const [chart, setChart] = useState<Field>("sleep_hours");
+  const [chart, setChart] = usePersistentState<Field>("body.chart", "sleep_hours", FIELDS);
   const [busy, setBusy] = useState(false);
 
   const kgText = (v: number, digits = 1) => `${fromKg(v, wu).toFixed(digits)} ${wu}`;

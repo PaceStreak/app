@@ -319,6 +319,8 @@ export interface Habit {
   why: string | null;
   total_goal: number | null;
   remind_hour: number | null;
+  /** A snoozed reminder comes back at this time, if still not done. */
+  snoozed_until?: string | null;
   template_id: string | null;
   started_on: string;
   archived: boolean;
@@ -826,4 +828,24 @@ export interface Insights {
 export interface HabitImportResult {
   habits: { name: string; days: number; first: string | null; last: string | null; merge: boolean }[];
   imported_days: number;
+}
+
+export interface SearchResult {
+  kind: "habit" | "habit_note" | "workout" | "journal" | "food" | "recipe";
+  id: string;
+  title: string;
+  detail: string | null;
+  date?: string;
+  url: string;
+}
+
+export interface DayView {
+  date: string;
+  workouts: { id: string; title: string | null; discipline: string; duration_sec: number | null; distance_m: number | null }[];
+  habits: { id: string; name: string; emoji: string; kind: HabitKind; unit: string | null; amount: number; note: string | null; done: boolean }[];
+  food: { meals: { meal: Meal; count: number; kcal: number; protein_g: number }[]; kcal: number; protein_g: number };
+  journal: { mood: number | null; note: string | null } | null;
+  readiness: { sleep: number; energy: number; soreness: number } | null;
+  rest: { kind: string; note: string | null } | null;
+  weigh_ins: { weight_kg: number; moment: string }[];
 }

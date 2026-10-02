@@ -3,6 +3,8 @@ import {
   Barbell,
   BookOpenText,
   Lightbulb,
+  MagnifyingGlass,
+  Trash,
   ForkKnife,
   CalendarBlank,
   ChartLineUp,
@@ -80,6 +82,7 @@ export default function You() {
           <RowLink to="/achievements" icon={<Medal size={20} />} title="Achievements" />
           {stats?.gamification_enabled && <RowLink to="/progress/xp" icon={<Sparkle size={20} />} title="Level and XP" />}
           <RowLink to="/body" icon={<Scales size={20} />} title="Body" detail="Private" />
+          <RowLink to="/search" icon={<MagnifyingGlass size={20} />} title="Search" detail="Habits, notes, sessions, journal, food" />
           <RowLink to="/insights" icon={<Lightbulb size={20} />} title="Insights" detail="Patterns in your own data" />
           <RowLink to="/journal" icon={<BookOpenText size={20} />} title="Journal" detail="Mood and notes · private" />
           <RowLink to="/food" icon={<ForkKnife size={20} />} title="Food" detail="Calories and macros · private" />
@@ -97,6 +100,7 @@ export default function You() {
       <Section>
         <List>
           <RowLink to="/settings" icon={<Gear size={20} />} title="Settings" />
+          <RowLink to="/trash" icon={<Trash size={20} />} title="Trash" detail="Restore anything deleted in the last 30 days" />
           {staff && <RowLink to="/admin" icon={<ShieldCheck size={20} />} title="Moderation" />}
         </List>
       </Section>

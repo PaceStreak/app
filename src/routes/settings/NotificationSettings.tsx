@@ -11,6 +11,7 @@ import { useProfilePatch } from "./useProfilePatch";
 interface Prefs {
   categories: { id: string; label: string; locked: boolean; push: boolean; email: boolean }[];
   push_available: boolean;
+  habit_summary_hour: number | null;
 }
 
 const hours = Array.from({ length: 24 }, (_, h) => h);
@@ -33,6 +34,15 @@ export function NotificationSettings() {
     channels[id] = { ...channels[id], [channel]: value };
     try {
       await api("/notifications/preferences", { method: "PUT", body: { channels } });
+      await q.refetch();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
+  const setSummary = async (hour: number | null) => {
+    try {
+      await api("/notifications/preferences", { method: "PUT", body: { habit_summary_hour: hour } });
       await q.refetch();
     } catch (err) {
       toast.error(errorText(err));
@@ -146,7 +156,29 @@ export function NotificationSettings() {
               </select>
             </span>
           </div>
-          <p className="text-sm text-dim">No push during quiet hours, apart from security alerts. Streak nudges come at most once a day and never on a week you've already kept.</p>
+          <div className="-mx-4 border-t border-line">
+            <Switch
+              checked={q.data?.habit_summary_hour != null}
+              onChange={(v) => void setSummary(v ? 20 : null)}
+              label="Habit reminders as one evening summary"
+              description={
+                q.data?.habit_summary_hour != null
+                  ? "One notification saying how many habits are still open, instead of one per habit. It never names them."
+                  : "Each habit reminds you at its own hour. Turn this on to get one summary instead."
+              }
+            />
+          </div>
+          {q.data?.habit_summary_hour != null && (
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="sum-h" className="font-medium">Summary time</label>
+              <select id="sum-h" className="input h-10 min-h-0 w-32" value={q.data.habit_summary_hour} onChange={(e) => void setSummary(Number(e.target.value))}>
+                {hours.map((h) => (
+                  <option key={h} value={h}>{hourLabel(h)}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <p className="text-sm text-dim">Habit reminders have Done and Snooze buttons right in the notification. No push during quiet hours, apart from security alerts. Streak nudges come at most once a day and never on a week you've already kept.</p>
         </div>
       </Section>
     </div>

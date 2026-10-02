@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import { Link } from "react-router";
 import { Trophy } from "../../components/phosphor";
 import { PersonRow } from "../../components/social";
@@ -9,6 +8,7 @@ import { api, errorText } from "../../lib/api";
 import { useMe, useSession } from "../../lib/session";
 import type { Group, Person } from "../../lib/types";
 import { SocialGate, SocialHeader } from "./SocialNav";
+import { usePersistentState } from "../../lib/persist";
 
 type Board = "consistency" | "streak" | "season_xp" | "season_prs" | "life_streak";
 type Row = Person & { value: number; rank: number; me: boolean };
@@ -24,8 +24,8 @@ const BOARDS: Record<Board, { label: string; unit: (v: number) => string; about:
 export default function Leaderboards() {
   const me = useMe();
   const { reloadMe } = useSession();
-  const [board, setBoard] = useState<Board>("consistency");
-  const [scope, setScope] = useState<string>("following");
+  const [board, setBoard] = usePersistentState<Board>("leaderboards.board", "consistency");
+  const [scope, setScope] = usePersistentState<string>("leaderboards.scope", "following");
   const groups = useQuery({ queryKey: ["groups"], queryFn: () => api<Group[]>("/groups") });
   const groupId = scope.startsWith("group:") ? scope.slice(6) : null;
   const q = useQuery({

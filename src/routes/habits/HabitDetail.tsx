@@ -10,6 +10,8 @@ import { Archive, CaretLeft, CaretRight, PencilSimple, Trash } from "../../compo
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { FocusTimer } from "../../components/FocusTimer";
+import { kvSet } from "../../lib/db";
+import { deleteWithUndo } from "../../lib/undo";
 import { ErrorState, Loading, PageHeader, Section, Stat } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { WEEKDAYS, addDays, weekday, fmtFullDay, fmtMonthDay, fmtMonthYear, fmtProjected, localToday, weekStart } from "../../lib/dates";
@@ -39,6 +41,9 @@ export default function HabitDetail() {
   // The month on show, as its first day.
   const [month, setMonth] = useState(() => `${today.slice(0, 8)}01`);
   const [confirmSheet, ask] = useConfirm();
+  // Several days at once: select them on the calendar, then mark or clear.
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
 
   if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   const h = q.data;
@@ -68,14 +73,43 @@ export default function HabitDetail() {
     toast.success(h.archived ? "Back in your list" : "Archived. Its history is kept.");
   };
   const remove = async () => {
-    if (!(await ask({ title: `Delete ${h.name}?`, body: "Its whole history goes too. Archive it instead to stop tracking but keep the record.", confirm: "Delete", danger: true }))) return;
-    await api(`/habits/${h.id}`, { method: "DELETE" });
-    await refresh();
-    navigate("/habits", { replace: true });
+    if (!(await ask({ title: `Delete ${h.name}?`, body: "It and its history move to the trash for 30 days, then go for good. Archive it instead to stop tracking but keep it in your records.", confirm: "Delete", danger: true }))) return;
+    // Not "habit": this page is still mounted and would refetch a habit that
+    // no longer exists. Its cached detail is dropped once we've left.
+    if (await deleteWithUndo({ path: `/habits/${h.id}`, label: h.name, refresh: ["habits", "stats", "habit-routines"] })) {
+      // Gone from the list at once, not after the refetch lands.
+      const remaining = queryClient.setQueryData<Habit[]>(["habits"], (old) => old?.filter((x) => x.id !== h.id));
+      // The list also opens from this device's saved copy; keep it in step.
+      if (remaining) await kvSet(`q:${JSON.stringify(["habits"])}`, remaining);
+      navigate("/habits", { replace: true });
+      queryClient.removeQueries({ queryKey: ["habit", h.id] });
+    }
+  };
+
+  const applyPicked = async (done: boolean) => {
+    const amount = done ? (h.kind === "check" ? 1 : (h.daily_goal ?? 1)) : 0;
+    try {
+      await api(`/habits/${h.id}/days`, { method: "PUT", body: { days: [...picked].sort().map((date) => ({ date, amount })) } });
+      await refresh();
+      toast.success(`${picked.size} ${picked.size === 1 ? "day" : "days"} ${done ? "marked done" : "cleared"}`);
+      setPicked(new Set());
+      setSelecting(false);
+    } catch (err) {
+      toast.error(errorText(err));
+    }
   };
 
   const tapDay = (date: string) => {
     if (date > today || date < addDays(today, -BACKFILL_DAYS)) return;
+    if (selecting) {
+      setPicked((prev) => {
+        const next = new Set(prev);
+        if (next.has(date)) next.delete(date);
+        else next.add(date);
+        return next;
+      });
+      return;
+    }
     const current = amounts.get(date) ?? 0;
     if (h.kind === "check") {
       void setHabitDay(h, date, current > 0 ? 0 : 1, today);
@@ -124,6 +158,7 @@ export default function HabitDetail() {
         </div>
       )}
       {!h.archived && h.kind === "duration" && <FocusTimer habit={h} today={today} />}
+      {!h.archived && h.kind !== "quit" && h.remind_hour != null && !h.today.done && <SnoozeRow habit={h} onChange={refresh} />}
       {h.why && <p className="mt-3 rounded-md bg-surface-2 px-4 py-3 text-sm text-muted">Why: {h.why}</p>}
 
       <div className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-line [&>*]:px-3 [&>*]:py-3 [&>*:first-child]:pl-0">
@@ -187,7 +222,24 @@ export default function HabitDetail() {
         </Section>
       )}
 
-      <Section title="Calendar">
+      <Section
+        title="Calendar"
+        action={
+          h.kind !== "quit" && (
+            <button
+              type="button"
+              className="text-sm font-semibold text-accent-text"
+              aria-pressed={selecting}
+              onClick={() => {
+                setSelecting(!selecting);
+                setPicked(new Set());
+              }}
+            >
+              {selecting ? "Cancel" : "Select days"}
+            </button>
+          )
+        }
+      >
         <div className="card p-4">
           <div className="mx-auto max-w-sm">
             <div className="mb-3 flex items-center justify-between">
@@ -223,10 +275,11 @@ export default function HabitDetail() {
                     type="button"
                     disabled={!editable}
                     onClick={() => tapDay(date)}
-                    aria-label={`${fmtFullDay(date)}: ${slipped ? "slipped" : done ? "done" : partial ? `${amount}, partly done` : "not done"}${noted.has(date) ? ", has a note" : ""}`}
+                    aria-pressed={selecting ? picked.has(date) : undefined}
+                    aria-label={`${fmtFullDay(date)}${selecting && picked.has(date) ? ", selected" : ""}: ${slipped ? "slipped" : done ? "done" : partial ? `${amount}, partly done` : "not done"}${noted.has(date) ? ", has a note" : ""}`}
                     className={`press num relative grid aspect-square place-items-center text-sm transition-colors hover:bg-surface-2 ${
                       future || before ? "text-dim/45" : done || slipped || partial ? "text-dim/50" : weekday(date) === 6 ? "text-accent-text" : "text-ink"
-                    } ${date === today ? "ring-2 ring-accent" : ""} disabled:cursor-default`}
+                    } ${date === today ? "ring-2 ring-accent" : ""} ${picked.has(date) ? "bg-accent-soft! ring-2 ring-inset ring-accent" : ""} disabled:cursor-default`}
                   >
                     {Number(date.slice(8))}
                     {done && h.kind !== "quit" && <MarkerX tone={markerFor(h.category)} />}
@@ -238,9 +291,20 @@ export default function HabitDetail() {
               })}
             </div>
           </div>
+          {selecting ? (
+            <div className="mt-4 flex gap-2">
+              <button type="button" className="btn btn-primary flex-1" disabled={!picked.size} onClick={() => void applyPicked(true)}>
+                Mark {picked.size || ""} done
+              </button>
+              <button type="button" className="btn flex-1" disabled={!picked.size} onClick={() => void applyPicked(false)}>
+                Clear {picked.size || ""}
+              </button>
+            </div>
+          ) : (
           <p className="mt-4 text-center text-xs text-dim">
             Tap a day to {h.kind === "check" ? "tick or untick it" : h.kind === "quit" ? "log a slip or a note" : "set how much and add a note"}. A dot means a note. Up to {BACKFILL_DAYS} days back.
           </p>
+          )}
         </div>
       </Section>
       <Section title="Notes" action={
@@ -298,3 +362,36 @@ export default function HabitDetail() {
 }
 
 const dayIndex = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
+
+/** Push today's reminder back, or bring it forward again. The worker sends
+ * it once when the snooze runs out, and only if the habit still isn't done. */
+function SnoozeRow({ habit, onChange }: { habit: Habit; onChange: () => Promise<unknown> }) {
+  const until = habit.snoozed_until ? new Date(habit.snoozed_until) : null;
+  const active = until && until.getTime() > Date.now();
+  const snooze = async (minutes: number | null) => {
+    try {
+      if (minutes == null) await api(`/habits/${habit.id}/snooze`, { method: "DELETE" });
+      else await api(`/habits/${habit.id}/snooze`, { method: "POST", body: { minutes } });
+      await onChange();
+      toast.success(minutes == null ? "Snooze cancelled" : `Reminding you again in ${minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`}`);
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+      <span className="text-dim">{active ? `Reminder snoozed until ${until!.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "Remind me again in"}</span>
+      {active ? (
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void snooze(null)}>
+          Cancel snooze
+        </button>
+      ) : (
+        [30, 60, 180].map((m) => (
+          <button key={m} type="button" className="btn btn-ghost btn-sm border border-line" onClick={() => void snooze(m)}>
+            {m >= 60 ? `${m / 60} h` : `${m} min`}
+          </button>
+        ))
+      )}
+    </div>
+  );
+}

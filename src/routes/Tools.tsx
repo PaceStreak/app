@@ -5,12 +5,13 @@ import { RestBar, useRestTimer } from "../components/RestTimer";
 import { PageHeader, Segmented } from "../components/ui";
 import { useMe } from "../lib/session";
 import { clock, e1rm, fromMetres, parseDuration, parseNumber, toMetres, type DistanceUnit } from "../lib/units";
+import { usePersistentState } from "../lib/persist";
 
 type Tool = "timer" | "intervals" | "plates" | "max" | "pace";
 
 export default function Tools() {
   const me = useMe();
-  const [tool, setTool] = useState<Tool>("timer");
+  const [tool, setTool] = usePersistentState<Tool>("tools", "timer", ["timer", "intervals", "plates", "max", "pace"]);
   return (
     <div>
       <PageHeader title="Tools" back="/you" />

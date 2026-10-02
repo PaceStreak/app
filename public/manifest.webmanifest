@@ -50,6 +50,54 @@
       ]
     },
     {
+      "name": "Log food",
+      "short_name": "Food",
+      "url": "/food?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-food.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Start a routine",
+      "short_name": "Routine",
+      "url": "/habits?routine=next&source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-routine.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Write in the journal",
+      "short_name": "Journal",
+      "url": "/journal?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-journal.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "url": "/search?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-search.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Start a live workout",
       "short_name": "Live",
       "url": "/workouts/live?source=shortcut",
@@ -62,19 +110,8 @@
       ]
     },
     {
-      "name": "Last week's recap",
-      "short_name": "Recap",
-      "url": "/recap?source=shortcut",
-      "icons": [
-        {
-          "src": "/icons/shortcut-recap.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
       "name": "Progress",
+      "short_name": "Progress",
       "url": "/progress?source=shortcut",
       "icons": [
         {
@@ -83,17 +120,24 @@
           "type": "image/png"
         }
       ]
-    },
-    {
-      "name": "Rest timer",
-      "url": "/tools?source=shortcut",
-      "icons": [
+    }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
         {
-          "src": "/icons/shortcut-timer.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "name": "image",
+          "accept": [
+            "image/*"
+          ]
         }
       ]
     }
-  ]
+  }
 }

@@ -1,10 +1,11 @@
+import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useConfirm } from "../../components/Confirm";
-import { DownloadSimple, UploadSimple, Warning } from "../../components/phosphor";
+import { DownloadSimple, Trash, UploadSimple, Warning } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Banner, Field, Section } from "../../components/ui";
+import { Banner, Field, Section, Switch } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { syncNow } from "../../lib/sync";
 import { queryClient } from "../../lib/queries";
@@ -107,6 +108,7 @@ export function Data() {
           ))}
         </div>
       </Section>
+      <BackupEmail />
       <Section title="Import">
         <button type="button" className="btn btn-secondary w-full" disabled={busy !== null} onClick={() => fileRef.current?.click()}>
           <UploadSimple size={18} /> {busy === "import" ? "Importing…" : "Import a PaceStreak export"}
@@ -116,6 +118,12 @@ export function Data() {
       </Section>
       <ActivityImport />
       <CalendarFeed />
+      <Section title="Trash">
+        <Link to="/trash" className="btn btn-secondary w-full">
+          <Trash size={18} /> Open the trash
+        </Link>
+        <p className="field-hint">Deleted habits, sessions, meals, recipes and journal entries wait here for 30 days and can be restored with their history.</p>
+      </Section>
       <Section title="Delete account">
         <button type="button" className="btn btn-danger w-full" onClick={() => setDeleting(true)}>
           <Warning size={18} /> Delete my account
@@ -130,5 +138,55 @@ export function Data() {
       </Sheet>
       {confirmSheet}
     </div>
+  );
+}
+
+interface BackupPrefs {
+  backup_attachment: boolean;
+  categories: { id: string; push: boolean; email: boolean }[];
+}
+
+/** The monthly backup by email, with the export attached. Off by default
+ * and confirmed with a plain warning: it puts everything in an inbox. */
+function BackupEmail() {
+  const q = useQuery({ queryKey: ["notification-prefs"], queryFn: () => api<BackupPrefs>("/notifications/preferences") });
+  const [confirmSheet, ask] = useConfirm();
+  const on = !!q.data?.backup_attachment && !!q.data.categories.find((c) => c.id === "backup")?.email;
+
+  const set = async (next: boolean) => {
+    if (
+      next &&
+      !(await ask({
+        title: "Email your data every month?",
+        body: "On the 1st, a zip of everything you've logged is emailed to you: habits (including any you're breaking), body measurements, food and your journal. Anyone who can read that inbox can read it, and it stays in your email until you delete it. You can turn this off at any time.",
+        confirm: "Email it to me",
+      }))
+    )
+      return;
+    try {
+      await api("/notifications/preferences", {
+        method: "PUT",
+        body: { backup_attachment: next, channels: next ? { backup: { email: true, push: false } } : undefined },
+      });
+      await q.refetch();
+      toast.success(next ? "Monthly backup email on" : "Monthly backup email off");
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
+  if (!q.data) return null;
+  return (
+    <Section title="Monthly backup">
+      <div className="card">
+        <Switch
+          checked={on}
+          onChange={(v) => void set(v)}
+          label="Email me my data every month"
+          description={on ? "A zip of your export arrives on the 1st. It imports straight back here." : "Off. You can still download an export any time, above."}
+        />
+      </div>
+      {confirmSheet}
+    </Section>
   );
 }

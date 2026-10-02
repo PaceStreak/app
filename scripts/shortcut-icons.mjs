@@ -10,14 +10,16 @@ import { execFileSync } from "node:child_process";
 import { writeFileSync, rmSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CalendarCheck, ChartLineUp, Lightning, Plus, Timer } from "@phosphor-icons/react/ssr";
+import { BookOpenText, ChartLineUp, ForkKnife, Lightning, ListChecks, MagnifyingGlass, Plus } from "@phosphor-icons/react/ssr";
 
 const ICONS = {
   log: Plus,
   live: Lightning,
-  recap: CalendarCheck,
   progress: ChartLineUp,
-  timer: Timer,
+  food: ForkKnife,
+  journal: BookOpenText,
+  routine: ListChecks,
+  search: MagnifyingGlass,
 };
 
 const ACCENT = "#d3ff3e";

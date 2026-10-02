@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { Check, PencilSimple, Play, Plus } from "./phosphor";
 import { Sheet } from "./Sheet";
 import { toast } from "./toast";
 import { Field, Section, Segmented } from "./ui";
-import { api, del, errorText, post, put } from "../lib/api";
-import { TIMES, isDone, setHabitDay } from "../lib/habits";
+import { api, errorText, post, put } from "../lib/api";
+import { TIMES, isDone, partOfDay, setHabitDay } from "../lib/habits";
 import { queryClient } from "../lib/queries";
+import { deleteWithUndo } from "../lib/undo";
 import type { Habit, HabitRoutine, TimeOfDay } from "../lib/types";
 
 /**
@@ -20,6 +22,19 @@ export function HabitRoutines({ habits, today }: { habits: Habit[]; today: strin
   const [running, setRunning] = useState<HabitRoutine | null>(null);
   const byId = new Map(habits.map((h) => [h.id, h]));
   const routines = q.data ?? [];
+  const [params, setParams] = useSearchParams();
+
+  // ?routine=next (the home-screen shortcut): start the routine for this part
+  // of the day, else the first one with steps left.
+  useEffect(() => {
+    if (params.get("routine") !== "next" || !q.data || !habits.length) return;
+    setParams({}, { replace: true });
+    const open = q.data.filter((r) => r.habit_ids.some((id) => habits.find((h) => h.id === id && !h.today.done)));
+    const now = partOfDay(new Date().getHours());
+    const pick = open.find((r) => r.time_of_day === now) ?? open[0];
+    if (pick) setRunning(pick);
+    else toast(q.data.length ? "Every routine is done for today" : "Make a routine first: tap New under Routines");
+  }, [params, setParams, q.data, habits]);
   const doable = habits.filter((h) => h.kind !== "quit");
   if (doable.length < 2 && !routines.length) return null;
 
@@ -90,9 +105,7 @@ function RoutineEditor({ routine, habits, onClose }: { routine: HabitRoutine | n
   };
   const remove = async () => {
     if (!routine) return;
-    await del(`/habit-routines/${routine.id}`);
-    await refresh();
-    onClose();
+    if (await deleteWithUndo({ path: `/habit-routines/${routine.id}`, label: routine.name, refresh: ["habit-routines"] })) onClose();
   };
 
   return (

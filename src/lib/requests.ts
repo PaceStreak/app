@@ -37,14 +37,22 @@ export async function queued(): Promise<QueuedRequest[]> {
  * is not queued: retrying a bad request would only fail again.
  */
 export async function sendOrQueue(path: string, method: "PUT" | "DELETE", body?: unknown): Promise<"sent" | "queued"> {
+  return (await sendOrQueueWithResult(path, method, body)).status;
+}
+
+/** As sendOrQueue, with the server's response when it was sent. */
+export async function sendOrQueueWithResult<T = unknown>(
+  path: string,
+  method: "PUT" | "DELETE",
+  body?: unknown,
+): Promise<{ status: "sent"; data: T } | { status: "queued"; data: null }> {
   try {
-    await api(path, { method, body });
-    return "sent";
+    return { status: "sent", data: await api<T>(path, { method, body }) };
   } catch (err) {
     if (!(err instanceof NetworkError)) throw err;
     await (await db()).put("requests", { path, method, body, queued_at: new Date().toISOString() });
     await notify();
-    return "queued";
+    return { status: "queued", data: null };
   }
 }
 
