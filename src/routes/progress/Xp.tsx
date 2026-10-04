@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart } from "../../components/BarChart";
 import { ErrorState, Loading, PageHeader, Section } from "../../components/ui";
 import { api } from "../../lib/api";
-import { fmtMonthDay, relativeDay } from "../../lib/dates";
+import { fmtMonthDay, localToday, relativeDay } from "../../lib/dates";
 import type { LevelInfo } from "../../lib/types";
 
 interface XpData {
@@ -84,7 +84,7 @@ export default function Xp() {
                 <li key={i} className="flex items-center justify-between px-4 py-3 text-sm">
                   <span>{SOURCES[r.source]?.label ?? r.source}</span>
                   <span className="num text-dim">
-                    +{r.amount} · {relativeDay(r.date, new Date().toISOString().slice(0, 10))}
+                    +{r.amount} · {relativeDay(r.date, localToday())}
                   </span>
                 </li>
               ))}
