@@ -27,7 +27,7 @@ trade, and it is accepted.
 ```text
 browser
   ├── app.pacestreak.com   Cloudflare Pages  →  static build of this repo
-  └── api.pacestreak.com   GCP VM via Cloudflare Tunnel  →  data, sessions
+  └── api.pacestreak.com   FastAPI Cloud     →  data, sessions
 ```
 
 The app talks only to the API. It has no server of its own; anything that needs
