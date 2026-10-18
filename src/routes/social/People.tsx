@@ -62,14 +62,14 @@ export default function People() {
           <>
             <div className="relative mt-4">
               <MagnifyingGlass size={18} className="absolute top-1/2 left-4 -translate-y-1/2 text-dim" />
-              <input className="input pl-11" placeholder="Search by handle or name" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search people" autoCapitalize="none" />
+              <input className="input pl-11" placeholder="Start of a handle or name" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search people" autoCapitalize="none" />
             </div>
             {term ? (
-              <Section title="Results">{search.data?.length === 0 ? <p className="text-muted">Nobody by that name, or their account is private.</p> : list(search.data)}</Section>
+              <Section title="Results">{search.data?.length === 0 ? <p className="text-muted">Nobody whose handle or name starts with that, or their account is private.</p> : list(search.data)}</Section>
             ) : suggested.data && suggested.data.length > 0 ? (
               <Section title="People you might know">{list(suggested.data)}</Section>
             ) : (
-              <p className="mt-6 text-[0.95rem] text-muted">Search for friends by their handle. Private accounts never show up in search.</p>
+              <p className="mt-6 text-[0.95rem] text-muted">Search for friends by the start of their handle or name. Private accounts never show up in search.</p>
             )}
           </>
         ) : (

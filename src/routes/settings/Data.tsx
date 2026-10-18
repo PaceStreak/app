@@ -50,7 +50,12 @@ export function Data() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await api<{ imported: number; skipped: number }>("/me/import", { method: "POST", form });
+      const res = await api<{ imported: number; skipped: number; queued?: boolean }>("/me/import", { method: "POST", form });
+      if (res.queued) {
+        // Large files import in the background; a notification carries the counts when it's done.
+        toast.success("Importing in the background", { body: "We'll let you know when it's done." });
+        return;
+      }
       await syncNow();
       void queryClient.invalidateQueries();
       toast.success(`Imported ${plural(res.imported, "session")}`, { body: res.skipped ? `${res.skipped} were already here or unreadable.` : undefined });
