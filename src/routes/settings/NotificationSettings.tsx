@@ -11,6 +11,8 @@ import { useProfilePatch } from "./useProfilePatch";
 interface Prefs {
   categories: { id: string; label: string; locked: boolean; push: boolean; email: boolean }[];
   push_available: boolean;
+  /** Absent on an old cached payload: read as off. */
+  email_available?: boolean;
   habit_summary_hour: number | null;
 }
 
@@ -67,12 +69,16 @@ export function NotificationSettings() {
     }
   };
 
+  // No email column at all on a server without email; push and the inbox are unchanged.
+  const mail = q.data?.email_available === true;
+  const cols = mail ? "grid-cols-[1fr_56px_56px]" : "grid-cols-[1fr_56px]";
+
   return (
     <div>
       <Section title="This device" className="mt-0">
         {!pushSupported() || !q.data?.push_available ? (
           <Banner icon={<BellSlash size={18} />}>
-            {!pushSupported() ? "This browser can't receive push notifications. On iPhone, install PaceStreak to your home screen first." : "Push isn't set up on this server. In-app and email still work."}
+            {!pushSupported() ? "This browser can't receive push notifications. On iPhone, install PaceStreak to your home screen first." : mail ? "Push isn't set up on this server. In-app and email still work." : "Push isn't set up on this server. In-app notifications still work."}
           </Banner>
         ) : (
           <div className="card flex items-center gap-3 p-4">
@@ -94,26 +100,29 @@ export function NotificationSettings() {
 
       <Section title="What you hear about">
         <div className="card overflow-hidden">
-          <div className="grid grid-cols-[1fr_56px_56px] items-center border-b border-line px-4 py-2 text-xs font-semibold text-dim">
+          <div className={`grid ${cols} items-center border-b border-line px-4 py-2 text-xs font-semibold text-dim`}>
             <span>Everything lands in your inbox. Plus:</span>
             <span className="text-center">Push</span>
-            <span className="text-center">Email</span>
+            {mail && <span className="text-center">Email</span>}
           </div>
           {(q.data?.categories ?? []).map((c) => (
-            <div key={c.id} className="grid grid-cols-[1fr_56px_56px] items-center border-b border-line px-4 py-3 last:border-0">
+            <div key={c.id} className={`grid ${cols} items-center border-b border-line px-4 py-3 last:border-0`}>
               <span>
                 <span className="block font-medium">{c.label}</span>
-                {c.locked && <span className="text-xs text-dim">Always emailed, so you hear about anyone else touching your account.</span>}
+                {c.locked && mail && <span className="text-xs text-dim">Always emailed, so you hear about anyone else touching your account.</span>}
               </span>
               <span className="flex justify-center">
                 <button type="button" role="switch" aria-checked={c.push} aria-label={`${c.label} push`} className="switch" data-on={c.push} onClick={() => void toggle(c.id, "push", !c.push)} />
               </span>
+              {mail && (
               <span className="flex justify-center">
                 <button type="button" role="switch" aria-checked={c.email} aria-label={`${c.label} email`} disabled={c.locked} className="switch disabled:opacity-50" data-on={c.email} onClick={() => void toggle(c.id, "email", !c.email)} />
               </span>
+              )}
             </div>
           ))}
         </div>
+        <p className="field-hint">No newsletters, no marketing email.</p>
       </Section>
 
       <Section title="Timing">
@@ -176,7 +185,7 @@ export function NotificationSettings() {
                 );
               })}
             </div>
-            <p className="field-hint">No reminder pushes or emails at all on these days, such as weekends off. They still wait in your inbox. Security alerts always come through.</p>
+            <p className="field-hint">{mail ? "No reminder pushes or emails" : "No reminder pushes"} at all on these days, such as weekends off. They still wait in your inbox. Security alerts always come through.</p>
           </div>
           <div className="-mx-4 border-t border-line">
             <Switch

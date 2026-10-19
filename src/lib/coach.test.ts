@@ -127,3 +127,17 @@ describe("foodCards", () => {
     expect(cards[1].tone).toBe("accent");
   });
 });
+
+describe("confirm-your-email card", () => {
+  const unverified = (email_enabled?: boolean) =>
+    ({ user: { email: "a@b.c", is_verified: false }, profile: { week_starts_on: 0, timezone: "UTC", deletion_scheduled_at: null }, email_enabled }) as unknown as Me;
+
+  it("shows only when the server sends email", () => {
+    expect(buildCards(ctx({}, { me: unverified(true) })).some((c) => c.id === "verify")).toBe(true);
+  });
+
+  it("never shows with email off, or on an old payload without the flag", () => {
+    expect(buildCards(ctx({}, { me: unverified(false) })).some((c) => c.id === "verify")).toBe(false);
+    expect(buildCards(ctx({}, { me: unverified(undefined) })).some((c) => c.id === "verify")).toBe(false);
+  });
+});

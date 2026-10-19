@@ -6,6 +6,7 @@ import { Sheet } from "../components/Sheet";
 import { toast } from "../components/toast";
 import { Empty, ErrorState, Loading, PageHeader, Segmented } from "../components/ui";
 import { api, errorText } from "../lib/api";
+import { useEmailEnabled } from "../lib/capabilities";
 import { ago } from "../lib/dates";
 import { useMe } from "../lib/session";
 
@@ -123,6 +124,8 @@ interface UserRow {
 }
 
 function Users({ admin }: { admin: boolean }) {
+  // "Unverified" means nothing on a server that sends no email.
+  const mail = useEmailEnabled();
   const [q, setQ] = useState("");
   const users = useQuery({ queryKey: ["admin-users", q], queryFn: () => api<UserRow[]>(`/admin/users?q=${encodeURIComponent(q)}`) });
   const patch = async (id: string, body: Record<string, unknown>) => {
@@ -147,7 +150,7 @@ function Users({ admin }: { admin: boolean }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">@{u.handle ?? "(no handle)"} <span className="text-sm text-dim">{u.email}</span></span>
                 <span className="block text-sm text-dim">
-                  {u.role} · {u.is_verified ? "verified" : "unverified"} · {u.reports} reports{u.official ? " · official" : ""}{u.social_suspended ? " · suspended" : ""}{!u.is_active ? " · deactivated" : ""}
+                  {u.role}{mail ? (u.is_verified ? " · verified" : " · unverified") : ""} · {u.reports} reports{u.official ? " · official" : ""}{u.social_suspended ? " · suspended" : ""}{!u.is_active ? " · deactivated" : ""}
                 </span>
               </span>
             </div>

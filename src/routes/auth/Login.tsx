@@ -4,6 +4,7 @@ import { Fingerprint } from "../../components/phosphor";
 import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
 import { api, ApiError, errorText } from "../../lib/api";
+import { useEmailEnabled } from "../../lib/capabilities";
 import { conditionalSupported, passkeysSupported, signInWithPasskey, wasCancelled } from "../../lib/passkeys";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
@@ -25,6 +26,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [captcha, setCaptcha] = useState<string | null>(null);
   const captchaRef = useRef<TurnstileHandle>(null);
+  const emailEnabled = useEmailEnabled();
 
   const done = async (tokens: Tokens) => {
     const me = await signIn(tokens);
@@ -80,7 +82,7 @@ export default function Login() {
         else await done(res);
       }
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
+      if (emailEnabled && err instanceof ApiError && err.status === 403) {
         // Unverified accounts have no way to reach the OTP entry field from
         // here - send them straight to it instead of a dead-end resend loop.
         navigate(`/verify-email?email=${encodeURIComponent(email)}`);
@@ -149,12 +151,15 @@ export default function Login() {
           </button>
         )}
         <p className="flex flex-col items-center gap-2 text-sm">
-          <Link to="/forgot-password" className="text-muted underline">
+          {/* Without email, a recovery code is how a forgotten password is reset. */}
+          <Link to={emailEnabled ? "/forgot-password" : "/recover"} className="text-muted underline">
             {t("auth.login.forgot")}
           </Link>
-          <Link to="/recover" className="text-muted underline">
-            {t("auth.login.lostAccess")}
-          </Link>
+          {emailEnabled && (
+            <Link to="/recover" className="text-muted underline">
+              {t("auth.login.lostAccess")}
+            </Link>
+          )}
         </p>
       </form>
     </AuthLayout>

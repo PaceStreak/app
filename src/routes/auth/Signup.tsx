@@ -1,12 +1,15 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
+import { toast } from "../../components/toast";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { AuthLayout, PasswordField } from "./AuthLayout";
 import { t } from "../../lib/i18n";
 import { rich } from "../../lib/i18n-rich";
+
+type Tokens = { access_token: string; expires_in: number; csrf_token?: string };
 
 export default function Signup() {
   const { signIn } = useSession();
@@ -18,6 +21,20 @@ export default function Signup() {
   const [captcha, setCaptcha] = useState<string | null>(null);
   const captchaRef = useRef<TurnstileHandle>(null);
   const short = password.length > 0 && password.length < 16;
+  // A server without email hands out recovery codes at signup instead of a
+  // code to confirm. They are shown here before signing in, because signing
+  // in moves this page on to onboarding.
+  const [codes, setCodes] = useState<{ list: string[]; tokens: Tokens | null } | null>(null);
+
+  const afterCodes = async () => {
+    if (!codes) return;
+    if (codes.tokens) {
+      await signIn(codes.tokens);
+      navigate("/welcome", { replace: true });
+    } else {
+      navigate(`/login?email=${encodeURIComponent(email)}`, { replace: true });
+    }
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -25,20 +42,30 @@ export default function Signup() {
     setBusy(true);
     setError(null);
     try {
-      await api("/auth/signup", { body: { email, password, turnstile_token: captcha }, auth: false });
+      const created = await api<{ recovery_codes?: string[] }>("/auth/signup", { body: { email, password, turnstile_token: captcha }, auth: false });
+      const recovery = created?.recovery_codes ?? null;
       // Signup does not sign in by design; do it straight away so the next
       // screen is onboarding, not a second form. A Turnstile token can only
       // be redeemed once, so the widget solves again (usually invisibly)
       // for this second request rather than reusing the signup token.
       const loginCaptcha = await captchaRef.current?.getFreshToken().catch(() => null);
       try {
-        const tokens = await api<{ access_token: string; expires_in: number; csrf_token?: string }>("/auth/login", {
+        const tokens = await api<Tokens>("/auth/login", {
           body: { email, password, turnstile_token: loginCaptcha },
           auth: false,
         });
+        if (recovery) {
+          setCodes({ list: recovery, tokens });
+          return;
+        }
         await signIn(tokens);
         navigate("/welcome", { replace: true });
       } catch {
+        if (recovery) {
+          // Codes are shown whatever happened to the sign-in: they exist only in this response.
+          setCodes({ list: recovery, tokens: null });
+          return;
+        }
         // The account from the signup call above already exists at this point
         // no matter why this second call failed (unverified 403, a stale
         // captcha token, a rate limit) - the only safe move is to send the
@@ -55,6 +82,26 @@ export default function Signup() {
       setBusy(false);
     }
   };
+
+  if (codes) {
+    return (
+      <AuthLayout title={t("auth.codes.title")} subtitle={t("auth.codes.subtitle")}>
+        <ul className="num grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm" aria-label={t("auth.codes.list")}>
+          {codes.list.map((c) => (
+            <li key={c}>{c}</li>
+          ))}
+        </ul>
+        <div className="mt-5 flex gap-2">
+          <button type="button" className="btn btn-secondary flex-1" onClick={() => void navigator.clipboard?.writeText(codes.list.join("\n")).then(() => toast.success(t("auth.codes.copied")))}>
+            {t("auth.codes.copy")}
+          </button>
+          <button type="button" className="btn btn-primary flex-1" onClick={() => void afterCodes()}>
+            {t("auth.codes.saved")}
+          </button>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout

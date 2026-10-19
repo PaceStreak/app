@@ -3,13 +3,16 @@ import { Link } from "react-router";
 import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
+import { useEmailEnabled } from "../../lib/capabilities";
 import { t } from "../../lib/i18n";
 import { rich } from "../../lib/i18n-rich";
 import { AuthLayout, PasswordField } from "./AuthLayout";
 
-/** Set a new password with a 2FA recovery code: for someone who has lost
- * both the password and the mailbox. */
+/** Set a new password with a recovery code: for someone who has lost both
+ * the password and the mailbox (2FA codes), or, on a server without email,
+ * just the password (every account gets codes at signup). */
 export default function Recover() {
+  const emailEnabled = useEmailEnabled();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -38,7 +41,7 @@ export default function Recover() {
     return <AuthLayout title={t("auth.recover.doneTitle")} subtitle={t("auth.recover.doneBody")} footer={<Link to="/login" className="font-semibold text-accent-text">{t("common.signIn")}</Link>} />;
   }
   return (
-    <AuthLayout title={t("auth.recover.title")} subtitle={t("auth.recover.subtitle")} footer={<Link to="/login" className="font-semibold text-accent-text">{t("auth.forgot.back")}</Link>}>
+    <AuthLayout title={t("auth.recover.title")} subtitle={t(emailEnabled ? "auth.recover.subtitle" : "auth.recover.subtitleCodes")} footer={<Link to="/login" className="font-semibold text-accent-text">{t("auth.forgot.back")}</Link>}>
       <form onSubmit={submit} className="space-y-5">
         <Field label={t("common.email")} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         <Field label={t("auth.recover.code")} autoComplete="off" autoCapitalize="none" spellCheck={false} value={code} onChange={(e) => setCode(e.target.value)} required />
@@ -48,7 +51,7 @@ export default function Recover() {
           {busy ? t("auth.recover.busy") : t("auth.recover.submit")}
         </button>
         <p className="text-sm text-dim">
-          {rich("auth.recover.noCodes", {
+          {rich(emailEnabled ? "auth.recover.noCodes" : "auth.recover.noCodesAny", {
             mail: (text) => (
               <a className="underline" href="mailto:hello@pacestreak.com">
                 {text}

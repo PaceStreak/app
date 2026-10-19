@@ -10,6 +10,7 @@ import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Avatar, ErrorState, Field, Loading, PageHeader, Segmented, Switch } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
+import { emailOn } from "../../lib/capabilities";
 import { fmtMonthDay } from "../../lib/dates";
 import { queryClient } from "../../lib/queries";
 import { useMe } from "../../lib/session";
@@ -149,7 +150,7 @@ export default function GroupDetail() {
                 checked={Boolean(group.muted)}
                 onChange={(v) => void action(() => api(`/groups/${id}/me`, { method: "PATCH", body: { muted: v } }), v ? "Group muted" : "Group unmuted")}
                 label="Mute this group"
-                description="No push or email about it. Everything still shows up in your inbox."
+                description={emailOn(me) ? "No push or email about it. Everything still shows up in your inbox." : "No push about it. Everything still shows up in your inbox."}
               />
             </div>
           )}

@@ -8,6 +8,7 @@ import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Banner, Field, Section } from "../../components/ui";
 import { api, errorText, setTokens } from "../../lib/api";
+import { emailOn } from "../../lib/capabilities";
 import { ago, timeAgo } from "../../lib/dates";
 import { useMe, useSession } from "../../lib/session";
 import { PasskeySection } from "./PasskeySection";
@@ -57,12 +58,20 @@ export function Security() {
   const [disable, setDisable] = useState<{ password: string; code: string } | null>(null);
   const [regen, setRegen] = useState<{ code: string; codes?: string[] } | null>(null);
   const [emailChange, setEmailChange] = useState<{ email: string; password: string } | null>(null);
+  // Without email there is no code to send: the password confirms the change and it applies at once.
+  const mail = emailOn(me);
+  const [accountCodes, setAccountCodes] = useState<{ password: string; code: string; codes?: string[] } | null>(null);
   const startEmailChange = async () => {
     if (!emailChange) return;
     try {
       const newEmail = emailChange.email.trim();
       await api<{ detail: string }>("/auth/change-email", { body: { new_email: newEmail, password: emailChange.password } });
       setEmailChange(null);
+      if (!mail) {
+        await reloadMe();
+        toast.success("Email address updated", { body: `Sign in with ${newEmail} from now on.` });
+        return;
+      }
       navigate(`/confirm-email?email=${encodeURIComponent(newEmail)}`);
     } catch (err) {
       toast.error(errorText(err));
@@ -124,6 +133,20 @@ export function Security() {
     }
   };
 
+  /** A fresh set for any account: the password, plus a TOTP code when two-factor is on. */
+  const makeAccountCodes = async () => {
+    if (!accountCodes) return;
+    try {
+      const res = await api<{ recovery_codes: string[] }>("/auth/recovery-codes", {
+        body: { password: accountCodes.password, ...(twofa.data?.enabled ? { code: accountCodes.code } : {}) },
+      });
+      setAccountCodes({ ...accountCodes, codes: res.recovery_codes });
+      void twofa.refetch();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
   const revoke = async (s: SessionRow) => {
     if (s.current) return void signOut();
     await api(`/auth/sessions/${s.id}`, { method: "DELETE" });
@@ -137,7 +160,7 @@ export function Security() {
 
   return (
     <div>
-      {!me.user.is_verified && (
+      {mail && !me.user.is_verified && (
         <Banner
           icon={<EnvelopeSimple size={18} />}
           action={
@@ -168,10 +191,10 @@ export function Security() {
             }}
           >
             <Field label="New email address" type="email" autoComplete="email" required value={emailChange.email} onChange={(e) => setEmailChange({ ...emailChange, email: e.target.value })} />
-            <Field label="Your password" type="password" autoComplete="current-password" required value={emailChange.password} onChange={(e) => setEmailChange({ ...emailChange, password: e.target.value })} hint="Nothing changes until you confirm the code we send to the new address. Your old address will be told." />
+            <Field label="Your password" type="password" autoComplete="current-password" required value={emailChange.password} onChange={(e) => setEmailChange({ ...emailChange, password: e.target.value })} hint={mail ? "Nothing changes until you confirm the code we send to the new address. Your old address will be told." : "Your password confirms it's you. You sign in with the new address straight away."} />
             <div className="flex gap-2">
               <button type="button" className="btn btn-secondary flex-1" onClick={() => setEmailChange(null)}>Cancel</button>
-              <button className="btn btn-primary flex-1" disabled={!emailChange.email.includes("@") || !emailChange.password}>Send code</button>
+              <button className="btn btn-primary flex-1" disabled={!emailChange.email.includes("@") || !emailChange.password}>{mail ? "Send code" : "Change email"}</button>
             </div>
           </form>
         ) : (
@@ -220,6 +243,23 @@ export function Security() {
           </>
         )}
       </Section>
+
+      {/* Without email, recovery codes are the way back from a forgotten password, so every account has them. */}
+      {!mail && !twofa.data?.enabled && twofa.data && (
+        <Section title="Recovery codes">
+          <div className="card flex items-center gap-3 p-4">
+            <ShieldCheck size={24} className="text-dim" aria-hidden />
+            <div className="flex-1">
+              <p className="font-semibold">{twofa.data.recovery_codes_remaining} left</p>
+              <p className="text-sm text-dim">Forgot your password? One of these sets a new one, from the sign-in page.</p>
+            </div>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAccountCodes({ password: "", code: "" })}>New codes</button>
+          </div>
+          {twofa.data.recovery_codes_remaining <= 3 && (
+            <p className="field-hint text-flame-text" role="status">Running low on recovery codes. Make a new set before you need one.</p>
+          )}
+        </Section>
+      )}
 
       <PasskeySection />
 
@@ -315,6 +355,35 @@ export function Security() {
               <Field label="Code from your authenticator app" inputMode="numeric" autoComplete="one-time-code" value={regen.code} onChange={(e) => setRegen({ ...regen, code: e.target.value.replace(/\D/g, "") })} />
               <button type="button" className="btn btn-primary w-full" disabled={regen.code.length < 6} onClick={regenerate}>Make new codes</button>
             </div>
+          ))}
+      </Sheet>
+      <Sheet open={accountCodes !== null} onClose={() => setAccountCodes(null)} title={accountCodes?.codes ? "Your new recovery codes" : "New recovery codes"}>
+        {accountCodes &&
+          (accountCodes.codes ? (
+            <div>
+              <p className="text-muted">Your old codes no longer work. Each of these works once; this is the only time they're shown.</p>
+              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm">
+                {accountCodes.codes.map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
+              <div className="mt-4 flex gap-2">
+                <button type="button" className="btn btn-secondary flex-1" onClick={() => void navigator.clipboard?.writeText(accountCodes.codes!.join("\n")).then(() => toast.success("Copied"))}>Copy</button>
+                <button type="button" className="btn btn-primary flex-1" onClick={() => setAccountCodes(null)}>I've saved them</button>
+              </div>
+            </div>
+          ) : (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void makeAccountCodes();
+              }}
+            >
+              <p className="text-muted">Every current recovery code stops working and ten new ones replace them.</p>
+              <Field label="Your password" type="password" autoComplete="current-password" value={accountCodes.password} onChange={(e) => setAccountCodes({ ...accountCodes, password: e.target.value })} />
+              <button className="btn btn-primary w-full" disabled={!accountCodes.password}>Make new codes</button>
+            </form>
           ))}
       </Sheet>
       {confirmSheet}

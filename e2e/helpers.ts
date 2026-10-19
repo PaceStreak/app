@@ -41,15 +41,29 @@ async function call(path: string, body: unknown, token?: string) {
   return res.json();
 }
 
-/** A verified, onboarded account, unique per call. */
+let emailMode: Promise<boolean> | null = null;
+
+/**
+ * Whether the API under test sends email (`EMAIL_ENABLED`), from its public
+ * GET /v1/config. Production runs with it off; specs that need emailed codes
+ * run only when it is on, and email-off specs only when it is off.
+ */
+export function emailEnabled(): Promise<boolean> {
+  emailMode ??= fetch(`${API}/config`)
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((c: { email_enabled?: boolean }) => c.email_enabled === true);
+  return emailMode;
+}
+
+/** An onboarded account, unique per call: verified when the API sends email, holding its signup recovery codes when not. */
 export async function newAccount(prefix = "e2e") {
   const id = `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
   const email = `${id}@example.com`;
-  await call("/auth/signup", { email, password: PASSWORD, turnstile_token: TOKEN });
-  await call("/auth/verify-email", { email, code: await codeFor(email) });
+  const created = await call("/auth/signup", { email, password: PASSWORD, turnstile_token: TOKEN });
+  if (await emailEnabled()) await call("/auth/verify-email", { email, code: await codeFor(email) });
   const { access_token } = await call("/auth/login", { email, password: PASSWORD, turnstile_token: TOKEN });
   await call("/me/onboarding", { handle: id.slice(0, 30), birth_year: 1990, accept_terms: true }, access_token);
-  return { email, handle: id.slice(0, 30), token: access_token as string };
+  return { email, handle: id.slice(0, 30), token: access_token as string, recoveryCodes: (created.recovery_codes ?? []) as string[] };
 }
 
 export async function signIn(page: Page, email: string) {

@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { Check, Eye, EyeSlash } from "../../components/phosphor";
 import { t } from "../../lib/i18n";
 
-const POINTS = [t("auth.panel.p1"), t("auth.panel.p2"), t("auth.panel.p3")];
+const POINTS = [t("auth.panel.p1"), t("auth.panel.p2"), t("auth.panel.p3"), t("auth.panel.p4")];
 
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle?: ReactNode; children?: ReactNode; footer?: ReactNode }) {
   return (

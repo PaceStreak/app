@@ -6,6 +6,7 @@ import { Toaster } from "./components/toast";
 import { Shell } from "./shell/Shell";
 import { Splash } from "./shell/Splash";
 import { queryClient } from "./lib/queries";
+import { useEmailCapability } from "./lib/capabilities";
 import { SessionProvider, useSession } from "./lib/session";
 import Today from "./routes/Today";
 
@@ -54,6 +55,13 @@ function PublicOnly({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** Screens that only exist to send or redeem an emailed code: with email off, go where the job is done instead. */
+function EmailOnly({ otherwise, children }: { otherwise: string; children: ReactNode }) {
+  const on = useEmailCapability();
+  if (on === undefined) return <Splash />;
+  return on ? <>{children}</> : <Navigate to={otherwise} replace />;
+}
+
 const routeError = page(() => import("./routes/RouteError"));
 
 const router = createBrowserRouter([
@@ -71,14 +79,14 @@ const router = createBrowserRouter([
         children: [
           { path: "/login", element: page(() => import("./routes/auth/Login")) },
           { path: "/signup", element: page(() => import("./routes/auth/Signup")) },
-          { path: "/forgot-password", element: page(() => import("./routes/auth/ForgotPassword")) },
+          { path: "/forgot-password", element: <EmailOnly otherwise="/recover">{page(() => import("./routes/auth/ForgotPassword"))}</EmailOnly> },
           { path: "/recover", element: page(() => import("./routes/auth/Recover")) },
         ],
       },
       // Reachable signed in or out: they arrive from an email.
-      { path: "/reset-password", element: page(() => import("./routes/auth/ResetPassword")) },
-      { path: "/verify-email", element: page(() => import("./routes/auth/VerifyEmail")) },
-      { path: "/confirm-email", element: page(() => import("./routes/auth/ConfirmEmail")) },
+      { path: "/reset-password", element: <EmailOnly otherwise="/recover">{page(() => import("./routes/auth/ResetPassword"))}</EmailOnly> },
+      { path: "/verify-email", element: <EmailOnly otherwise="/">{page(() => import("./routes/auth/VerifyEmail"))}</EmailOnly> },
+      { path: "/confirm-email", element: <EmailOnly otherwise="/settings/security">{page(() => import("./routes/auth/ConfirmEmail"))}</EmailOnly> },
       { path: "/unsubscribe", element: page(() => import("./routes/auth/Unsubscribe")) },
       {
         path: "/welcome",

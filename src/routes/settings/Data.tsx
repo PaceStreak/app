@@ -151,6 +151,8 @@ interface BackupPrefs {
   backup_attachment: boolean;
   backup_frequency?: "monthly" | "weekly";
   categories: { id: string; push: boolean; email: boolean }[];
+  /** Absent on an old cached payload: read as off. */
+  email_available?: boolean;
 }
 
 /** The monthly backup by email, with the export attached. Off by default
@@ -193,7 +195,8 @@ function BackupEmail() {
     }
   };
 
-  if (!q.data) return null;
+  // A backup by email needs a server that sends email.
+  if (!q.data || q.data.email_available !== true) return null;
   return (
     <Section title="Backup by email">
       <div className="card">

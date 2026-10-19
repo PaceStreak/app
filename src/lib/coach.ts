@@ -436,7 +436,8 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
     });
   }
 
-  if (!me.user.is_verified) {
+  // Only while the server sends email: without it there is no code to confirm, and nothing waits on one.
+  if (me.email_enabled === true && !me.user.is_verified) {
     cards.push({
       id: "verify",
       tone: "neutral",
