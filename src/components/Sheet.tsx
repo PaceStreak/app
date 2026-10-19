@@ -31,11 +31,16 @@ export function Sheet({
   const drag = useRef<{ y: number; t: number; dy: number } | null>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const closing = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) {
+    if (open && (!dialog.open || dialog.dataset.state === "closing")) {
+      // Reopened during the exit animation (a second confirm straight after
+      // the first): stop the pending close, or it shuts the new one.
+      clearTimeout(closing.current);
+      if (dialog.open) dialog.close();
       dialog.showModal();
       dialog.dataset.state = "open";
     } else if (!open && dialog.open) {
@@ -52,7 +57,7 @@ export function Sheet({
       };
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (reduce) done();
-      else setTimeout(done, 220);
+      else closing.current = setTimeout(done, 220);
     }
   }, [open]);
 
