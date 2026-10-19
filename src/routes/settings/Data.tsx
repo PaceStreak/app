@@ -7,6 +7,7 @@ import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
 import { Banner, Field, Section, Segmented, Switch } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
+import { exportFilename } from "../../lib/download";
 import { syncNow } from "../../lib/sync";
 import { queryClient } from "../../lib/queries";
 import { useSession } from "../../lib/session";
@@ -30,7 +31,7 @@ export function Data() {
     try {
       const res = await api<Response>(`/me/export?format=${format}`, { raw: true });
       const blob = await res.blob();
-      const name = /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? `pacestreak.${format}`;
+      const name = exportFilename(res.headers.get("content-disposition"), blob.type, format);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
