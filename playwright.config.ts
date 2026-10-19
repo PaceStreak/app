@@ -32,6 +32,6 @@ export default defineConfig({
     url: "http://localhost:5173",
     reuseExistingServer: false,
     timeout: 180_000,
-    env: { PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA", PUBLIC_API_BASE_URL: "http://localhost:8000" },
+    env: { PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA", PUBLIC_API_BASE_URL: process.env.E2E_API_ORIGIN ?? "http://localhost:8000" },
   },
 });

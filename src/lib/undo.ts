@@ -55,7 +55,13 @@ export async function restore(trashId: string, label: string, keys: string[]): P
   try {
     await api(`/trash/${trashId}/restore`, { method: "POST" });
   } catch (err) {
-    toast.error(err instanceof ApiError && err.status === 409 ? `Can't restore ${label}: something already exists in its place` : errorText(err));
+    if (err instanceof ApiError && err.status === 404) {
+      // Past its 30 days, already restored, or deleted for good meanwhile (possibly from another device).
+      void queryClient.invalidateQueries({ queryKey: ["trash"] });
+      toast.error(`Can't restore ${label}: it's no longer in the trash`);
+    } else {
+      toast.error(err instanceof ApiError && err.status === 409 ? `Can't restore ${label}: something already exists in its place` : errorText(err));
+    }
     return false;
   }
   await Promise.all([...keys, "trash"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));

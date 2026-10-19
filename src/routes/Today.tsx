@@ -357,12 +357,15 @@ function CoachStack({
   useEffect(() => {
     const prev = previous.current;
     previous.current = lead;
-    if (prev && lead && prev.id !== lead.id && !cards.some((c) => c.id === prev.id)) {
-      setLeaving(prev);
-      const t = setTimeout(() => setLeaving(null), 520);
-      return () => clearTimeout(t);
-    }
+    if (prev && lead && prev.id !== lead.id && !cards.some((c) => c.id === prev.id)) setLeaving(prev);
   }, [lead, cards]);
+  // Its own effect: tied to the one above, any re-render with a new `cards`
+  // array cancelled the timer and left the old card stuck over the new one.
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => setLeaving(null), 520);
+    return () => clearTimeout(t);
+  }, [leaving]);
 
   if (!lead) return null;
   return (
