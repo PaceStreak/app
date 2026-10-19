@@ -27,6 +27,8 @@ export default function Welcome() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
+  // Until they type in Handle themselves, it follows the name.
+  const [handleEdited, setHandleEdited] = useState(false);
   const [handleState, setHandleState] = useState<{ ok: boolean; reason?: string | null } | null>(null);
   const [birthYear, setBirthYear] = useState("");
   const [terms, setTerms] = useState(false);
@@ -46,7 +48,7 @@ export default function Welcome() {
 
   // Suggest a handle from the name, and check availability as they type.
   useEffect(() => {
-    if (!handle && name) setHandle(name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 24));
+    if (!handleEdited) setHandle(name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 24));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
   useEffect(() => {
@@ -126,7 +128,10 @@ export default function Welcome() {
               <Field
                 label="Handle"
                 value={handle}
-                onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30))}
+                onChange={(e) => {
+                  setHandleEdited(true);
+                  setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30));
+                }}
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
