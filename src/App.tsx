@@ -42,9 +42,15 @@ function RequireSession({ onboarding = false, children }: { onboarding?: boolean
 }
 
 function PublicOnly({ children }: { children: ReactNode }) {
-  const { status } = useSession();
+  const { status, me } = useSession();
+  const location = useLocation();
   if (status === "loading") return <Splash />;
-  if (status === "ready") return <Navigate to="/" replace />;
+  if (status === "ready") {
+    // Signing in flips the session to ready before Login's own navigate runs, so honour ?next= here too.
+    const next = new URLSearchParams(location.search).get("next");
+    const safe = next?.startsWith("/") && !next.startsWith("//") ? next : "/";
+    return <Navigate to={me?.needs_onboarding ? "/welcome" : safe} replace />;
+  }
   return <>{children}</>;
 }
 
