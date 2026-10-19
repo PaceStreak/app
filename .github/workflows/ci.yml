@@ -37,60 +37,52 @@ jobs:
           # No inline <script> bodies: script-src 'self' would block them.
           ! grep -E '<script[^>]*>[^<]' dist/index.html
 
-  # A real browser against the real stack: this repo's production build, the
-  # API from PaceStreak/api's main branch, Postgres and Redis. Turnstile uses
-  # Cloudflare's always-pass test keys; email is printed to the API log,
-  # which the tests read verification codes from.
+  # A real browser against the real stack: this repo's production build and
+  # the Workers API from PaceStreak/api under `wrangler dev`, with local D1,
+  # Queues and R2. Turnstile uses Cloudflare's always-pass test keys; email is
+  # printed to the API log, which the tests read verification codes from.
   e2e:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:18-alpine
-        env:
-          POSTGRES_USER: pacestreak
-          POSTGRES_PASSWORD: pacestreak
-          POSTGRES_DB: pacestreak
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U pacestreak -d pacestreak"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-      redis:
-        image: redis:8-alpine
-        ports: ["6379:6379"]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s --health-timeout 3s --health-retries 10
     env:
-      DATABASE_URL: postgresql+asyncpg://pacestreak:pacestreak@localhost:5432/pacestreak
-      REDIS_URL: redis://localhost:6379/0
-      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
-      EMAIL_BACKEND: console
-      CORS_ORIGINS: http://localhost:5173
-      FRONTEND_URL: http://localhost:5173
-      PUBLIC_API_URL: http://localhost:8000
-      RATE_LIMIT_SIGNUP: 100/minute
-      RATE_LIMIT_LOGIN: 100/minute
-      RATE_LIMIT_MFA_VERIFY: 100/minute
       E2E_API_LOG: ${{ github.workspace }}/api.log
+      E2E_API_ORIGIN: http://localhost:8787
+      E2E_API: http://localhost:8787/v1
     steps:
       - uses: actions/checkout@v5
+      # `next` until the cutover merges it into main; then drop the ref.
       - uses: actions/checkout@v5
         with:
           repository: PaceStreak/api
+          ref: next
           path: api-src
-      - uses: astral-sh/setup-uv@v6
+          token: ${{ secrets.API_REPO_TOKEN || github.token }}
+      - uses: pnpm/action-setup@v4
         with:
-          python-version: "3.14"
+          package_json_file: api-src/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
       - name: Start the API
         working-directory: api-src
         run: |
-          uv sync --locked
-          make keys vapid
-          uv run alembic upgrade head
-          # The venv directly, not `uv run`: a long-lived uv process holds the
-          # cache lock and fails setup-uv's clean-up step.
-          nohup .venv/bin/uvicorn app.main:app --port 8000 > "$E2E_API_LOG" 2>&1 &
-          for i in $(seq 60); do curl -sf localhost:8000/health && break; sleep 1; done
+          pnpm install --frozen-lockfile
+          key() { openssl rand -base64 32; }
+          {
+            echo ENVIRONMENT=development
+            echo MAILER=console
+            echo COOKIE_DOMAIN=
+            echo CORS_ORIGINS=http://localhost:5173
+            echo FRONTEND_URL=http://localhost:5173
+            echo PUBLIC_API_URL=http://localhost:8787
+            echo "JWT_KEYS={\"current\":\"k1\",\"keys\":{\"k1\":\"$(key)\"}}"
+            echo "PEPPER=$(key)"
+            echo "DATA_KEY=$(key)"
+            echo TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+            echo IP_LIMITS_OFF=1
+          } > .dev.vars
+          pnpm wrangler d1 migrations apply pacestreak --local
+          nohup pnpm wrangler dev --port 8787 --ip 127.0.0.1 > "$E2E_API_LOG" 2>&1 &
+          for i in $(seq 90); do curl -sf localhost:8787/health && break; sleep 1; done
       - uses: actions/setup-node@v5
         with:
           node-version: 22
