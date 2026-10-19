@@ -82,7 +82,7 @@ export default function Settings() {
         <SignOut size={18} /> Sign out
       </button>
       <p className="mt-6 text-center text-xs text-dim">
-        <Link to="/settings/about" className="underline">PaceStreak</Link> · open source, AGPL-3.0
+        <Link to="/settings/about" className="underline">PaceStreak</Link> · AGPL-3.0
       </p>
       {confirmSheet}
     </div>
