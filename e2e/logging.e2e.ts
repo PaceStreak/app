@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { logRun, newAccount, serverWorkouts, signIn } from "./helpers";
+import { API, logRun, newAccount, serverWorkouts, signIn } from "./helpers";
 
 test("a quick-logged run reaches the server and survives a reload", async ({ page }) => {
   const { email, token } = await newAccount("log");
@@ -18,7 +18,7 @@ test("a run logged offline and left unsent survives sign-out and uploads on retu
   // (Playwright's setOffline also cuts the service worker off from its own
   // cache, which no real phone does, so the API is blocked instead.)
   const cut = (route: { abort: (e: string) => Promise<void> }) => route.abort("internetdisconnected");
-  await context.route("http://localhost:8000/**", cut);
+  await context.route(`${new URL(API).origin}/**`, cut);
   await logRun(page, "7");
   await page.getByRole("link", { name: "You", exact: true }).last().click();
   await page.getByRole("link", { name: /settings/i }).first().click();
@@ -29,7 +29,7 @@ test("a run logged offline and left unsent survives sign-out and uploads on retu
   await dialog.getByRole("button", { name: /sign out/i }).click();
   expect(await serverWorkouts(token)).toEqual([]);
 
-  await context.unroute("http://localhost:8000/**", cut);
+  await context.unroute(`${new URL(API).origin}/**`, cut);
   await signIn(page, email);
   await expect.poll(async () => (await serverWorkouts(token)).map((w) => w.distance_m), { timeout: 20_000 }).toEqual([7000]);
 });
