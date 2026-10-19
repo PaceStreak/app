@@ -442,7 +442,7 @@ export function buildCards(ctx: CoachContext): CoachCard[] {
       tone: "neutral",
       icon: "mail",
       title: "Confirm your email",
-      body: `We sent a link to ${me.user.email}. Following people and groups unlock once it's confirmed.`,
+      body: `We sent a code to ${me.user.email}. Following people and groups unlock once it's confirmed.`,
       primary: { kind: "resend", label: "Send it again" },
       dismissible: true,
     });
