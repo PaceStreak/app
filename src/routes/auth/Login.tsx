@@ -29,7 +29,7 @@ export default function Login() {
   const done = async (tokens: Tokens) => {
     const me = await signIn(tokens);
     const next = params.get("next");
-    navigate(me?.needs_onboarding ? "/welcome" : next && next.startsWith("/") ? next : "/", { replace: true });
+    navigate(me?.needs_onboarding ? "/welcome" : next?.startsWith("/") && !next.startsWith("//") ? next : "/", { replace: true });
   };
 
   // Offer saved passkeys in the email field's autofill list. The request waits
