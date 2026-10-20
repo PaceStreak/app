@@ -16,15 +16,18 @@ test("add a habit, tick it off, see the week and grid fill, delete with undo and
   await page.goto("/habits");
   const row = page.getByRole("button", { name: "Mark Stretch daily done" });
   const week = page.getByText(/\d\/\d this week/);
-  await expect(week).toHaveText(/\b0\/7 this week/);
+  // A habit made mid-week counts only the days left in it (7 on a Monday, 6 on a Tuesday...).
+  await expect(week).toBeVisible();
+  const target = (await week.textContent())?.match(/\/(\d)/)?.[1] ?? "7";
+  await expect(week).toHaveText(new RegExp(`\\b0\\/${target} this week`));
   await row.click();
   await expect(page.getByRole("status").filter({ hasText: "Stretch daily: done" })).toBeVisible();
-  await expect(week).toHaveText(/\b1\/7 this week/);
+  await expect(week).toHaveText(new RegExp(`\\b1\\/${target} this week`));
   // The tick undoes itself.
   await page.getByRole("button", { name: "Stretch daily: done. Tap to undo." }).click();
-  await expect(week).toHaveText(/\b0\/7 this week/);
+  await expect(week).toHaveText(new RegExp(`\\b0\\/${target} this week`));
   await page.getByRole("button", { name: "Mark Stretch daily done" }).click();
-  await expect(week).toHaveText(/\b1\/7 this week/);
+  await expect(week).toHaveText(new RegExp(`\\b1\\/${target} this week`));
 
   // The month grid on the habit's page shows today as done.
   await page.goto(url);
