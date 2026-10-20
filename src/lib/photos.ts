@@ -32,23 +32,14 @@ export async function addPhoto(file: Blob, date: string, pose: Photo["pose"]): P
 }
 
 /**
- * Uploads go straight from this device to R2, not through the API - see
- * api/app/training/photos.py. The API hands out a presigned URL, this code
- * PUTs the bytes directly to it (a plain fetch, not `api()`: it's a
- * different origin, and it must carry neither our auth header nor cookies),
- * and then tells the API to verify what actually landed there before it
- * counts as backed up.
+ * One request: the bytes go to the API with our auth like any other call,
+ * typed by the blob, with the date and pose in the query. The API checks the
+ * first bytes really are that image type before it stores anything, so a
+ * 200 means it is backed up.
  */
 async function upload(photo: Photo) {
-  const body = { date: photo.date, pose: photo.pose, content_type: photo.blob.type };
-  const { upload_url } = await api<{ upload_url: string }>(`/body-photos/${photo.id}/upload`, { body });
-  const put = await fetch(upload_url, {
-    method: "PUT",
-    headers: { "Content-Type": photo.blob.type },
-    body: photo.blob,
-  });
-  if (!put.ok) throw new Error("Photo upload failed");
-  await api(`/body-photos/${photo.id}/upload/complete`, { body });
+  const q = new URLSearchParams({ date: photo.date, pose: photo.pose });
+  await api(`/body-photos/${photo.id}?${q}`, { method: "PUT", blob: photo.blob });
   await (await db()).put("photos", { ...photo, synced: true });
 }
 
@@ -83,12 +74,15 @@ export async function syncPhotos(): Promise<number> {
   }
   for (const r of remote) {
     if (localIds.has(r.id)) continue;
-    // Fetching the photo is two hops: the API returns a presigned R2 URL
-    // (never raw bytes), and this code fetches that plainly - again no auth
-    // header or cookies, since a presigned URL carries its own permission.
-    const { url } = await api<{ url: string }>(`/body-photos/${r.id}`);
-    const res = await fetch(url);
-    if (!res.ok) continue;
+    // The API streams the bytes back to their owner (never cached). It is an
+    // authenticated fetch, so the photo is shown from this device's copy
+    // through an object URL, never by pointing an <img> at the API.
+    let res: Response;
+    try {
+      res = await api<Response>(`/body-photos/${r.id}`, { raw: true });
+    } catch {
+      continue;
+    }
     await store.put("photos", { id: r.id, date: r.date, pose: r.pose, blob: await res.blob(), created_at: new Date().toISOString(), synced: true });
     moved++;
   }
