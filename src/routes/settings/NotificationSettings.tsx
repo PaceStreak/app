@@ -122,7 +122,7 @@ export function NotificationSettings() {
             </div>
           ))}
         </div>
-        <p className="field-hint">No newsletters, no marketing email.</p>
+        <p className="field-hint">No newsletters, no marketing email. A habit's name never appears in an email subject or a push title, so a lock screen never shows one.</p>
       </Section>
 
       <Section title="Timing">

@@ -6,7 +6,7 @@ import { useConfirm } from "../../components/Confirm";
 import { DeviceMobile, EnvelopeSimple, ShieldCheck } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Banner, Field, Section, Switch } from "../../components/ui";
+import { Banner, Field, Section, Skeleton, Switch } from "../../components/ui";
 import { api, errorText, setTokens } from "../../lib/api";
 import { emailOn } from "../../lib/capabilities";
 import { ago, timeAgo } from "../../lib/dates";
@@ -61,6 +61,32 @@ function QR({ text }: { text: string }) {
       <path d={cells.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("")} fill="#111" />
     </svg>
   );
+}
+
+/** A freshly made set of recovery codes: shown once, with copy and an explicit "saved" step. */
+function NewCodes({ codes, lead, onDone }: { codes: string[]; lead: string; onDone: () => void }) {
+  return (
+    <div>
+      <p className="text-muted">{lead}</p>
+      <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm" aria-label="Recovery codes">
+        {codes.map((c) => (
+          <li key={c}>{c}</li>
+        ))}
+      </ul>
+      <div className="mt-4 flex gap-2">
+        <button type="button" className="btn btn-secondary flex-1" onClick={() => void navigator.clipboard?.writeText(codes.join("\n")).then(() => toast.success("Copied"))}>Copy</button>
+        <button type="button" className="btn btn-primary flex-1" onClick={onDone}>I've saved them</button>
+      </div>
+    </div>
+  );
+}
+
+const NEW_SET = "Your old codes no longer work. Each of these works once; this is the only time they're shown.";
+
+/** One line in place of a list while it loads, or when there is nothing to list. */
+function ListNote({ loading, children }: { loading: boolean; children: string }) {
+  if (loading) return <Skeleton className="h-14" />;
+  return <p className="card px-4 py-3 text-sm text-dim">{children}</p>;
 }
 
 export function Security() {
@@ -140,7 +166,7 @@ export function Security() {
     try {
       await api("/auth/2fa/disable", { body: disable });
       setDisable(null);
-      toast("Two-factor is off");
+      toast("Authenticator app is off");
       void twofa.refetch();
     } catch (err) {
       toast.error(errorText(err));
@@ -258,39 +284,22 @@ export function Security() {
 
       <Section title="Password">
         {pw ? (
-          <div className="card space-y-4 p-4">
+          <form
+            className="card space-y-4 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void changePassword();
+            }}
+          >
             <Field label="Current password" type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />
-            <Field label="New password" type="password" autoComplete="new-password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} hint="At least 16 characters." />
+            <Field label="New password" type="password" autoComplete="new-password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} hint="At least 16 characters. Every other device is signed out." />
             <div className="flex gap-2">
               <button type="button" className="btn btn-secondary flex-1" onClick={() => setPw(null)}>Cancel</button>
-              <button type="button" className="btn btn-primary flex-1" disabled={pw.next.length < 16 || !pw.current} onClick={changePassword}>Change</button>
+              <button className="btn btn-primary flex-1" disabled={pw.next.length < 16 || !pw.current}>Change</button>
             </div>
-          </div>
+          </form>
         ) : (
           <button type="button" className="btn btn-secondary w-full" onClick={() => setPw({ current: "", next: "" })}>Change password</button>
-        )}
-      </Section>
-
-      <Section title="Two-factor authentication">
-        <div className="card flex items-center gap-3 p-4">
-          <ShieldCheck size={24} weight={twofa.data?.enabled ? "fill" : "regular"} className={twofa.data?.enabled ? "text-accent-text" : "text-dim"} />
-          <div className="flex-1">
-            <p className="font-semibold">{twofa.data?.enabled ? "On" : "Off"}</p>
-            <p className="text-sm text-dim">{twofa.data?.enabled ? `${twofa.data.recovery_codes_remaining} recovery codes left` : "A code from an authenticator app at every sign-in."}</p>
-          </div>
-          {twofa.data?.enabled ? (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setDisable({ password: "", code: "" })}>Turn off</button>
-          ) : (
-            <button type="button" className="btn btn-primary btn-sm" onClick={startSetup}>Set up</button>
-          )}
-        </div>
-        {twofa.data?.enabled && (
-          <>
-            {twofa.data.recovery_codes_remaining <= 3 && (
-              <p className="field-hint text-flame-text" role="status">Running low on recovery codes. Make a new set before you need one.</p>
-            )}
-            <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={() => setRegen({ code: "" })}>New recovery codes</button>
-          </>
         )}
       </Section>
 
@@ -336,24 +345,50 @@ export function Security() {
           <div className="card flex items-center gap-3 p-4">
             <ShieldCheck size={24} className="text-dim" aria-hidden />
             <div className="flex-1">
-              <p className="font-semibold">{twofa.data.recovery_codes_remaining} left</p>
+              <p className="font-semibold">{twofa.data.recovery_codes_remaining > 0 ? `${twofa.data.recovery_codes_remaining} left` : "None yet"}</p>
               <p className="text-sm text-dim">{mail ? "No access to your inbox? One of these signs you in instead of the emailed code." : "Forgot your password? One of these sets a new one, from the sign-in page."}</p>
             </div>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAccountCodes({ password: "", code: "" })}>New codes</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAccountCodes({ password: "", code: "" })}>{twofa.data.recovery_codes_remaining > 0 ? "New codes" : "Make codes"}</button>
           </div>
-          {twofa.data.recovery_codes_remaining <= 3 && (
+          {twofa.data.recovery_codes_remaining > 0 && twofa.data.recovery_codes_remaining <= 3 && (
             <p className="field-hint text-flame-text" role="status">Running low on recovery codes. Make a new set before you need one.</p>
           )}
         </Section>
       )}
 
+      <Section title="Authenticator app">
+        <div className="card flex items-center gap-3 p-4">
+          <ShieldCheck size={24} weight={twofa.data?.enabled ? "fill" : "regular"} className={twofa.data?.enabled ? "text-accent-text" : "text-dim"} aria-hidden />
+          <div className="flex-1">
+            <p className="font-semibold">{twofa.data?.enabled ? "On" : "Off"}</p>
+            <p className="text-sm text-dim">{twofa.data?.enabled ? `${twofa.data.recovery_codes_remaining} recovery codes left` : "Optional. A code from an app such as 1Password or Google Authenticator, in place of the emailed one."}</p>
+          </div>
+          {twofa.data?.enabled ? (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setDisable({ password: "", code: "" })}>Turn off</button>
+          ) : (
+            <button type="button" className="btn btn-primary btn-sm" onClick={startSetup}>Set up</button>
+          )}
+        </div>
+        {twofa.data?.enabled && (
+          <>
+            {twofa.data.recovery_codes_remaining <= 3 && (
+              <p className="field-hint text-flame-text" role="status">Running low on recovery codes. Make a new set before you need one.</p>
+            )}
+            <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={() => setRegen({ code: "" })}>New recovery codes</button>
+          </>
+        )}
+      </Section>
+
       <PasskeySection />
 
       <Section title="Where you're signed in" action={<button type="button" className="text-sm font-semibold text-danger" onClick={everywhere}>Sign out everywhere</button>}>
+        {!sessions.data?.length ? (
+          <ListNote loading={sessions.isPending}>No other sessions.</ListNote>
+        ) : (
         <ul className="card divide-y divide-line">
-          {(sessions.data ?? []).map((s) => (
+          {sessions.data.map((s) => (
             <li key={s.id} className="flex items-center gap-3 px-4 py-3">
-              <DeviceMobile size={20} className="text-dim" />
+              <DeviceMobile size={20} className="text-dim" aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">
                   {device(s.user_agent)} {s.current && <span className="chip chip-accent ml-1 h-5 px-1.5 text-[0.7rem]">This device</span>}
@@ -367,11 +402,15 @@ export function Security() {
             </li>
           ))}
         </ul>
+        )}
       </Section>
 
       <Section title="Recent security activity">
+        {!events.data?.length ? (
+          <ListNote loading={events.isPending}>Nothing yet.</ListNote>
+        ) : (
         <ul className="card divide-y divide-line">
-          {(events.data ?? []).slice(0, 20).map((e) => (
+          {events.data.slice(0, 20).map((e) => (
             <li key={e.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
               <span>
                 <span className="block font-medium">{e.label}</span>
@@ -381,33 +420,29 @@ export function Security() {
             </li>
           ))}
         </ul>
+        )}
         <p className="field-hint">Something here you didn't do? Change your password and sign out everywhere.</p>
       </Section>
 
       <Sheet open={setup !== null} onClose={() => setSetup(null)} title={setup?.codes ? "Save your recovery codes" : "Set up two-factor"}>
         {setup &&
           (setup.codes ? (
-            <div>
-              <p className="text-muted">Each works once if you lose your phone. This is the only time they're shown.</p>
-              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm">
-                {setup.codes.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
-              <div className="mt-4 flex gap-2">
-                <button type="button" className="btn btn-secondary flex-1" onClick={() => void navigator.clipboard?.writeText(setup.codes!.join("\n")).then(() => toast.success("Copied"))}>Copy</button>
-                <button type="button" className="btn btn-primary flex-1" onClick={() => setSetup(null)}>I've saved them</button>
-              </div>
-            </div>
+            <NewCodes codes={setup.codes} lead="Each works once if you lose your phone. This is the only time they're shown." onDone={() => setSetup(null)} />
           ) : (
-            <div className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void confirmSetup();
+              }}
+            >
               <p className="text-muted">Scan this with your authenticator app, then enter the code it shows.</p>
               <QR text={setup.uri} />
               <p className="num text-center font-mono text-sm break-all text-dim">{setup.secret}</p>
               <Field label="Code from the app" inputMode="numeric" autoComplete="one-time-code" value={setup.code} onChange={(e) => setSetup({ ...setup, code: e.target.value.replace(/\D/g, "") })} />
               <Field label="Your password" type="password" autoComplete="current-password" value={setup.password} onChange={(e) => setSetup({ ...setup, password: e.target.value })} hint="Asked so a stolen session can't lock you out of your own account." />
-              <button type="button" className="btn btn-primary w-full" disabled={setup.code.length < 6 || !setup.password} onClick={confirmSetup}>Turn on</button>
-            </div>
+              <button className="btn btn-primary w-full" disabled={setup.code.length < 6 || !setup.password}>Turn on</button>
+            </form>
           ))}
       </Sheet>
 
@@ -433,53 +468,44 @@ export function Security() {
         )}
       </Sheet>
 
-      <Sheet open={disable !== null} onClose={() => setDisable(null)} title="Turn off two-factor">
+      <Sheet open={disable !== null} onClose={() => setDisable(null)} title="Turn off the authenticator app">
         {disable && (
-          <div className="space-y-4">
-            <Field label="Password" type="password" autoComplete="current-password" value={disable.password} onChange={(e) => setDisable({ ...disable, password: e.target.value })} />
-            <Field label="Current code" inputMode="numeric" value={disable.code} onChange={(e) => setDisable({ ...disable, code: e.target.value })} />
-            <button type="button" className="btn btn-danger w-full" onClick={turnOff}>Turn off</button>
-          </div>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void turnOff();
+            }}
+          >
+            <p className="text-muted">Your password and a code from the app, so a stolen session can't turn it off.</p>
+            <Field label="Your password" type="password" autoComplete="current-password" value={disable.password} onChange={(e) => setDisable({ ...disable, password: e.target.value })} />
+            <Field label="Code from your authenticator app" inputMode="numeric" autoComplete="one-time-code" value={disable.code} onChange={(e) => setDisable({ ...disable, code: e.target.value.replace(/\D/g, "") })} />
+            <button className="btn btn-danger w-full" disabled={!disable.password || disable.code.length < 6}>Turn off</button>
+          </form>
         )}
       </Sheet>
       <Sheet open={regen !== null} onClose={() => setRegen(null)} title={regen?.codes ? "Your new recovery codes" : "New recovery codes"}>
         {regen &&
           (regen.codes ? (
-            <div>
-              <p className="text-muted">Your old codes no longer work. Each of these works once; this is the only time they're shown.</p>
-              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm">
-                {regen.codes.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
-              <div className="mt-4 flex gap-2">
-                <button type="button" className="btn btn-secondary flex-1" onClick={() => void navigator.clipboard?.writeText(regen.codes!.join("\n")).then(() => toast.success("Copied"))}>Copy</button>
-                <button type="button" className="btn btn-primary flex-1" onClick={() => setRegen(null)}>I've saved them</button>
-              </div>
-            </div>
+            <NewCodes codes={regen.codes} lead={NEW_SET} onDone={() => setRegen(null)} />
           ) : (
-            <div className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void regenerate();
+              }}
+            >
               <p className="text-muted">Every current recovery code stops working and ten new ones replace them.</p>
               <Field label="Code from your authenticator app" inputMode="numeric" autoComplete="one-time-code" value={regen.code} onChange={(e) => setRegen({ ...regen, code: e.target.value.replace(/\D/g, "") })} />
-              <button type="button" className="btn btn-primary w-full" disabled={regen.code.length < 6} onClick={regenerate}>Make new codes</button>
-            </div>
+              <button className="btn btn-primary w-full" disabled={regen.code.length < 6}>Make new codes</button>
+            </form>
           ))}
       </Sheet>
       <Sheet open={accountCodes !== null} onClose={() => setAccountCodes(null)} title={accountCodes?.codes ? "Your new recovery codes" : "New recovery codes"}>
         {accountCodes &&
           (accountCodes.codes ? (
-            <div>
-              <p className="text-muted">Your old codes no longer work. Each of these works once; this is the only time they're shown.</p>
-              <ul className="num mt-4 grid grid-cols-2 gap-2 rounded-md bg-surface-2 p-4 font-mono text-sm">
-                {accountCodes.codes.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
-              <div className="mt-4 flex gap-2">
-                <button type="button" className="btn btn-secondary flex-1" onClick={() => void navigator.clipboard?.writeText(accountCodes.codes!.join("\n")).then(() => toast.success("Copied"))}>Copy</button>
-                <button type="button" className="btn btn-primary flex-1" onClick={() => setAccountCodes(null)}>I've saved them</button>
-              </div>
-            </div>
+            <NewCodes codes={accountCodes.codes} lead={NEW_SET} onDone={() => setAccountCodes(null)} />
           ) : (
             <form
               className="space-y-4"

@@ -65,7 +65,7 @@ const en = {
   "auth.panel.p3": "Works offline, installs to your home screen, exports everything.",
   "auth.panel.p4": "No newsletters, no marketing email.",
   "auth.login.title": "Welcome back.",
-  "auth.login.subtitle": "Log in to keep the streak going.",
+  "auth.login.subtitle": "Sign in to keep the streak going.",
   "auth.login.newHere": "New here? <signup>Create an account</signup>",
   "auth.login.submit": "Sign in",
   "auth.login.busy": "Signing in…",
@@ -134,7 +134,7 @@ const en = {
 
   "auth.login.lostAccess": "Lost access to your email?",
   "auth.recover.title": "Use a recovery code.",
-  "auth.recover.subtitle": "If you turned on two-factor, each of the recovery codes you saved works once to set a new password, with no email needed.",
+  "auth.recover.subtitle": "Each of the recovery codes you saved works once to set a new password, with no email needed.",
   "auth.recover.subtitleCodes": "Each of the recovery codes you saved works once to set a new password.",
   "auth.recover.noCodesAny": "Lost your recovery codes too? Write to <mail>hello@pacestreak.com</mail> from the address you sign in with and we'll help.",
   "auth.recover.code": "Recovery code",

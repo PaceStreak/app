@@ -94,6 +94,14 @@ export default function Login() {
     setWaitUntil(Date.now() + (c.resend_in ?? 0) * 1000);
   };
 
+  // Back to email and password, without carrying the code step's error or notice along.
+  const back = () => {
+    setMfa(null);
+    setCode("");
+    setError(null);
+    setNotice(null);
+  };
+
   const resend = async () => {
     if (!mfa) return;
     setError(null);
@@ -182,13 +190,13 @@ export default function Login() {
           </button>
           <div className="flex flex-col items-center gap-2 text-sm">
             {!recovery && (
-              <button type="button" className="text-muted underline disabled:no-underline disabled:opacity-70" onClick={() => void resend()} disabled={wait > 0}>
+              <button type="button" className="min-h-11 px-2 text-muted underline disabled:no-underline disabled:opacity-70" onClick={() => void resend()} disabled={wait > 0}>
                 {wait > 0 ? t("auth.emailCode.resendIn", { time: clock(wait) }) : t("auth.emailCode.resend")}
               </button>
             )}
             <button
               type="button"
-              className="text-muted underline"
+              className="min-h-11 px-2 text-muted underline"
               onClick={() => {
                 setRecovery(!recovery);
                 setCode("");
@@ -198,7 +206,7 @@ export default function Login() {
               {recovery ? t("auth.emailCode.useEmail") : t("auth.emailCode.useRecovery")}
             </button>
           </div>
-          <button type="button" className="btn btn-ghost w-full" onClick={() => setMfa(null)}>
+          <button type="button" className="btn btn-ghost w-full" onClick={back}>
             {t("common.back")}
           </button>
         </form>
@@ -221,10 +229,10 @@ export default function Login() {
             placeholder="123 456"
             required
           />
-          <button className="btn btn-primary w-full" disabled={busy || code.length < 6}>
+          <button className="btn btn-primary w-full" disabled={busy || code.trim().length < 6}>
             {busy ? t("auth.mfa.busy") : t("auth.login.submit")}
           </button>
-          <button type="button" className="btn btn-ghost w-full" onClick={() => setMfa(null)}>
+          <button type="button" className="btn btn-ghost w-full" onClick={back}>
             {t("common.back")}
           </button>
         </form>
@@ -261,13 +269,13 @@ export default function Login() {
             <Fingerprint size={18} aria-hidden /> {t("auth.login.passkey")}
           </button>
         )}
-        <p className="flex flex-col items-center gap-2 text-sm">
+        <p className="flex flex-col items-center gap-1 text-sm">
           {/* Without email, a recovery code is how a forgotten password is reset. */}
-          <Link to={emailEnabled ? "/forgot-password" : "/recover"} className="text-muted underline">
+          <Link to={emailEnabled ? "/forgot-password" : "/recover"} className="inline-flex min-h-11 items-center px-2 text-muted underline">
             {t("auth.login.forgot")}
           </Link>
           {emailEnabled && (
-            <Link to="/recover" className="text-muted underline">
+            <Link to="/recover" className="inline-flex min-h-11 items-center px-2 text-muted underline">
               {t("auth.login.lostAccess")}
             </Link>
           )}

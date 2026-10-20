@@ -234,7 +234,14 @@ export default function Today() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="chip chip-flame h-8 px-3 text-sm">
-            <Fire size={15} weight="fill" aria-hidden /> <span className="num">{lifeWeeks}</span> {lifeWeeks === 1 ? "week" : "weeks"} unbroken
+            <Fire size={15} weight="fill" aria-hidden />{" "}
+            {lifeWeeks > 0 ? (
+              <>
+                <span className="num">{lifeWeeks}</span> {lifeWeeks === 1 ? "week" : "weeks"} unbroken
+              </>
+            ) : (
+              "Streak starts this week"
+            )}
           </span>
           {gamified && stats.data && (
             <Link to="/progress/xp" className="chip h-8 px-3 text-sm">
