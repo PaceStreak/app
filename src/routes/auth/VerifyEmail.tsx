@@ -4,6 +4,7 @@ import { Turnstile, type TurnstileHandle } from "../../components/Turnstile";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
+import { type Challenge, isChallenge } from "../../lib/signin";
 import { AuthLayout } from "./AuthLayout";
 import { t } from "../../lib/i18n";
 
@@ -42,7 +43,11 @@ export default function VerifyEmail() {
       if (password) {
         try {
           const token = await captchaRef.current?.getFreshToken().catch(() => null);
-          const tokens = (await api("/auth/login", { body: { email, password, turnstile_token: token }, auth: false })) as Tokens;
+          const tokens = (await api("/auth/login", { body: { email, password, turnstile_token: token }, auth: false })) as Tokens | Challenge;
+          if (isChallenge(tokens)) {
+            navigate(`/login?email=${encodeURIComponent(email)}`, { replace: true, state: { challenge: tokens } });
+            return;
+          }
           await signIn(tokens);
           navigate("/", { replace: true });
           return;

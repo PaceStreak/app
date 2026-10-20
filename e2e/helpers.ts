@@ -61,17 +61,47 @@ export async function newAccount(prefix = "e2e") {
   const email = `${id}@example.com`;
   const created = await call("/auth/signup", { email, password: PASSWORD, turnstile_token: TOKEN });
   if (await emailEnabled()) await call("/auth/verify-email", { email, code: await codeFor(email) });
-  const { access_token } = await call("/auth/login", { email, password: PASSWORD, turnstile_token: TOKEN });
+  const { access_token } = await apiSignIn(email);
   await call("/me/onboarding", { handle: id.slice(0, 30), birth_year: 1990, accept_terms: true }, access_token);
   return { email, handle: id.slice(0, 30), token: access_token as string, recoveryCodes: (created.recovery_codes ?? []) as string[] };
 }
 
+/**
+ * POST /auth/login over plain fetch; with email on the API answers with an email-code challenge, finished here
+ * with the code from the API log (no cookie jar, so nothing is trusted).
+ */
+export async function apiSignIn(email: string, password = PASSWORD): Promise<{ access_token: string }> {
+  const mark = logMark();
+  const res = await call("/auth/login", { email, password, turnstile_token: TOKEN });
+  if (!res.mfa_required) return res;
+  if (res.method !== "email") throw new Error(`apiSignIn cannot answer a ${res.method} challenge`);
+  return call("/auth/2fa/verify", { mfa_token: res.mfa_token, code: await codeFor(email, mark), trust_device: false });
+}
+
+/** The code step after a password, when the API mails sign-in codes: the newest code since `mark`. */
+export async function enterEmailCode(page: Page, email: string, mark: number) {
+  await expect(page.getByRole("heading", { name: "Check your email." })).toBeVisible({ timeout: 20_000 });
+  await page.getByLabel("6-digit code").fill(await codeFor(email, mark));
+  await page.getByRole("button", { name: /^sign in$/i }).click();
+}
+
+/** Type the password; with email on, answer the code step too unless this browser is trusted. */
+export async function submitPassword(page: Page, email: string, password = PASSWORD) {
+  await page.getByLabel(/email/i).first().fill(email);
+  await page.getByLabel(/password/i).first().fill(password);
+  await turnstilePassed(page);
+  const mark = logMark();
+  await page.getByRole("button", { name: /^(sign in|log in)$/i }).click();
+  if (!(await emailEnabled())) return;
+  const step = page.getByRole("heading", { name: "Check your email." });
+  // Either the code step shows, or a trusted browser goes straight in.
+  await page.waitForFunction(() => !location.pathname.startsWith("/login") || document.querySelector("h1")?.textContent?.includes("Check your email"), undefined, { timeout: 20_000 });
+  if (await step.isVisible()) await enterEmailCode(page, email, mark);
+}
+
 export async function signIn(page: Page, email: string) {
   await page.goto("/login");
-  await page.getByLabel(/email/i).first().fill(email);
-  await page.getByLabel(/password/i).first().fill(PASSWORD);
-  await turnstilePassed(page);
-  await page.getByRole("button", { name: /^(sign in|log in)$/i }).click();
+  await submitPassword(page, email);
   await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
 }
 

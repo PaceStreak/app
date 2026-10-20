@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { API, PASSWORD, codeFor, emailEnabled, logMark, newAccount, signIn, turnstilePassed } from "./helpers";
+import { API, PASSWORD, codeFor, emailEnabled, enterEmailCode, logMark, newAccount, signIn, submitPassword, turnstilePassed } from "./helpers";
 
 test("sign up, onboard with the terms, land on Today, then confirm the emailed code (email on) or keep the recovery codes (email off)", async ({ page }) => {
   const mail = await emailEnabled();
@@ -9,7 +9,13 @@ test("sign up, onboard with the terms, land on Today, then confirm the emailed c
   await page.getByLabel("Email").fill(email);
   await page.getByLabel(/password/i).first().fill(PASSWORD);
   await turnstilePassed(page);
+  const mark = logMark();
   await page.getByRole("button", { name: "Create account" }).click();
+
+  if (mail) {
+    // Signing in straight after signup asks for the emailed sign-in code, which also confirms the address.
+    await enterEmailCode(page, email, mark);
+  }
 
   if (!mail) {
     // No email: the account's recovery codes come first, shown once, before onboarding.
@@ -54,15 +60,7 @@ test("sign up, onboard with the terms, land on Today, then confirm the emailed c
     return;
   }
 
-  // Confirm the address with the emailed code; the reminder goes away.
-  await page.goto("/settings/security");
-  await expect(page.getByText(`Confirm ${email} to unlock social features.`)).toBeVisible();
-  const mark = logMark();
-  await page.getByRole("button", { name: "Resend" }).click();
-  await expect(page).toHaveURL(/\/verify-email/);
-  await page.getByLabel("6-digit code").fill(await codeFor(email, mark));
-  await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  // The sign-in code reached the inbox, so the address is confirmed: no reminder.
   await page.goto("/settings/security");
   await expect(page.getByRole("heading", { name: "Email address" })).toBeVisible();
   await expect(page.getByText(`Confirm ${email} to unlock social features.`)).toHaveCount(0);
@@ -92,9 +90,7 @@ test("reset a forgotten password with the emailed code, then sign in with it", a
   await turnstilePassed(page);
   await page.getByRole("button", { name: /^sign in$/i }).click();
   await expect(page.getByRole("alert")).toBeVisible();
-  await page.getByLabel(/password/i).first().fill(fresh);
-  await turnstilePassed(page);
-  await page.getByRole("button", { name: /^sign in$/i }).click();
+  await submitPassword(page, email, fresh);
   await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
 });
 

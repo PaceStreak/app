@@ -1,13 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, newAccount, turnstilePassed } from "./helpers";
+import { newAccount, submitPassword } from "./helpers";
 import type { Page } from "@playwright/test";
 
-async function submitLogin(page: Page, email: string) {
-  await page.getByLabel(/email/i).first().fill(email);
-  await page.getByLabel(/password/i).first().fill(PASSWORD);
-  await turnstilePassed(page);
-  await page.getByRole("button", { name: /^sign in$/i }).click();
-}
+/** The password, and the emailed code when the API sends one: `next` must survive the extra step. */
+const submitLogin = (page: Page, email: string) => submitPassword(page, email);
 
 test("a signed-out visit to a page returns there after signing in", async ({ page }) => {
   const { email } = await newAccount("next");

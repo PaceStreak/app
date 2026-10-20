@@ -5,6 +5,7 @@ import { toast } from "../../components/toast";
 import { Field } from "../../components/ui";
 import { api, errorText } from "../../lib/api";
 import { useSession } from "../../lib/session";
+import { type Challenge, isChallenge } from "../../lib/signin";
 import { AuthLayout, PasswordField } from "./AuthLayout";
 import { t } from "../../lib/i18n";
 import { rich } from "../../lib/i18n-rich";
@@ -50,10 +51,15 @@ export default function Signup() {
       // for this second request rather than reusing the signup token.
       const loginCaptcha = await captchaRef.current?.getFreshToken().catch(() => null);
       try {
-        const tokens = await api<Tokens>("/auth/login", {
+        const tokens = await api<Tokens | Challenge>("/auth/login", {
           body: { email, password, turnstile_token: loginCaptcha },
           auth: false,
         });
+        // Email codes at sign-in: the code step finishes the sign-in, and the code also confirms the address.
+        if (isChallenge(tokens)) {
+          navigate(`/login?email=${encodeURIComponent(email)}`, { replace: true, state: { challenge: tokens } });
+          return;
+        }
         if (recovery) {
           setCodes({ list: recovery, tokens });
           return;

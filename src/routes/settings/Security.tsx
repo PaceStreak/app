@@ -6,7 +6,7 @@ import { useConfirm } from "../../components/Confirm";
 import { DeviceMobile, EnvelopeSimple, ShieldCheck } from "../../components/phosphor";
 import { Sheet } from "../../components/Sheet";
 import { toast } from "../../components/toast";
-import { Banner, Field, Section } from "../../components/ui";
+import { Banner, Field, Section, Switch } from "../../components/ui";
 import { api, errorText, setTokens } from "../../lib/api";
 import { emailOn } from "../../lib/capabilities";
 import { ago, timeAgo } from "../../lib/dates";
@@ -19,6 +19,24 @@ interface SessionRow {
   last_used_at: string | null;
   user_agent: string | null;
   ip_address: string | null;
+  current: boolean;
+}
+
+interface TwoFactor {
+  enabled: boolean;
+  recovery_codes_remaining: number;
+  /** Email codes at sign-in: the owner's choice, whether it applies now (not with TOTP), and whether email exists. */
+  email_codes?: boolean;
+  email_codes_active?: boolean;
+  email_available?: boolean;
+}
+
+interface TrustedDevice {
+  id: string;
+  created_at: string;
+  last_used_at: string | null;
+  expires_at: string;
+  user_agent: string | null;
   current: boolean;
 }
 
@@ -52,7 +70,14 @@ export function Security() {
   const [confirmSheet, ask] = useConfirm();
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api<SessionRow[]>("/auth/sessions") });
   const events = useQuery({ queryKey: ["security-events"], queryFn: () => api<{ id: string; label: string; user_agent: string | null; created_at: string }[]>("/me/security-events") });
-  const twofa = useQuery({ queryKey: ["2fa"], queryFn: () => api<{ enabled: boolean; recovery_codes_remaining: number }>("/auth/2fa") });
+  const twofa = useQuery({ queryKey: ["2fa"], queryFn: () => api<TwoFactor>("/auth/2fa") });
+  const emailCodesShown = Boolean(twofa.data?.email_available);
+  const trusted = useQuery({
+    queryKey: ["trusted-devices"],
+    queryFn: () => api<TrustedDevice[]>("/auth/trusted-devices"),
+    enabled: emailCodesShown,
+  });
+  const [emailCodes, setEmailCodes] = useState<{ enabled: boolean; password: string } | null>(null);
   const [pw, setPw] = useState<{ current: string; next: string } | null>(null);
   const [setup, setSetup] = useState<{ secret: string; uri: string; password: string; code: string; codes?: string[] } | null>(null);
   const [disable, setDisable] = useState<{ password: string; code: string } | null>(null);
@@ -142,6 +167,31 @@ export function Security() {
       });
       setAccountCodes({ ...accountCodes, codes: res.recovery_codes });
       void twofa.refetch();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
+  const saveEmailCodes = async () => {
+    if (!emailCodes) return;
+    try {
+      await api("/auth/2fa/email", { body: emailCodes });
+      setEmailCodes(null);
+      toast.success(emailCodes.enabled ? "Email codes are on" : "Email codes are off", {
+        body: emailCodes.enabled ? "New devices need a code from your inbox to sign in." : "Your password alone signs you in.",
+      });
+      void twofa.refetch();
+      void trusted.refetch();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
+  const forget = async (d?: TrustedDevice) => {
+    try {
+      if (d) await api(`/auth/trusted-devices/${d.id}`, { method: "DELETE" });
+      else await api("/auth/trusted-devices", { method: "DELETE" });
+      void trusted.refetch();
     } catch (err) {
       toast.error(errorText(err));
     }
@@ -244,14 +294,50 @@ export function Security() {
         )}
       </Section>
 
-      {/* Without email, recovery codes are the way back from a forgotten password, so every account has them. */}
-      {!mail && !twofa.data?.enabled && twofa.data && (
+      {emailCodesShown && twofa.data && (
+        <Section title="Email codes at sign-in">
+          <div className="card">
+            <Switch
+              checked={Boolean(twofa.data.email_codes)}
+              onChange={(v) => setEmailCodes({ enabled: v, password: "" })}
+              label="Email me a code when I sign in"
+              description={
+                twofa.data.enabled
+                  ? "Not used while your authenticator app is on: it asks instead."
+                  : "After your password, a 6-digit code from your inbox. Trusted devices skip it for 30 days."
+              }
+            />
+          </div>
+          {(trusted.data ?? []).length > 0 && (
+            <>
+              <ul className="card mt-3 divide-y divide-line" aria-label="Trusted devices">
+                {(trusted.data ?? []).map((d) => (
+                  <li key={d.id} className="flex items-center gap-3 px-4 py-3">
+                    <DeviceMobile size={20} className="text-dim" aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">
+                        {device(d.user_agent)} {d.current && <span className="chip chip-accent ml-1 h-5 px-1.5 text-[0.7rem]">This device</span>}
+                      </span>
+                      <span className="block text-sm text-dim">Trusted {ago(d.created_at)}</span>
+                    </span>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => void forget(d)}>Forget</button>
+                  </li>
+                ))}
+              </ul>
+              <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={() => void forget()}>Forget every trusted device</button>
+            </>
+          )}
+        </Section>
+      )}
+
+      {/* Recovery codes stand in for a lost password without email, and for the emailed sign-in code with it. */}
+      {!twofa.data?.enabled && twofa.data && (!mail || twofa.data.email_codes_active) && (
         <Section title="Recovery codes">
           <div className="card flex items-center gap-3 p-4">
             <ShieldCheck size={24} className="text-dim" aria-hidden />
             <div className="flex-1">
               <p className="font-semibold">{twofa.data.recovery_codes_remaining} left</p>
-              <p className="text-sm text-dim">Forgot your password? One of these sets a new one, from the sign-in page.</p>
+              <p className="text-sm text-dim">{mail ? "No access to your inbox? One of these signs you in instead of the emailed code." : "Forgot your password? One of these sets a new one, from the sign-in page."}</p>
             </div>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAccountCodes({ password: "", code: "" })}>New codes</button>
           </div>
@@ -323,6 +409,28 @@ export function Security() {
               <button type="button" className="btn btn-primary w-full" disabled={setup.code.length < 6 || !setup.password} onClick={confirmSetup}>Turn on</button>
             </div>
           ))}
+      </Sheet>
+
+      <Sheet open={emailCodes !== null} onClose={() => setEmailCodes(null)} title={emailCodes?.enabled ? "Turn on email codes" : "Turn off email codes"}>
+        {emailCodes && (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void saveEmailCodes();
+            }}
+          >
+            <p className="text-muted">
+              {emailCodes.enabled
+                ? "Signing in on a new device will need a code from your inbox."
+                : "Your password alone will sign you in. Every trusted device is forgotten either way."}
+            </p>
+            <Field label="Your password" type="password" autoComplete="current-password" value={emailCodes.password} onChange={(e) => setEmailCodes({ ...emailCodes, password: e.target.value })} />
+            <button className={emailCodes.enabled ? "btn btn-primary w-full" : "btn btn-danger w-full"} disabled={!emailCodes.password}>
+              {emailCodes.enabled ? "Turn on" : "Turn off"}
+            </button>
+          </form>
+        )}
       </Sheet>
 
       <Sheet open={disable !== null} onClose={() => setDisable(null)} title="Turn off two-factor">
