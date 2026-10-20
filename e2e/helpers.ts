@@ -60,7 +60,6 @@ export async function newAccount(prefix = "e2e") {
   const id = `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
   const email = `${id}@example.com`;
   const created = await call("/auth/signup", { email, password: PASSWORD, turnstile_token: TOKEN });
-  if (await emailEnabled()) await call("/auth/verify-email", { email, code: await codeFor(email) });
   const { access_token } = await apiSignIn(email);
   await call("/me/onboarding", { handle: id.slice(0, 30), birth_year: 1990, accept_terms: true }, access_token);
   return { email, handle: id.slice(0, 30), token: access_token as string, recoveryCodes: (created.recovery_codes ?? []) as string[] };
