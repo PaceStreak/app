@@ -119,13 +119,14 @@ export function AppSection() {
 export function About() {
   return (
     <div className="space-y-4 text-muted">
-      <p>PaceStreak is a workout streak tracker built in the open. The whole thing is AGPL-3.0.</p>
+      <p>PaceStreak is a habit and streak tracker, built in public. The whole thing is open source under AGPL-3.0: the app, the API and the websites.</p>
       <ul className="card divide-y divide-line">
         {[
           ["Privacy policy", "https://www.pacestreak.com/privacy"],
           ["Terms", "https://www.pacestreak.com/terms"],
           ["Build log", "https://blog.pacestreak.com"],
           ["Service status", "https://status.pacestreak.com"],
+          ["Source code", "https://github.com/PaceStreak"],
           ["Contact", "mailto:hello@pacestreak.com"],
         ].map(([label, href]) => (
           <li key={href}>
