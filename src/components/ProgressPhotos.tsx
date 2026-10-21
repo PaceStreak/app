@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { errorText } from "../lib/api";
 import { fmtMonthDay } from "../lib/dates";
 import type { Photo } from "../lib/db";
-import { addPhoto, deletePhoto, listPhotos, stopPhotoBackup, syncPhotos } from "../lib/photos";
+import { addPhoto, deletePhoto, listPhotos, startPhotoBackup, stopPhotoBackup, syncPhotos } from "../lib/photos";
 import { prefs } from "../lib/prefs";
 import { useConfirm } from "./Confirm";
 import { Camera, CloudCheck, Trash } from "./phosphor";
@@ -46,6 +46,7 @@ export function ProgressPhotos({ today }: { today: string }) {
     setSyncing(true);
     try {
       await syncPhotos();
+      setBackup(prefs.photoBackup());
     } catch (err) {
       if (!quiet) toast.error(errorText(err));
     } finally {
@@ -60,7 +61,12 @@ export function ProgressPhotos({ today }: { today: string }) {
 
   const toggleBackup = async (on: boolean) => {
     if (on) {
-      prefs.setPhotoBackup(true);
+      try {
+        await startPhotoBackup();
+      } catch (err) {
+        toast.error(errorText(err));
+        return;
+      }
       setBackup(true);
       await sync(false);
       toast.success("Photos backed up to your account");

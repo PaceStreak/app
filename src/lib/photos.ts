@@ -6,10 +6,11 @@
  * where the photo was taken.
  */
 
-import { api } from "./api";
+import { ApiError, api } from "./api";
 import { uuid } from "./dates";
 import { db, type Photo } from "./db";
 import { prefs } from "./prefs";
+import type { Me } from "./types";
 
 const MAX_SIDE = 1600;
 
@@ -39,7 +40,13 @@ export async function addPhoto(file: Blob, date: string, pose: Photo["pose"]): P
  */
 async function upload(photo: Photo) {
   const q = new URLSearchParams({ date: photo.date, pose: photo.pose });
-  await api(`/body-photos/${photo.id}?${q}`, { method: "PUT", blob: photo.blob });
+  try {
+    await api(`/body-photos/${photo.id}?${q}`, { method: "PUT", blob: photo.blob });
+  } catch (err) {
+    // 409: the account's backup was turned off elsewhere; this device's mirror was stale.
+    if (err instanceof ApiError && err.status === 409) prefs.setPhotoBackup(false);
+    throw err;
+  }
   await (await db()).put("photos", { ...photo, synced: true });
 }
 
@@ -55,7 +62,10 @@ interface RemotePhoto {
  * runs with backup on. Returns how many photos moved either way.
  */
 export async function syncPhotos(): Promise<number> {
-  if (!prefs.photoBackup()) return 0;
+  if (!(await syncBackupSetting())) {
+    await forgetSynced(); // turned off elsewhere: the server copies are gone
+    return 0;
+  }
   const store = await db();
   const local = await store.getAll("photos");
   const remote = await api<RemotePhoto[]>("/body-photos");
@@ -89,12 +99,75 @@ export async function syncPhotos(): Promise<number> {
   return moved;
 }
 
-/** Turn backup off: every copy on the server goes; this device keeps its own. */
+/**
+ * What the backup setting should be, from the account's flag and this device's mirror. The account wins; the one
+ * exception is the move from the old device-only setting: a device that says on, has uploaded before and has not
+ * migrated yet turns the account on, once.
+ */
+export function resolveBackup(account: boolean, device: boolean, uploadedBefore: boolean, migrated: boolean): { on: boolean; migrate: boolean } {
+  if (account) return { on: true, migrate: false };
+  const migrate = !migrated && device && uploadedBefore;
+  return { on: migrate, migrate };
+}
+
+/**
+ * Level this device's mirror with the account (GET /me, or the `me` already in hand). Offline, the mirror stands.
+ * Returns the setting in force.
+ */
+export async function syncBackupSetting(me?: Me): Promise<boolean> {
+  let account: boolean;
+  try {
+    account = (me ?? (await api<Me>("/me"))).profile.photo_backup ?? false;
+  } catch {
+    return prefs.photoBackup();
+  }
+  let uploadedBefore = false;
+  if (!account && prefs.photoBackup() && !prefs.photoBackupMigrated()) {
+    try {
+      uploadedBefore = (await (await db()).getAll("photos")).some((p) => p.synced);
+    } catch {
+      /* no local store: nothing was uploaded from here */
+    }
+  }
+  const { on, migrate } = resolveBackup(account, prefs.photoBackup(), uploadedBefore, prefs.photoBackupMigrated());
+  if (migrate) {
+    try {
+      await api("/me/profile", { method: "PATCH", body: { photo_backup: true } });
+    } catch {
+      return prefs.photoBackup(); // try again next time
+    }
+  }
+  prefs.setPhotoBackupMigrated();
+  prefs.setPhotoBackup(on);
+  return on;
+}
+
+/** Turn backup on for the account (every device follows). */
+export async function startPhotoBackup() {
+  await api("/me/profile", { method: "PATCH", body: { photo_backup: true } });
+  prefs.setPhotoBackupMigrated();
+  prefs.setPhotoBackup(true);
+}
+
+/**
+ * Turn backup off for the account: the API deletes every server copy in the same request as the flag. This device
+ * keeps its own.
+ */
 export async function stopPhotoBackup() {
-  await api("/body-photos", { method: "DELETE" });
+  await api("/me/profile", { method: "PATCH", body: { photo_backup: false } });
+  prefs.setPhotoBackupMigrated();
   prefs.setPhotoBackup(false);
   const store = await db();
   for (const p of await store.getAll("photos")) if (p.synced) await store.put("photos", { ...p, synced: false });
+}
+
+async function forgetSynced() {
+  try {
+    const store = await db();
+    for (const p of await store.getAll("photos")) if (p.synced) await store.put("photos", { ...p, synced: false });
+  } catch {
+    /* no local store */
+  }
 }
 
 export async function listPhotos(): Promise<Photo[]> {

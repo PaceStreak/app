@@ -50,9 +50,15 @@ export const prefs = {
   /** Which strength-standards table to compare with; null hides them. */
   standards: () => read<"men" | "women" | null>("standards", null),
   setStandards: (v: "men" | "women" | null) => write("standards", v),
-  /** Back progress photos up to the account from this device. */
+  /**
+   * This device's mirror of the account's photo-backup setting (profile.photo_backup), for offline use.
+   * The account wins whenever it can be read; src/lib/photos.ts keeps the two level.
+   */
   photoBackup: () => read<boolean>("photoBackup", false),
   setPhotoBackup: (on: boolean) => write("photoBackup", on),
+  /** The one-time move of a device-only "on" to the account has run on this device. */
+  photoBackupMigrated: () => read<boolean>("photoBackupMigrated", false),
+  setPhotoBackupMigrated: () => write("photoBackupMigrated", true),
   textSize: () => read<TextSize>("textSize", "default"),
   setTextSize: (v: TextSize) => {
     write("textSize", v);
