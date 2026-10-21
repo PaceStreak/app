@@ -109,7 +109,7 @@ function message(status: number, data: unknown): string {
   const detail = (data as { detail?: unknown })?.detail;
   if (typeof detail === "string") return detail;
   if (Array.isArray(detail) && detail.length) {
-    // FastAPI validation errors: [{loc, msg}]. Show the first, readably.
+    // Validation errors keep the FastAPI shape, [{loc, msg}]. Show the first, readably.
     const first = detail[0] as { loc?: string[]; msg?: string };
     const field = first.loc?.filter((p) => p !== "body").join(" ");
     const msg = (first.msg ?? "is invalid").replace(/^Value error, /, "");

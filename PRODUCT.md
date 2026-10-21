@@ -10,7 +10,7 @@ web
 
 React + Vite + TypeScript, Tailwind CSS v4, installable PWA. Static SPA on
 Cloudflare Pages (Git-connected); talks only to `api.pacestreak.com`
-(FastAPI). CSP is `default-src 'self'` with no `unsafe-inline`: no inline
+(a Cloudflare Worker, TypeScript and Hono). CSP is `default-src 'self'` with no `unsafe-inline`: no inline
 scripts/styles in markup, `assetsInlineLimit: 0`, and one deliberate
 third-party exception for Cloudflare Turnstile (`challenges.cloudflare.com`,
 2026-09-27) on the forms that could otherwise be used to spam email.
