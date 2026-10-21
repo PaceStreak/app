@@ -126,6 +126,7 @@ export function About() {
           ["Terms", "https://www.pacestreak.com/terms"],
           ["Build log", "https://blog.pacestreak.com"],
           ["Service status", "https://status.pacestreak.com"],
+          ["How it runs", "https://docs.pacestreak.com"],
           ["Source code", "https://github.com/PaceStreak"],
           ["Contact", "mailto:hello@pacestreak.com"],
         ].map(([label, href]) => (
